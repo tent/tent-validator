@@ -29,9 +29,7 @@ class StatusPostResponseValidator < PostResponseValidator
 end
 
 class PostsValidation < TentValidator::Validation
-
-  # this will always be executed first
-  describe "POST /posts" do
+  create_post = describe "POST /posts" do
     data = {} # ...
     with_client :app, :server => :remote do |client|
       # expect valid status post json
@@ -42,8 +40,7 @@ class PostsValidation < TentValidator::Validation
     end
   end
 
-  # this will always be executed second
-  describe "GET /posts/:id" do
+  describe "GET /posts/:id", :depends_on => create_post do
     with_client :app, :server => :local do |client|
       # expect valid status post json
       expect_response(:status_post, :id => get(:post_id), :entity => get(:entity)) do
