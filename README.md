@@ -58,7 +58,7 @@ class PostsValidation < TentValidator::Validation
 
 end
 
-posts_res = PostsValidation.run # => TentValidator::Results
+posts_res = PostsValidation.run # => TentValidator::CombinedResults
 posts_res.passed? # => true
 posts_res.as_json == {
   "GET /posts/:id" => [
