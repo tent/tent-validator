@@ -5,7 +5,6 @@ module TentValidator
   autoload :Validation, 'tent-validator/validation'
   autoload :ExampleGroup, 'tent-validator/example_group'
   autoload :Results, 'tent-validator/results'
-  autoload :CombinedResults, 'tent-validator/combined_results'
   autoload :ResponseValidator, 'tent-validator/response_validator'
 
   class << self

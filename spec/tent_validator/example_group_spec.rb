@@ -47,7 +47,7 @@ describe TentValidator::ExampleGroup do
 
     it "should yield client for remote app authorization" do
       client = nil
-      example_group.with_client(:app, :server => :remote) { |c| client = c }
+      example_group.with_client(:app, :server => :remote) { |c| client = c.client }
       expect(client).to be_a(TentClient)
       expect(client.server_urls).to eql(Array(remote_server))
       %w[ mac_key_id mac_algorithm mac_key ].each { |option|
@@ -57,7 +57,7 @@ describe TentValidator::ExampleGroup do
 
     it "should yield client for local app authorization" do
       client = nil
-      example_group.with_client(:app, :server => :local) { |c| client = c }
+      example_group.with_client(:app, :server => :local) { |c| client = c.client }
       expect(client).to be_a(TentClient)
       expect(client.faraday_adapter).to eql(TentValidator.local_adapter)
     end
@@ -65,11 +65,13 @@ describe TentValidator::ExampleGroup do
 
   describe "#expect_response" do
     it "should validate response with given validator" do
-      example_group.expect_response(:test) { stub(:body => 'test') }
+      response = stub(:body => 'test')
+      example_group.expect_response(:test) { response }
       res = example_group.run
       expect(res.passed?).to be_true
 
-      example_group.expect_response(:test) { stub(:body => nil) }
+      response = stub(:body => nil)
+      example_group.expect_response(:test) { response }
       res = example_group.run
       expect(res.passed?).to be_false
     end

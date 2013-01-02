@@ -14,11 +14,8 @@ end
 
 describe TentValidator::ResponseValidator do
   it "should register custom validators" do
-    expect(described_class.validate(:test) { stub(:body => 'test') }).to be_true
-    res = described_class.validate(:test) { stub(:body => nil) }
-    expect(res.size).to eql(2)
-    expect(res.first).to be_false
-    expect(res.last).to be_a(String)
+    expect(described_class.validate(:test) { stub(:body => 'test') }).to be_passed
+    expect(described_class.validate(:test) { stub(:body => nil) }).to_not be_passed
   end
 
   it "should raise exception when specified validator doesn't exist" do

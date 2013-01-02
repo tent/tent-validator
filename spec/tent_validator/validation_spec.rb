@@ -23,8 +23,8 @@ describe TentValidator::Validation do
       expect(called_examples).to include(example_group_2)
     end
 
-    it "should return validation combined results object" do
-      expect(described_class.run).to be_a(TentValidator::CombinedResults)
+    it "should return validation results object" do
+      expect(described_class.run).to be_a(TentValidator::Results)
     end
   end
 end
