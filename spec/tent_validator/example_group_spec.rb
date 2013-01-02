@@ -1,0 +1,77 @@
+require 'spec_helper'
+
+describe TentValidator::ExampleGroup do
+  let(:example_group) { described_class.new }
+
+  context "without block" do
+    it "should have pending flag" do
+      example_group = described_class.new
+      expect(example_group).to be_pending
+    end
+  end
+
+  describe "#run" do
+    it "should yield to given block via instance_eval" do
+      context = nil
+      example_group = described_class.new { context = self}
+      example_group.run
+      expect(context).to eql(example_group)
+    end
+
+    it "should return validation results object" do
+      example_group = described_class.new {}
+      expect(example_group.run).to be_a(TentValidator::Results)
+    end
+  end
+
+  describe "#set(key, value) / #get(key)" do
+    it "should set/get key in temp key/val store" do
+      example_group.set(:foo, "bar")
+      expect(example_group.get(:foo)).to eql("bar")
+    end
+  end
+
+  describe "#with_client" do
+    let(:remote_server) { "https://example.org/tent" }
+    let(:remote_auth_details) do
+      {
+        :mac_key_id => 'mac-key-id',
+        :mac_algorithm => 'hmac-sha-256',
+        :mac_key => 'mac-key'
+      }
+    end
+    before(:each) do
+      TentValidator.remote_server = remote_server
+      TentValidator.remote_auth_details = remote_auth_details
+    end
+
+    it "should yield client for remote app authorization" do
+      client = nil
+      example_group.with_client(:app, :server => :remote) { |c| client = c }
+      expect(client).to be_a(TentClient)
+      expect(client.server_urls).to eql(Array(remote_server))
+      %w[ mac_key_id mac_algorithm mac_key ].each { |option|
+        expect(client.instance_eval { @options[option.to_sym] }).to eql(remote_auth_details[option.to_sym])
+      }
+    end
+
+    it "should yield client for local app authorization" do
+      client = nil
+      example_group.with_client(:app, :server => :local) { |c| client = c }
+      expect(client).to be_a(TentClient)
+      expect(client.faraday_adapter).to eql(TentValidator.local_adapter)
+    end
+  end
+
+  describe "#expect_response" do
+    it "should validate response with given validator" do
+      example_group.expect_response(:test) { stub(:body => 'test') }
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      example_group.expect_response(:test) { stub(:body => nil) }
+      res = example_group.run
+      expect(res.passed?).to be_false
+    end
+  end
+end
