@@ -60,7 +60,7 @@ end
 
 posts_res = PostsValidation.run # => TentValidator::Results
 posts_res.passed? # => true
-posts_res.to_hash == {
+posts_res.as_json == {
   "GET /posts/:id" => [
     {
       :request_headers => {},
@@ -91,7 +91,7 @@ posts_res.first # => TentValidator::Result
 
 all_res = TentValidator::Validation.run # => TentValidator::Results
 all_res.passed? # => true
-all_res.to_hash == [
+all_res.as_json == [
   {
     "GET /posts/:id" => [] # ...
   }
