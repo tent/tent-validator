@@ -1,4 +1,4 @@
-# TentValidator
+# TentValidator [![Build Status](https://secure.travis-ci.org/tent/tent-validator.png)](http://travis-ci.org/tent/tent-validator)
 
 Tent protocol validator. **This is a WIP**
 
