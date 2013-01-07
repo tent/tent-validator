@@ -8,6 +8,34 @@ module TentValidator
       class Anything
       end
 
+      class JSONMatcher
+        def initialize(expected)
+          @expected = expected
+        end
+
+        def match(actual, expected=@expected)
+          case expected
+          when Regexp
+            !!expected.match(actual)
+          when Hash
+            if actual.kind_of?(String)
+              actual = Yajl::Parser.parse(actual)
+            end
+
+            res = true
+            expected.each_pair do |k,v|
+              return false unless _actual = actual[k.to_s]
+              unless match(_actual, v)
+                res = false
+              end
+            end
+            res
+          else
+            actual == expected
+          end
+        end
+      end
+
       attr_reader :expected_body, :expected_headers, :expected_status
 
       def initialize(options)
@@ -30,10 +58,12 @@ module TentValidator
         return true if expected_body.kind_of?(Anything)
 
         case expected_body
-        when String
-          expected_body == response.body
+        when Regexp
+          !!expected_body.match(response.body)
+        when Hash
+          JSONMatcher.new(expected_body).match(response.body)
         else
-          false
+          expected_body == response.body
         end
       end
 

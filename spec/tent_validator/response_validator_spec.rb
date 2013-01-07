@@ -40,9 +40,41 @@ describe TentValidator::ResponseValidator::Expectation do
       ).to be_false
     end
 
-    it 'should set expectation for partial match of response body'
+    it 'should set expectation for partial match of response body' do
+      expectation = described_class.new(
+        :body => /test/i
+      )
 
-    it 'should set expectation for deep partial match of response body'
+      response = stub(:body => 'Testing')
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response = stub(:body => 'unexpected')
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
+
+    it 'should set expectation for deep partial match of response body' do
+      expectation = described_class.new(
+        :body => {
+          :foo => {
+            :bar => /baz/i
+          }
+        }
+      )
+
+      response = stub(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'Bazzer', 'baz' => 'bar' } }))
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response = stub(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'foobar' } }))
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
   end
 
   context 'response headers' do
