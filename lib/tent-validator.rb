@@ -7,6 +7,22 @@ module TentValidator
   autoload :Results, 'tent-validator/results'
   autoload :ResponseValidator, 'tent-validator/response_validator'
 
+  class TentRackFaradayAdapter < Faraday::Adapter::Rack
+    def call(env)
+      env[:request_body] = env[:body].dup if env[:body]
+      super
+    end
+  end
+  Faraday.register_middleware :adapter, :tent_rack => TentRackFaradayAdapter
+
+  class TentNetHttpFaradayAdapter < Faraday::Adapter::NetHttp
+    def call(env)
+      env[:request_body] = env[:body].dup if env[:body]
+      super
+    end
+  end
+  Faraday.register_middleware :adapter, :tent_net_http => TentNetHttpFaradayAdapter
+
   class << self
     attr_accessor :remote_server, :remote_auth_details
   end
@@ -17,5 +33,9 @@ module TentValidator
 
   def self.local_adapter
     @local_adapter ||= [:tent_rack, tentd]
+  end
+
+  def self.remote_adapter
+    @remote_adapter ||= :tent_net_http
   end
 end

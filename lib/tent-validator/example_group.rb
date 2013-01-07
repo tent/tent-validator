@@ -22,6 +22,38 @@ module TentValidator
       end
     end
 
+    class Results < TentValidator::Results
+      attr_reader :context
+
+      def initialize(results, context)
+        @context = context
+        super(results)
+      end
+
+      def as_json(options = {})
+        {
+          context.description => @results.map { |r| r.as_json(options) }
+        }
+      end
+    end
+
+    class Expectation
+      attr_reader :context
+
+      def initialize(context, name, params, &block)
+        @context = context
+        @name = name
+        @params = params
+        @block = block
+      end
+
+      def run
+        result = ResponseValidator.validate(@name, @params, &@block)
+        result.expectation = self
+        result
+      end
+    end
+
     attr_reader :description, :env, :state, :dependent_example_groups
 
     def initialize(description="", options = {}, &block)
@@ -61,12 +93,14 @@ module TentValidator
 
     def run
       instance_eval(&@block) if @block
-      Results.new(@expectations.map(&:call))
+      Results.new(@expectations.map(&:run), self)
     end
 
     def with_client(type, options, &block)
       client = if options[:server] == :remote
-        TentClient.new(TentValidator.remote_server, TentValidator.remote_auth_details)
+        TentClient.new(TentValidator.remote_server, TentValidator.remote_auth_details.merge(
+          :faraday_adapter => TentValidator.remote_adapter
+        ))
       else
         TentClient.new("", :faraday_adapter => TentValidator.local_adapter)
       end
@@ -80,9 +114,7 @@ module TentValidator
     end
 
     def expect_response(name, params = {}, &block)
-      @expectations << proc do
-        ResponseValidator.validate(name, params, &block)
-      end
+      @expectations << Expectation.new(self, name, params, &block)
     end
   end
 end
