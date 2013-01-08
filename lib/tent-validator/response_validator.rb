@@ -19,7 +19,7 @@ module TentValidator
         def match(actual, expected=@expected)
           case expected
           when Regexp
-            !!expected.match(actual)
+            !!expected.match(actual.to_s)
           when Range
             expected.include?(actual)
           else
@@ -38,8 +38,7 @@ module TentValidator
 
             res = true
             expected.each_pair do |k,v|
-              return false unless _actual = actual[k.to_s]
-              unless match(_actual, v)
+              unless match(actual[k.to_s], v)
                 res = false
               end
             end
@@ -108,7 +107,7 @@ module TentValidator
       end
 
       def passed?
-        !@expectations.any? { |e| !e.validate(response) }
+        !expectations.any? { |e| !e.validate(response) }
       end
 
       # TODO: finish filling in data
@@ -119,14 +118,15 @@ module TentValidator
           :request_path => response.env[:url].path,
           :request_params => parse_params(response.env[:url]),
           :request_url => response.env[:url].to_s,
+          :request_method => response.env[:method].to_s.upcase,
 
           :response_headers => response.headers,
           :response_body => response.body,
           :response_status => response.status,
 
-          :expected_response_headers => nil,
-          :expected_response_body => nil,
-          :expected_response_status => nil,
+          :expected_response_headers => expected_response_headers,
+          :expected_response_body => expected_response_body,
+          :expected_response_status => expected_response_status,
 
           :passed => passed?,
         }
@@ -138,6 +138,31 @@ module TentValidator
           key, value = part.split('=')
           params[key] = value
           params
+        end
+      end
+
+      private
+
+      def expected_response_headers
+        expectations.inject({}) { |memo, expectation|
+          next memo if expectation.expected_headers.kind_of?(Expectation::Anything)
+          memo.merge(expectation.expected_headers)
+        }
+      end
+
+      def expected_response_body
+        expectations.inject({}) { |memo, expectation|
+          next memo if expectation.expected_body.kind_of?(Expectation::Anything)
+          next expectation.expected_body if expectation.expected_body.kind_of?(String)
+          memo.merge(expectation.expected_body)
+        }
+      end
+
+      def expected_response_status
+        if expectation = expectations.find { |expectation| expectation.expected_status != (200...300) }
+          expectation.expected_status
+        elsif expectation = expectations.first
+          expectation.expected_status
         end
       end
     end

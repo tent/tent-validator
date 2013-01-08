@@ -193,3 +193,138 @@ describe TentValidator::ResponseValidator::Expectation do
     end
   end
 end
+
+describe TentValidator::ResponseValidator::Result do
+  let(:env) { Hashie::Mash.new(
+    :request_headers => { 'Accept' => TentD::API::MEDIA_TYPE, 'Content-Type' => TentD::API::MEDIA_TYPE },
+    :request_body => Yajl::Encoder.encode({ type: 'https://tent.io/types/post/status/v0.1.0', content: { text: 'Hello World' } }),
+    :method => :put,
+    :url => URI('https://remote.example.com/tent/posts?version=2'),
+    :status => 200,
+    :response_headers => { 'content-type' => TentD::API::MEDIA_TYPE, 'etag' => '1234' },
+    :body => {"entity"=>"https://demo.example.com", "licenses"=>[], "content"=>{"text"=>"Hello World"}, "published_at"=>1357665780, "permissions"=>{"groups"=>[], "entities"=>{}, "public"=>false}, "id"=>"8Ow_LxdKerMwNRuSVUxcJg", "updated_at"=>1357665780, "received_at"=>1357665780, "attachments"=>[], "type"=>"https://tent.io/types/post/status/v0.1.0", "version"=>1, "app"=>{"url"=>"https://apps.example.org/demo", "name"=>"Demo App"}, "mentions"=>[]}
+  ) }
+  let(:response) { Faraday::Response.new(env) }
+  let(:expectations) {
+    [
+      TentValidator::ResponseValidator::Expectation.new(
+        :headers => { 'Content-Type' => TentD::API::MEDIA_TYPE }
+      ),
+      TentValidator::ResponseValidator::Expectation.new(
+        :headers => { 'etag' => /\A\S+\Z/ },
+        :body => {
+          :id => /\A\S+\Z/,
+          :entity => "https://demo.example.com",
+          :content => {
+            :text => "Hello World"
+          },
+          :version => 1
+        }
+      ),
+      TentValidator::ResponseValidator::Expectation.new(
+        :body => {
+          :published_at => /\A\d+\Z/,
+          :updated_at => /\A\d+\Z/,
+          :received_at => /\A\d+\Z/,
+          :permissions => {
+            :public => false
+          },
+          :mentions => []
+        }
+      ),
+      TentValidator::ResponseValidator::Expectation.new(
+        :status => 200
+      )
+    ]
+  }
+  let(:result) { described_class.new(response: response, expectations: expectations) }
+
+  describe "#as_json" do
+    let(:json) { result.as_json }
+
+    it 'should contain request headers' do
+      expect(json[:request_headers]).to eql(env[:request_headers])
+    end
+
+    it 'should contain request body' do
+      expect(json[:request_body]).to eql(env[:request_body])
+    end
+
+    it 'should contain request params' do
+      expect(json[:request_params]).to eql('version' => '2')
+    end
+
+    it 'should contain request path' do
+      expect(json[:request_path]).to eql('/tent/posts')
+    end
+
+    it 'should contain request url' do
+      expect(json[:request_url]).to eql("https://remote.example.com/tent/posts?version=2")
+    end
+
+    it 'should contain request method' do
+      expect(json[:request_method]).to eql('PUT')
+    end
+
+    it 'should contain response headers' do
+      expect(json[:response_headers]).to eql(env[:response_headers])
+    end
+
+    it 'should contain response body' do
+      expect(json[:response_body]).to eql(env[:body])
+    end
+
+    it 'should contain response status' do
+      expect(json[:response_status]).to eql(env[:status])
+    end
+
+    it 'should contain expected response headers' do
+      expect(json[:expected_response_headers]).to eql(
+        'Content-Type' => TentD::API::MEDIA_TYPE,
+        'etag' => /\A\S+\Z/
+      )
+    end
+
+    it 'should contain expected response body' do
+      expect(json[:expected_response_body]).to eql(
+        :id => /\A\S+\Z/,
+        :entity => "https://demo.example.com",
+        :content => {
+          :text => "Hello World"
+        },
+        :version => 1,
+        :published_at => /\A\d+\Z/,
+        :updated_at => /\A\d+\Z/,
+        :received_at => /\A\d+\Z/,
+        :permissions => {
+          :public => false
+        },
+        :mentions => []
+      )
+    end
+
+    context 'when expected response body is a string' do
+      let(:body) { Yajl::Encoder.encode(env[:body]) }
+      let(:expectations) {
+        [
+          TentValidator::ResponseValidator::Expectation.new(
+            :body => body
+          ),
+          TentValidator::ResponseValidator::Expectation.new(status: 200)
+        ]
+      }
+
+      it 'should contain expected response body' do
+        expect(json[:expected_response_body]).to eql(body)
+      end
+    end
+
+    it 'should contain expected response status' do
+      expect(json[:expected_response_status]).to eql(200)
+    end
+
+    it 'should contain passed status' do
+      expect(json[:passed]).to be_true
+    end
+  end
+end
