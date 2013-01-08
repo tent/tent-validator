@@ -6,9 +6,12 @@ module TentValidator
 
     class Expectation
       class Anything
+        def ==(other)
+          true
+        end
       end
 
-      class JSONMatcher
+      class Matcher
         def initialize(expected)
           @expected = expected
         end
@@ -17,6 +20,15 @@ module TentValidator
           case expected
           when Regexp
             !!expected.match(actual)
+          else
+            actual == expected
+          end
+        end
+      end
+
+      class JSONMatcher < Matcher
+        def match(actual, expected=@expected)
+          case expected
           when Hash
             if actual.kind_of?(String)
               actual = Yajl::Parser.parse(actual)
@@ -31,7 +43,7 @@ module TentValidator
             end
             res
           else
-            actual == expected
+            super
           end
         end
       end
@@ -69,7 +81,12 @@ module TentValidator
 
       def validate_headers(response)
         return true if expected_headers.kind_of?(Anything)
-        false
+        expected_headers.inject(true) do |memo, (k,v)|
+          unless Matcher.new(v).match(response.headers[k.to_s.downcase])
+            memo = false
+          end
+          memo
+        end
       end
 
       def validate_status(response)

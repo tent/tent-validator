@@ -78,9 +78,42 @@ describe TentValidator::ResponseValidator::Expectation do
   end
 
   context 'response headers' do
-    it 'should set expectation that specified headers be included with exact values'
+    it 'should set expectation that specified headers be included with exact values' do
+      expectation = described_class.new(
+        :headers => {
+          :foo => '25',
+          :bar => 'baz'
+        }
+      )
 
-    it 'should set expectation that specified headers be included with approximate values'
+      response = stub(:headers => {  'foo' => '25', 'bar' => 'baz' })
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response = stub(:headers => {  'foo' => '00', 'bar' => 'baz' })
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
+
+    it 'should set expectation that specified headers be included with approximate values' do
+      expectation = described_class.new(
+        :headers => {
+          :foo => /\A\d+[a-z]\Z/
+        }
+      )
+
+      response = stub(:headers => { 'foo' => '25x', 'bar' => 'baz' })
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response = stub(:headers => { 'foo' => 'xxx', 'bar' => 'baz' })
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
   end
 
   context 'response status' do
