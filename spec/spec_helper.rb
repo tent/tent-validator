@@ -10,6 +10,9 @@ Dir["#{File.dirname(__FILE__)}/support/*.rb"].each { |f| require f }
 
 ENV['RACK_ENV'] ||= 'test'
 
+require 'sequel'
+DB = Sequel.connect(ENV['TEST_DATABASE_URL'] || 'postgres://localhost/tent_server_test')
+
 RSpec.configure do |config|
   config.include WebMock::API
   config.mock_with :mocha
