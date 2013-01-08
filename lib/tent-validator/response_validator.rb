@@ -20,6 +20,8 @@ module TentValidator
           case expected
           when Regexp
             !!expected.match(actual)
+          when Range
+            expected.include?(actual)
           else
             actual == expected
           end
@@ -53,7 +55,7 @@ module TentValidator
       def initialize(options)
         @expected_body = options.delete(:body) || anything
         @expected_headers = options.delete(:headers) || anything
-        @expected_status = options.delete(:status) || anything
+        @expected_status = options.delete(:status) || (200...300)
       end
 
       def anything
@@ -91,7 +93,7 @@ module TentValidator
 
       def validate_status(response)
         return true if expected_status.kind_of?(Anything)
-        false
+        Matcher.new(expected_status).match(response.status)
       end
     end
 

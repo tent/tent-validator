@@ -10,9 +10,15 @@ class TestValidator < TentValidator::ResponseValidator
 end
 
 describe TentValidator::ResponseValidator do
+  let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
+  let(:response) { Faraday::Response.new(env) }
+
   it "should register custom validators" do
-    expect(described_class.validate(:test) { stub(:body => 'test') }).to be_passed
-    expect(described_class.validate(:test) { stub(:body => nil) }).to_not be_passed
+    response.stubs(:body => 'test')
+    expect(described_class.validate(:test) { response }).to be_passed
+
+    response.stubs(:body => nil)
+    expect(described_class.validate(:test) { response }).to_not be_passed
   end
 
   it "should raise exception when specified validator doesn't exist" do
@@ -23,18 +29,21 @@ describe TentValidator::ResponseValidator do
 end
 
 describe TentValidator::ResponseValidator::Expectation do
+  let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
+  let(:response) { Faraday::Response.new(env) }
+
   context 'response body' do
     it 'should set expectation for exact match of response body' do
       expectation = described_class.new(
         :body => 'test'
       )
 
-      response = stub(:body => 'test')
+      response.stubs(:body => 'test')
       expect(
         expectation.validate(response)
       ).to be_true
 
-      response = stub(:body => 'unexpected')
+      response.stubs(:body => 'unexpected')
       expect(
         expectation.validate(response)
       ).to be_false
@@ -45,12 +54,12 @@ describe TentValidator::ResponseValidator::Expectation do
         :body => /test/i
       )
 
-      response = stub(:body => 'Testing')
+      response.stubs(:body => 'Testing')
       expect(
         expectation.validate(response)
       ).to be_true
 
-      response = stub(:body => 'unexpected')
+      response.stubs(:body => 'unexpected')
       expect(
         expectation.validate(response)
       ).to be_false
@@ -65,12 +74,12 @@ describe TentValidator::ResponseValidator::Expectation do
         }
       )
 
-      response = stub(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'Bazzer', 'baz' => 'bar' } }))
+      response.stubs(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'Bazzer', 'baz' => 'bar' } }))
       expect(
         expectation.validate(response)
       ).to be_true
 
-      response = stub(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'foobar' } }))
+      response.stubs(:body => Yajl::Encoder.encode({ 'foo' => { 'bar' => 'foobar' } }))
       expect(
         expectation.validate(response)
       ).to be_false
@@ -86,12 +95,12 @@ describe TentValidator::ResponseValidator::Expectation do
         }
       )
 
-      response = stub(:headers => {  'foo' => '25', 'bar' => 'baz' })
+      response.stubs(:headers => {  'foo' => '25', 'bar' => 'baz' })
       expect(
         expectation.validate(response)
       ).to be_true
 
-      response = stub(:headers => {  'foo' => '00', 'bar' => 'baz' })
+      response.stubs(:headers => {  'foo' => '00', 'bar' => 'baz' })
       expect(
         expectation.validate(response)
       ).to be_false
@@ -104,12 +113,12 @@ describe TentValidator::ResponseValidator::Expectation do
         }
       )
 
-      response = stub(:headers => { 'foo' => '25x', 'bar' => 'baz' })
+      response.stubs(:headers => { 'foo' => '25x', 'bar' => 'baz' })
       expect(
         expectation.validate(response)
       ).to be_true
 
-      response = stub(:headers => { 'foo' => 'xxx', 'bar' => 'baz' })
+      response.stubs(:headers => { 'foo' => 'xxx', 'bar' => 'baz' })
       expect(
         expectation.validate(response)
       ).to be_false
@@ -117,10 +126,70 @@ describe TentValidator::ResponseValidator::Expectation do
   end
 
   context 'response status' do
-    it 'should set expectation for exact response status'
+    it 'should set expectation for exact response status' do
+      expectation = described_class.new(
+        :status => 304
+      )
 
-    it 'should set expectation that response status is in given range'
+      response.stubs(:status => 304)
+      expect(
+        expectation.validate(response)
+      ).to be_true
 
-    it 'should default to expecting 2xx'
+      response.stubs(:status => 200)
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
+
+    it 'should set expectation that response status is in given range' do
+      expectation = described_class.new(
+        :status => 200...300
+      )
+
+      response.stubs(:status => 200)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 204)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 299)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 300)
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
+
+    it 'should default to expecting 2xx' do
+      expectation = described_class.new({})
+
+      response.stubs(:status => 200)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 204)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 299)
+      expect(
+        expectation.validate(response)
+      ).to be_true
+
+      response.stubs(:status => 300)
+      expect(
+        expectation.validate(response)
+      ).to be_false
+    end
   end
 end

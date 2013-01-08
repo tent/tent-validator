@@ -64,13 +64,16 @@ describe TentValidator::ExampleGroup do
   end
 
   describe "#expect_response" do
+    let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
+    let(:response) { Faraday::Response.new(env) }
+
     it "should validate response with given validator" do
-      response = stub(:body => 'test')
+      response.stubs(:body => 'test')
       example_group.expect_response(:test) { response }
       res = example_group.run
       expect(res.passed?).to be_true
 
-      response = stub(:body => nil)
+      response.stubs(:body => nil)
       example_group.expect_response(:test) { response }
       res = example_group.run
       expect(res.passed?).to be_false
