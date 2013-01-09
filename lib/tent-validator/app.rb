@@ -53,6 +53,16 @@ module TentValidator
       def full_path(path)
         "#{path_prefix}/#{path}".gsub(%r{//}, '/')
       end
+
+      def current_user
+        if session['current_user']
+          @current_user ||= User.first(:id => session['current_user'].to_i)
+        end
+      end
+
+      def format_url(url)
+        url.to_s.sub(%r{\Ahttps?://}, '')
+      end
     end
 
     use OmniAuth::Builder do

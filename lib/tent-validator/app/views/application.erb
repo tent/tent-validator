@@ -10,6 +10,12 @@
     <div class='navbar'>
       <div class='navbar-inner'>
         <div class='brand'><a href='/'>Tent Protocol Validator</a></div>
+
+        <ul class='nav pull-right'>
+          <% if current_user %>
+            <li><a href='<%= full_path('/signout') %>'>Signout (<%= format_url(current_user.entity) %>)</a></li>
+          <% end %>
+        </ul>
       </div>
     </div>
 
