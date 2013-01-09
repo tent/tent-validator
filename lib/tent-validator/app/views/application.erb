@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="<%= asset_path("application.css") %>" />
+
+    <title>Tent Protocol Validator</title>
+  </head>
+
+  <body>
+    <div class='navbar'>
+      <div class='navbar-inner'>
+        <div class='brand'><a href='/'>Tent Protocol Validator</a></div>
+      </div>
+    </div>
+
+    <div class='container'>
+      <div id='main'>
+        <%= yield %>
+      </div>
+
+      <div id='footer' class='navbar-fixed-bottom'>
+        <a href='https://tent.is/terms'>Terms</a>&nbsp;|&nbsp;
+        <a href='https://tent.is/privacy'>Privacy</a>&nbsp;|&nbsp;
+        <a href='https://tent.is/partners'>Partners</a>&nbsp;|&nbsp;
+        <a href='https://tent.is/security'>Security</a>&nbsp;|&nbsp;
+        <a href='mailto:contact@tent.is'>Contact</a>&nbsp;|&nbsp;
+        &copy; 2012 Apollic Software, LLC  
+      </div>
+    </div>
+  </body>
+</html>

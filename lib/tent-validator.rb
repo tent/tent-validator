@@ -6,6 +6,8 @@ module TentValidator
   autoload :ExampleGroup, 'tent-validator/example_group'
   autoload :Results, 'tent-validator/results'
   autoload :ResponseValidator, 'tent-validator/response_validator'
+  autoload :Spec, 'tent-validator/spec'
+  autoload :App, 'tent-validator/app'
 
   class TentRackFaradayAdapter < Faraday::Adapter::Rack
     def call(env)
@@ -28,7 +30,7 @@ module TentValidator
   end
 
   def self.tentd
-    @tentd ||= TentD.new(:job_backend => 'sidekiq')
+    @tentd ||= TentD.new(:job_backend => 'sidekiq', :database => ENV['TENT_DATABASE_URL'])
   end
 
   def self.local_adapter
