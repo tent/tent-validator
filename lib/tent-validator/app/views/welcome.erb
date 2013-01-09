@@ -1,1 +1,8 @@
 <h2>Welcome to the official Tent Protocol Validator</h2>
+
+<% unless current_user %>
+  <h3>Authenticate with a test entity on your Tent server to get started</h3>
+  <%= erb :auth %>
+<% else %>
+  <p>Your server is currently being tested for Tent compatibility. Results will show up here shortly.</p>
+<% end %>
