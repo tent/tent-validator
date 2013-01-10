@@ -37,7 +37,7 @@ describe TentValidator do
     res = remote_validation.run
     expect(res).to be_passed
 
-    expect(res.first).to be_a(TentValidator::Results)
+    expect(res).to be_a(TentValidator::Results)
 
     http_stubs.each { |s|
       expect(s).to have_been_requested
@@ -60,7 +60,7 @@ describe TentValidator do
     res = remote_validation.run
     expect(res).to_not be_passed
 
-    expect(res.first).to be_a(TentValidator::Results)
+    expect(res).to be_a(TentValidator::Results)
 
     http_stubs.each { |s|
       expect(s).to have_been_requested

@@ -19,6 +19,7 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency 'tent-client'
   gem.add_runtime_dependency 'tentd'
+  gem.add_runtime_dependency 'celluloid'
 
   gem.add_development_dependency 'rspec', '~> 2.11'
   gem.add_development_dependency 'webmock'

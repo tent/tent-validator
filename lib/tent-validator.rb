@@ -6,6 +6,8 @@ module TentValidator
   autoload :ExampleGroup, 'tent-validator/example_group'
   autoload :Results, 'tent-validator/results'
   autoload :ResponseValidator, 'tent-validator/response_validator'
+  autoload :ExampleGroupRunner, 'tent-validator/example_group_runner'
+  autoload :ValidationRunner, 'tent-validator/validation_runner'
   autoload :Spec, 'tent-validator/spec'
   autoload :App, 'tent-validator/app'
 
