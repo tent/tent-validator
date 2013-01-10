@@ -12,9 +12,9 @@ module TentValidator
     end
 
     # Run all example_groups concurrently
-    def self.run
+    def self.run(&block)
       runner = ValidationRunner.new(self)
-      res = runner.run
+      res = runner.run(&block)
       runner.terminate
       res
     end

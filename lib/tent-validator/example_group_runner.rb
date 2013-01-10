@@ -12,16 +12,16 @@ module TentValidator
     end
 
     def run
-      res = [
-        example_group.run,
+      example_group_res = example_group.run
 
-        # Run all dependent example groups concurrently
-        example_group.dependent_example_groups.map { |g|
-          runner = ExampleGroupRunner.new_link(g)
-          @dependent_runners << runner
-          runner.future.run
-        }.map(&:value)
-      ].flatten
+      # Run all dependent example groups concurrently
+      dependent_runners_res = example_group.dependent_example_groups.map { |g|
+        runner = ExampleGroupRunner.new_link(g)
+        @dependent_runners << runner
+        runner.future.run
+      }.map(&:value).flatten(1)
+
+      res = [example_group_res].concat(dependent_runners_res)
 
       @dependent_runners.each(&:terminate)
       @dependent_runners = []

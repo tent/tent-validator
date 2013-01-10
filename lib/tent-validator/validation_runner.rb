@@ -11,14 +11,18 @@ module TentValidator
       @runners = []
     end
 
-    def run
+    def run(&block)
       # Run all independent example_groups concurrently
       # then wait for them all to finish
       results = independent_example_groups.map { |g|
         runner = ExampleGroupRunner.new_link(g)
         @runners << runner
         runner.future.run
-      }.flatten.map(&:value).flatten
+      }.flatten(1).map { |future|
+        res = future.value
+        block.call(res) if block
+        res
+      }.flatten(1)
 
       @runners.each(&:terminate)
       @runners = []
