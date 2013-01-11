@@ -1,14 +1,5 @@
 require 'spec_helper'
 
-class TestValidator < TentValidator::ResponseValidator
-  register :test
-
-  def validate(options)
-    expect(:body => 'test')
-    super
-  end
-end
-
 describe TentValidator::ResponseValidator do
   let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
   let(:response) { Faraday::Response.new(env) }

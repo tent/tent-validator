@@ -55,6 +55,7 @@ module TentValidator
         @expected_body = options.delete(:body) || anything
         @expected_headers = options.delete(:headers) || anything
         @expected_status = options.delete(:status) || (200...300)
+        @options = options
       end
 
       def anything
@@ -70,13 +71,27 @@ module TentValidator
       def validate_body(response)
         return true if expected_body.kind_of?(Anything)
 
+        if @options[:list]
+          if response.body.kind_of?(String)
+            response_body = Yajl::Parser.parse(response.body)
+          else
+            response_body = response.body
+          end
+          return false unless response_body.kind_of?(Array)
+          !response_body.map { |i| _validate_body(i) }.find { |i| !i }
+        else
+          _validate_body(response.body)
+        end
+      end
+
+      def _validate_body(response_body)
         case expected_body
         when Regexp
-          !!expected_body.match(response.body)
+          !!expected_body.match(response_body)
         when Hash
-          JSONMatcher.new(expected_body).match(response.body)
+          JSONMatcher.new(expected_body).match(response_body)
         else
-          expected_body == response.body
+          expected_body == response_body
         end
       end
 
@@ -179,19 +194,20 @@ module TentValidator
     def self.validate(name, options={}, &block)
       raise ValidatorNotFoundError.new(name) unless ResponseValidator.validators && validator = ResponseValidator.validators[name.to_s]
       response = yield
-      validator.new(response, block).validate(options)
+      validator.new(response, block, options).validate(options)
     end
 
     attr_reader :response
 
-    def initialize(response, block)
+    def initialize(response, block, options={})
       @response = response
       @block = block
       @expectations = []
+      @options = options
     end
 
     def expect(options)
-      @expectations << Expectation.new(options)
+      @expectations << Expectation.new(options.merge(list: @options[:list]))
     end
 
     def validate(options)

@@ -78,5 +78,12 @@ describe TentValidator::ExampleGroup do
       res = example_group.run
       expect(res.passed?).to be_false
     end
+
+    it "should validate each item in array response with given validator" do
+      response.stubs(:body => Yajl::Encoder.encode(['test', 'test']))
+      example_group.expect_response(:test, :list => true) { response }
+      res = example_group.run
+      expect(res.passed?).to be_true
+    end
   end
 end
