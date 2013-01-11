@@ -20,6 +20,7 @@ module TentValidator
           column :mac_algorithm, "text"
           column :profile_info_types, "text[]", :default=>"{}"
           column :post_types, "text[]", :default=>"{}"
+          column :validation_id, "text"
         end
         User.columns # load columns
       end

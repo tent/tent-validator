@@ -1,8 +1,11 @@
+%w( apps ).each do |validation_name|
+  require "tent-validator/spec/#{validation_name}_validation"
+end
+
 module TentValidator
   module Spec
     def self.run(&block)
-      Dir[File.join(File.expand_path(File.dirname(__FILE__)), 'spec', '*.rb')].each { |f| require f }
-      Validation.run(&block)
+      AppsValidation.run(&block)
     end
   end
 end

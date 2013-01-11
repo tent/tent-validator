@@ -1,4 +1,5 @@
 require "tent-validator/version"
+require "tent-validator/sidekiq"
 require "tentd"
 
 module TentValidator
@@ -8,6 +9,7 @@ module TentValidator
   autoload :ResponseValidator, 'tent-validator/response_validator'
   autoload :ExampleGroupRunner, 'tent-validator/example_group_runner'
   autoload :ValidationRunner, 'tent-validator/validation_runner'
+  autoload :ValidationResultsStore, 'tent-validator/validation_results_store'
   autoload :Spec, 'tent-validator/spec'
   autoload :App, 'tent-validator/app'
 

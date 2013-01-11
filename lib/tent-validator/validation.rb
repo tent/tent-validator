@@ -6,9 +6,12 @@ module TentValidator
 
     def self.describe(description="", options={}, &block)
       example_group = ExampleGroup.new(description, options, &block)
-      @example_groups ||= []
-      @example_groups << example_group
+      example_groups << example_group
       example_group
+    end
+
+    def self.example_groups
+      @example_groups ||= []
     end
 
     # Run all example_groups concurrently

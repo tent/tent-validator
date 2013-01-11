@@ -20,7 +20,7 @@ module TentValidator
         runner.future.run
       }.flatten(1).map { |future|
         res = future.value
-        block.call(res) if block
+        res.each { |r| block.call(r) } if block
         res
       }.flatten(1)
 

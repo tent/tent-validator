@@ -1,5 +1,7 @@
 require 'sinatra/base'
 require 'omniauth-tent'
+require "securerandom"
+require "tent-validator/sidekiq"
 
 module TentValidator
   class App < Sinatra::Base
@@ -63,6 +65,24 @@ module TentValidator
       def format_url(url)
         url.to_s.sub(%r{\Ahttps?://}, '')
       end
+
+      def authenticate!
+        halt 403 unless current_user
+      end
+
+      def json(data)
+        [200, { 'Content-Type' => 'application/json' }, [data.to_json]]
+      end
+
+      def run_validations_for(user)
+        validation_id = SecureRandom.uuid
+        user.update(:validation_id => validation_id)
+        ValidationWorker.perform_async(
+          :remote_server => user.primary_server,
+          :remote_auth_details => user.auth_details,
+          :validation_id => validation_id
+        )
+      end
     end
 
     use OmniAuth::Builder do
@@ -120,13 +140,16 @@ module TentValidator
       end
     end
 
-    get '/auth' do
-      erb :auth, :layout => :application
-    end
-
     get '/auth/tent/callback' do
+      halt redirect('/') if current_user
+
       user = User.find_or_create_from_auth_hash(env['omniauth.auth'])
       session['current_user'] = user.id
+
+      unless user.validation_id
+        run_validations_for(user)
+      end
+
       redirect '/'
     end
 
@@ -140,6 +163,19 @@ module TentValidator
 
     get '/signout' do
       session.clear
+      redirect '/'
+    end
+
+    get '/results.json' do
+      authenticate!
+
+      results_store = ValidationResultsStore.new(current_user.validation_id)
+      json results_store.results
+    end
+
+    get '/run' do
+      authenticate!
+      run_validations_for(current_user)
       redirect '/'
     end
   end
