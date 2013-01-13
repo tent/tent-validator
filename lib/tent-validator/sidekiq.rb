@@ -15,7 +15,10 @@ module TentValidator
 
     def perform(msg)
       TentValidator.remote_server = msg['remote_server']
-      TentValidator.remote_auth_details = msg['remote_auth_details']
+      TentValidator.remote_auth_details = msg['remote_auth_details'].inject({}) { |memo, (k,v)|
+        memo[k.to_sym] = v
+        memo
+      }
 
       @validation_id = msg['validation_id']
 
