@@ -13,6 +13,8 @@ module TentValidator
   class ValidationWorker
     include Sidekiq::Worker
 
+    ValidationInProgressError = Class.new(StandardError)
+
     def perform(msg)
       TentValidator.remote_server = msg['remote_server']
       TentValidator.remote_auth_details = msg['remote_auth_details'].inject({}) { |memo, (k,v)|
@@ -21,10 +23,16 @@ module TentValidator
       }
 
       @validation_id = msg['validation_id']
+      raise ValidationInProgressError if results_store.in_progress?
 
+      results_store.start
       Spec.run do |results|
         example_group_completed(results)
       end
+      results_store.stop
+    rescue => e
+      results_store.stop unless e.kind_of?(ValidationInProgressError)
+      raise
     end
 
     private
