@@ -9,22 +9,21 @@ The validation DSL is very similar in appearance to RSpec, but is simpler and fo
 ### DSL
 
 ```ruby
-class PostResponseValidator < TentValidator::ResponseValidator
-  register :post
+class TentResponseValidator < TentValidator::ResponseValidator
+  register :tent
 
-  # should return true if valid
-  # should return [false, "Error description"] if invalid
-  def validate(response)
-    # ...
+  validate_headers do
+    expect_valid_cors_headers
+    expect_header('Content-Type', /\A#{Regexp.escape(TentD::API::MEDIA_TYPE)}/)
   end
-end
 
-class StatusPostResponseValidator < PostResponseValidator
-  register :status_post
+  private
 
-  def validate(response)
-    super
-    # ...
+  def expect_valid_cors_headers
+    expect_header('Access-Control-Allow-Origin', '*')
+    expect_header('Access-Control-Allow-Methods', %w( GET POST HEAD PUT DELETE PATCH OPTIONS ), :split => /[^a-z]+/i)
+    expect_header('Access-Control-Allow-Headers', %w( Content-Type Authorization ), :split => /[^a-z]+/i)
+    expect_header('Access-Control-Expose-Headers', %w( Count Link ), :split => /[^a-z]+/i)
   end
 end
 
@@ -33,24 +32,24 @@ class PostsValidation < TentValidator::Validation
     data = {} # ...
     with_client :app, :server => :remote do |client|
       # expect valid status post json
-      expect_response(:status_post, :entity => get(:entity)) do
+      expect_response(:tent, :schema => :status, :properties => { :entity => get(:entity) }) do
+        # uses tent-client-ruby
         res = client.post.create(data)
       end
-      set(:post_id, res.body['id'])
+      set(:post_id, res.body['id']) # res.body['id'] => 'abc123'
     end
   end
 
   describe "GET /posts/:id", :depends_on => create_post do
     with_client :app, :server => :local do |client|
       # expect valid status post json
-      expect_response(:status_post, :id => get(:post_id), :entity => get(:entity)) do
-        # uses tent-client-ruby
+      expect_response(:tent, :schema => :status, :properties => { :id => get(:post_id), :entity => get(:entity) }) do
         client.post.get(get(:post_id), get(:entity))
       end
     end
 
     with_client :app, :server => :remote do |client|
-      expect_response(:status_post, get(:post_id)) do
+      expect_response(:tent, :schema => :status, :properties => { :id => get(:post_id) }) do
         client.post.get(get(:post_id))
       end
     end
@@ -75,35 +74,24 @@ posts_res.as_json == {
       :response_params => {},
       :response_body => "",
       :response_status => 200,
+      :response_schema_errors => [],
 
-      :expected_response_headers => TentValidator::Expectation,
-      :expected_response_server => TentValidator::Expectation,
-      :expected_response_path => TentValidator::Expectation,
-      :expected_response_params => TentValidator::Expectation,
-      :expected_response_body => TentValidator::Expectation,
-      :expected_response_status => TentValidator::Expectation,
+      :expected_response_headers => {
+        "Content-Type" => "\\Aapplication/vnd\\.tent\\.v0\\+json", # ...
+      },
+      :expected_response_body => {
+        :id => "abc123",
+        :entity => "https://remote.example.com"
+      },
+      :expected_response_schema => 'status',
+      :expected_response_status => "200...300",
 
       :passed => true
     }, # ...
   ]
 }
-posts_res.first # => TentValidator::Result
 
-all_res = TentValidator::Validation.run # => TentValidator::Results
-all_res.passed? # => true
-all_res.as_json == [
-  {
-    "GET /posts/:id" => [] # ...
-  }
-]
-
-all_res.first == posts_res # => true
-
-TentValidator::Validation.run(
-  :on_failure => lambda { |result| }, # result.class == TentValidator::Result
-  :on_success => lambda { |result| }, # result.class == TentValidator::Result
-  :on_error => lambda { |exception| } # called when unexpected Ruby exception caught
-)
+TentValidator::Validation.run # run all validations
 ```
 
 ## Contributing
