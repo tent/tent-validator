@@ -1,5 +1,6 @@
 require 'tent-schemas'
 require 'json-schema'
+require 'tentd/core_ext/hash/slice'
 
 module TentValidator
   class ResponseValidator
@@ -125,6 +126,7 @@ module TentValidator
         @context = params[:context]
         @expectations = params[:expectations]
         @schema = params[:schema]
+        @schema_options = params.slice(:list)
       end
 
       def passed?
@@ -139,7 +141,7 @@ module TentValidator
 
       def schema_valid?
         return true unless schema
-        JSON::Validator.validate(schema, response.body)
+        JSON::Validator.validate(schema, response.body, @schema_options)
       end
 
       def as_json(options = {})
@@ -154,7 +156,7 @@ module TentValidator
           :response_headers => response.headers,
           :response_body => response.body,
           :response_status => response.status,
-          :response_schema_errors => @schema ? JSON::Validator.fully_validate(schema, response.body) : [],
+          :response_schema_errors => @schema ? JSON::Validator.fully_validate(schema, response.body, @schema_options) : [],
 
           :expected_response_headers => expected_response_headers,
           :expected_response_body => expected_response_body,
@@ -234,6 +236,7 @@ module TentValidator
         :expectations => @expectations,
         :response => @response,
         :schema => @options[:schema],
+        :list => @options[:list],
         :context => @block.binding.eval("self")
       )
     end

@@ -66,6 +66,21 @@ describe TentValidator::ExampleGroup do
   describe "#expect_response" do
     let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
     let(:response) { Faraday::Response.new(env) }
+    before do
+      foobar_schema = {
+        "title" => "Foobar",
+        "type" => "object",
+        "properties" => {
+          "foo" => {
+            "description" => "foos and bars and such",
+            "type" => "string",
+            "required" => true
+          }
+        }
+      }
+
+      TentSchemas.stubs(:[]).with(:foobar).returns(foobar_schema)
+    end
 
     it "should validate response with given validator" do
       response.stubs(:body => 'test')
@@ -80,19 +95,6 @@ describe TentValidator::ExampleGroup do
     end
 
     it "should validate response against given schema" do
-      foobar_schema = {
-        "title" => "Foobar",
-        "type" => "object",
-        "properties" => {
-          "foo" => {
-            "description" => "foos and bars and such",
-            "type" => "string",
-            "required" => true
-          }
-        }
-      }
-
-      TentSchemas.stubs(:[]).with(:foobar).returns(foobar_schema)
       example_group.expect_response(:void, :schema => :foobar) { response }
 
       response.stubs(:body => {
@@ -108,7 +110,23 @@ describe TentValidator::ExampleGroup do
       expect(res.passed?).to be_false
     end
 
-    it "should validate each item in list response against given schema"
+    it "should validate each item in list response against given schema" do
+      example_group.expect_response(:void, :schema => :foobar, :list => true) { response }
+
+      response.stubs(:body => [{
+        "foo" => "bar"
+      }])
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      response.stubs(:body => [{
+        "foo" => "bar"
+      }, {
+        "baz" => 20
+      }])
+      res = example_group.run
+      expect(res.passed?).to be_false
+    end
 
     it "should validate each item in array response with given validator" do
       response.stubs(:body => Yajl::Encoder.encode(['test', 'test']))
