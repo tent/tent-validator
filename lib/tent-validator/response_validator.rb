@@ -8,6 +8,26 @@ module TentValidator
     Error = Class.new(StandardError)
     ValidatorNotFoundError = Class.new(Error)
 
+    class HeaderExpectation
+      def initialize(header, value, options={})
+        @header = header
+        @value = value
+        @options = options
+      end
+
+      def validate(response)
+        header = response.env[:response_headers][@header.to_s]
+        if @value.kind_of?(Array)
+          response_header_values = header.to_s.split(@options[:split])
+          (@value - response_header_values).empty?
+        elsif @value.kind_of?(Regexp)
+          !!(header =~ @value)
+        else
+          header == @value
+        end
+      end
+    end
+
     class Expectation
       class Anything
         def ==(other)
@@ -211,6 +231,11 @@ module TentValidator
       ResponseValidator.validators[name.to_s] = self
     end
 
+    def self.validate_headers(&block)
+      @validate_headers ||= []
+      @validate_headers.push(block)
+    end
+
     def self.validate(name, options={}, &block)
       raise ValidatorNotFoundError.new(name) unless ResponseValidator.validators && validator = ResponseValidator.validators[name.to_s]
       response = yield
@@ -231,6 +256,7 @@ module TentValidator
     end
 
     def validate(options)
+      validate_headers
       Result.new(
         :validator => self,
         :expectations => @expectations,
@@ -239,6 +265,19 @@ module TentValidator
         :list => @options[:list],
         :context => @block.binding.eval("self")
       )
+    end
+
+    private
+
+    def validate_headers
+      (self.class.class_eval { @validate_headers } || []).each do |block|
+        next unless block
+        instance_eval(&block)
+      end
+    end
+
+    def expect_header(header, value, options={})
+      @expectations << HeaderExpectation.new(header, value, options)
     end
   end
 end

@@ -3,6 +3,7 @@ require 'spec_helper'
 describe TentValidator::ResponseValidator do
   let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
   let(:response) { Faraday::Response.new(env) }
+  let(:block) { lambda {} }
 
   it "should register custom validators" do
     response.stubs(:body => 'test')
@@ -17,6 +18,104 @@ describe TentValidator::ResponseValidator do
       described_class.validate(:unknown)
     }).to raise_error(described_class::ValidatorNotFoundError)
   end
+
+  context "validate headers" do
+    it "exact match when passing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Allow-Origin', '*')
+        end
+      end
+
+      env.response_headers['Access-Control-Allow-Origin'] = '*'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to be_passed
+    end
+
+    it "exact match when failing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Allow-Origin', '*')
+        end
+      end
+
+      env.response_headers['Access-Control-Allow-Origin'] = 'foo'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to_not be_passed
+    end
+
+    it "match list inclusion when passing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Allow-Methods', %w( GET POST HEAD ), :split => /[^a-z]+/i)
+        end
+      end
+
+      env.response_headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS, POST, HEAD, DELETE'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to be_passed
+    end
+
+    it "match list inclusion when failing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Allow-Methods', %w( GET POST HEAD ), :split => /[^a-z]+/i)
+        end
+      end
+
+      env.response_headers['Access-Control-Allow-Methods'] = 'OPTIONS, POST, HEAD, DELETE'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to_not be_passed
+    end
+
+    it "match via regex when passing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Expose-Headers', /\bCount\b/)
+          expect_header('Access-Control-Expose-Headers', /\bLink\b/)
+        end
+      end
+
+      env.response_headers['Access-Control-Expose-Headers'] = 'Count, Link'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to be_passed
+    end
+
+    it "match via regex when failing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_headers do
+          expect_header('Access-Control-Expose-Headers', /\bCount\b/)
+          expect_header('Access-Control-Expose-Headers', /\bLink\b/)
+        end
+      end
+
+      env.response_headers['Access-Control-Expose-Headers'] = 'Count'
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to_not be_passed
+    end
+  end
+
+  it "should validate status"
+
+  it "should validate body"
 end
 
 describe TentValidator::ResponseValidator::Expectation do
