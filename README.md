@@ -4,7 +4,7 @@ Tent protocol validator. **This is a WIP**
 
 ## Writing validations
 
-The validation DSL is very similar in appearance to RSpec, but is simpler and focused on testing the Tent protocol.
+The validation DSL aims to be simple and focused on testing the Tent protocol.
 
 ### DSL
 
