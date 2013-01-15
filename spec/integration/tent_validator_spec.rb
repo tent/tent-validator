@@ -1,14 +1,5 @@
 require 'spec_helper'
 
-class TestHelloWorldValidator < TentValidator::ResponseValidator
-  register :test_hello_world
-
-  def validate(options)
-    expect(:body => 'Tent!')
-    super
-  end
-end
-
 describe TentValidator do
   let(:http_stubs) { Array.new }
 
@@ -22,13 +13,13 @@ describe TentValidator do
   end
 
   it "should test successful response from remote server" do
-    http_stubs << stub_request(:post, "https://remote.example.org/foo?bar=baz").to_return(:body => 'Tent!')
+    http_stubs << stub_request(:post, "https://remote.example.org/foo?bar=baz").to_return(:body => Yajl::Encoder.encode({ :id => 'Tent!' }), :headers => { 'Content-Type' => TentD::API::MEDIA_TYPE })
 
     remote_validation = Class.new(TentValidator::Validation)
     remote_validation.class_eval do
       describe "GET /" do
         with_client :app, :server => :remote do
-          expect_response :test_hello_world do
+          expect_response :void, :properties => { :id => 'Tent!' } do
             client.http.post('/foo?bar=baz', { foo: 'bar' })
           end
         end
@@ -45,14 +36,14 @@ describe TentValidator do
   end
 
   it "should test unsuccessful response from remote server" do
-    http_stubs << stub_request(:put, "https://remote.example.org/foo").to_return(:body => 'foo bar')
+    http_stubs << stub_request(:post, "https://remote.example.org/foo?bar=baz").to_return(:body => Yajl::Encoder.encode({ :id => 'Foo Bar' }), :headers => { 'Content-Type' => TentD::API::MEDIA_TYPE })
 
     remote_validation = Class.new(TentValidator::Validation)
     remote_validation.class_eval do
       describe "GET /" do
         with_client :app, :server => :remote do
-          expect_response :test_hello_world do
-            client.http.put('/foo', { foo: 'bar' })
+          expect_response :void, :properties => { :id => 'Tent!' } do
+            client.http.post('/foo?bar=baz', { foo: 'bar' })
           end
         end
       end
@@ -72,7 +63,7 @@ describe TentValidator do
     local_validation.class_eval do
       describe "GET /" do
         with_client :app, :server => :local do
-          expect_response :test_hello_world do
+          expect_response :void do
             client.http.get('/')
           end
         end
@@ -87,7 +78,7 @@ describe TentValidator do
     local_validation.class_eval do
       describe "GET /" do
         with_client :app, :server => :local do
-          expect_response :test_hello_world do
+          expect_response :void, :status => 200 do
             client.http.get('/foo/bar/baz')
           end
         end

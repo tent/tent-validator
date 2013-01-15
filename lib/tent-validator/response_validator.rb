@@ -26,6 +26,17 @@ module TentValidator
           header == @value
         end
       end
+
+      def expected_headers
+        value = if @value.kind_of?(Regexp)
+                  @value.source
+                else
+                  @value
+                end
+        {
+          @header => value
+        }
+      end
     end
 
     class StatusExpectation
@@ -40,112 +51,45 @@ module TentValidator
           response.status == @value
         end
       end
+
+      def expected_status
+        @value
+      end
     end
 
-    class Expectation
-      class Anything
-        def ==(other)
-          true
-        end
-      end
-
-      class Matcher
-        def initialize(expected)
-          @expected = expected
+    class BodyExpectation
+      class DeepJsonMatcher
+        def initialize(actual)
+          @actual = actual
         end
 
-        def match(actual, expected=@expected)
-          case expected
-          when Regexp
-            !!expected.match(actual.to_s)
-          when Range
-            expected.include?(actual)
-          else
-            actual == expected
-          end
-        end
-      end
-
-      class JSONMatcher < Matcher
-        def match(actual, expected=@expected)
+        def match(expected, actual=@actual)
           case expected
           when Hash
-            if actual.kind_of?(String)
-              actual = Yajl::Parser.parse(actual)
-            end
-
             res = true
             expected.each_pair do |k,v|
-              unless match(actual[k.to_s], v)
+              unless match(v, actual[k.to_s])
                 res = false
               end
             end
             res
           else
-            super
+            expected == actual
           end
         end
       end
 
-      attr_reader :expected_body, :expected_headers, :expected_status
-
-      def initialize(options)
-        @expected_body = options.delete(:body) || anything
-        @expected_headers = options.delete(:headers) || anything
-        @expected_status = options.delete(:status) || (200...300)
-        @options = options
-      end
-
-      def anything
-        Anything.new
+      def initialize(expected_fields)
+        @expected_fields = expected_fields
       end
 
       def validate(response)
-        validate_body(response) && validate_headers(response) && validate_status(response)
+        return false unless response.body.kind_of?(Hash)
+        DeepJsonMatcher.new(response.body).match(@expected_fields)
       end
 
-      private
-
-      def validate_body(response)
-        return true if expected_body.kind_of?(Anything)
-
-        if @options[:list]
-          if response.body.kind_of?(String)
-            response_body = Yajl::Parser.parse(response.body)
-          else
-            response_body = response.body
-          end
-          return false unless response_body.kind_of?(Array)
-          !response_body.map { |i| _validate_body(i) }.find { |i| !i }
-        else
-          _validate_body(response.body)
-        end
-      end
-
-      def _validate_body(response_body)
-        case expected_body
-        when Regexp
-          !!expected_body.match(response_body)
-        when Hash
-          JSONMatcher.new(expected_body).match(response_body)
-        else
-          expected_body == response_body
-        end
-      end
-
-      def validate_headers(response)
-        return true if expected_headers.kind_of?(Anything)
-        expected_headers.inject(true) do |memo, (k,v)|
-          unless Matcher.new(v).match(response.headers[k.to_s.downcase])
-            memo = false
-          end
-          memo
-        end
-      end
-
-      def validate_status(response)
-        return true if expected_status.kind_of?(Anything)
-        Matcher.new(expected_status).match(response.status)
+      def expected_body
+        @expected_fields
       end
     end
 
@@ -197,6 +141,10 @@ module TentValidator
           :expected_response_status => expected_response_status,
           :expected_response_schema => @schema,
 
+          :failed_headers_expectations => failed_headers_expectations,
+          :failed_body_expectations => failed_body_expectations,
+          :failed_status_expectations => failed_status_expectations,
+
           :passed => passed?,
         }
       end
@@ -214,25 +162,41 @@ module TentValidator
 
       def expected_response_headers
         expectations.inject({}) { |memo, expectation|
-          next memo if expectation.expected_headers.kind_of?(Expectation::Anything)
+          next memo unless expectation.respond_to?(:expected_headers)
           memo.merge(expectation.expected_headers)
+        }
+      end
+
+      def failed_headers_expectations
+        expectations.select { |expectation|
+          expectation.respond_to?(:expected_headers) && !expectation.validate(response)
         }
       end
 
       def expected_response_body
         expectations.inject({}) { |memo, expectation|
-          next memo if expectation.expected_body.kind_of?(Expectation::Anything)
-          next expectation.expected_body if expectation.expected_body.kind_of?(String)
+          next memo unless expectation.respond_to?(:expected_body)
           memo.merge(expectation.expected_body)
         }
       end
 
+      def failed_body_expectations
+        expectations.select { |expectation|
+          expectation.respond_to?(:expected_body) && !expectation.validate(response)
+        }
+      end
+
       def expected_response_status
-        if expectation = expectations.find { |expectation| expectation.expected_status != (200...300) }
-          expectation.expected_status
-        elsif expectation = expectations.first
-          expectation.expected_status
-        end
+        expected_status = expectations.select { |expectation|
+          expectation.respond_to?(:expected_status)
+        }.map(&:expected_status)
+        expected_status.size > 1 ? expected_status : expected_status.first
+      end
+
+      def failed_status_expectations
+        expectations.select { |expectation|
+          expectation.respond_to?(:expected_status) && !expectation.validate(response)
+        }
       end
     end
 
@@ -270,13 +234,10 @@ module TentValidator
       @options = options
     end
 
-    def expect(options)
-      @expectations << Expectation.new(options.merge(list: @options[:list]))
-    end
-
     def validate(options)
       validate_headers
-      validate_status
+      validate_status(options)
+      validate_body(options[:properties])
       Result.new(
         :validator => self,
         :expectations => @expectations,
@@ -300,7 +261,11 @@ module TentValidator
       @expectations << HeaderExpectation.new(header, value, options)
     end
 
-    def validate_status
+    def validate_status(options)
+      if options[:status]
+        @expectations << StatusExpectation.new(options[:status])
+      end
+
       (self.class.class_eval { @validate_status } || []).each do |block|
         next unless block
         instance_eval(&block)
@@ -309,6 +274,11 @@ module TentValidator
 
     def expect_status(value)
       @expectations << StatusExpectation.new(value)
+    end
+
+    def validate_body(expected_fields)
+      return unless expected_fields
+      @expectations << BodyExpectation.new(expected_fields)
     end
   end
 end

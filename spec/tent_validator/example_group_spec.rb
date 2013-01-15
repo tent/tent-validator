@@ -82,18 +82,6 @@ describe TentValidator::ExampleGroup do
       TentSchemas.stubs(:[]).with(:foobar).returns(foobar_schema)
     end
 
-    it "should validate response with given validator" do
-      response.stubs(:body => 'test')
-      example_group.expect_response(:test) { response }
-      res = example_group.run
-      expect(res.passed?).to be_true
-
-      response.stubs(:body => nil)
-      example_group.expect_response(:test) { response }
-      res = example_group.run
-      expect(res.passed?).to be_false
-    end
-
     it "should validate response against given schema" do
       example_group.expect_response(:void, :schema => :foobar) { response }
 
@@ -126,13 +114,6 @@ describe TentValidator::ExampleGroup do
       }])
       res = example_group.run
       expect(res.passed?).to be_false
-    end
-
-    it "should validate each item in array response with given validator" do
-      response.stubs(:body => Yajl::Encoder.encode(['test', 'test']))
-      example_group.expect_response(:test, :list => true) { response }
-      res = example_group.run
-      expect(res.passed?).to be_true
     end
   end
 end
