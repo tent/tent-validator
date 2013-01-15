@@ -113,7 +113,67 @@ describe TentValidator::ResponseValidator do
     end
   end
 
-  it "should validate status"
+  context "validate status" do
+    it "exact match when passing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_status do
+          expect_status(200)
+        end
+      end
+
+      env.status = 200
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to be_passed
+    end
+
+    it "exact match when failing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_status do
+          expect_status(404)
+        end
+      end
+
+      env.status = 200
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to_not be_passed
+    end
+
+    it "match via range when passing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_status do
+          expect_status(200...300)
+        end
+      end
+
+      env.status = 204
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to be_passed
+    end
+
+    it "match via range when failing" do
+      validator_class = Class.new(described_class)
+      validator_class.class_eval do
+        validate_status do
+          expect_status(400...500)
+        end
+      end
+
+      env.status = 304
+
+      expect(
+        validator_class.new(response, block).validate({})
+      ).to_not be_passed
+    end
+  end
 
   it "should validate body"
 end
