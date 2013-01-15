@@ -170,7 +170,7 @@ module TentValidator
       def failed_headers_expectations
         expectations.select { |expectation|
           expectation.respond_to?(:expected_headers) && !expectation.validate(response)
-        }
+        }.map(&:expected_headers)
       end
 
       def expected_response_body
@@ -183,7 +183,7 @@ module TentValidator
       def failed_body_expectations
         expectations.select { |expectation|
           expectation.respond_to?(:expected_body) && !expectation.validate(response)
-        }
+        }.map(&:expected_body)
       end
 
       def expected_response_status
@@ -196,7 +196,7 @@ module TentValidator
       def failed_status_expectations
         expectations.select { |expectation|
           expectation.respond_to?(:expected_status) && !expectation.validate(response)
-        }
+        }.map(&:expected_status)
       end
     end
 

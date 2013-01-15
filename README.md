@@ -86,6 +86,10 @@ posts_res.as_json == {
       :expected_response_schema => 'status',
       :expected_response_status => "200...300",
 
+      :failed_headers_expectations => [],
+      :failed_body_expectations => [],
+      :failed_status_expectations => [],
+
       :passed => true
     }, # ...
   ]
