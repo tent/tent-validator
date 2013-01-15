@@ -1,3 +1,6 @@
+require 'tent-schemas'
+require 'json-schema'
+
 module TentValidator
   class ResponseValidator
 
@@ -115,17 +118,30 @@ module TentValidator
       attr_reader :response, :context, :expectations
       attr_accessor :expectation
 
+      SchemaNotFoundError = Class.new(StandardError)
+
       def initialize(params = {})
         @response = params[:response]
         @context = params[:context]
         @expectations = params[:expectations]
+        @schema = params[:schema]
       end
 
       def passed?
-        !expectations.any? { |e| !e.validate(response) }
+        !expectations.any? { |e| !e.validate(response) } && schema_valid?
       end
 
-      # TODO: finish filling in data
+      def schema
+        return unless @schema
+        raise SchemaNotFoundError unless schema = TentSchemas[@schema]
+        schema
+      end
+
+      def schema_valid?
+        return true unless schema
+        JSON::Validator.validate(schema, response.body)
+      end
+
       def as_json(options = {})
         {
           :request_headers => response.env[:request_headers],
@@ -138,10 +154,12 @@ module TentValidator
           :response_headers => response.headers,
           :response_body => response.body,
           :response_status => response.status,
+          :response_schema_errors => @schema ? JSON::Validator.fully_validate(schema, response.body) : [],
 
           :expected_response_headers => expected_response_headers,
           :expected_response_body => expected_response_body,
           :expected_response_status => expected_response_status,
+          :expected_response_schema => @schema,
 
           :passed => passed?,
         }
@@ -215,6 +233,7 @@ module TentValidator
         :validator => self,
         :expectations => @expectations,
         :response => @response,
+        :schema => @options[:schema],
         :context => @block.binding.eval("self")
       )
     end

@@ -40,15 +40,15 @@ module TentValidator
     class Expectation
       attr_reader :context
 
-      def initialize(context, name, params, &block)
+      def initialize(context, name, options, &block)
         @context = context
         @name = name
-        @params = params
+        @options = options
         @block = block
       end
 
       def run
-        result = ResponseValidator.validate(@name, @params, &@block)
+        result = ResponseValidator.validate(@name, @options, &@block)
         result.expectation = self
         result
       end
@@ -113,8 +113,8 @@ module TentValidator
       end
     end
 
-    def expect_response(name, params = {}, &block)
-      @expectations << Expectation.new(self, name, params, &block)
+    def expect_response(name, options = {}, &block)
+      @expectations << Expectation.new(self, name, options, &block)
     end
   end
 end
