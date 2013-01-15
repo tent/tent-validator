@@ -32,7 +32,7 @@ class PostsValidation < TentValidator::Validation
     data = {} # ...
     with_client :app, :server => :remote do |client|
       # expect valid status post json
-      expect_response(:tent, :schema => :status, :properties => { :entity => get(:entity) }) do
+      expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :entity => get(:entity) }) do
         # uses tent-client-ruby
         res = client.post.create(data)
       end
@@ -43,13 +43,13 @@ class PostsValidation < TentValidator::Validation
   describe "GET /posts/:id", :depends_on => create_post do
     with_client :app, :server => :local do |client|
       # expect valid status post json
-      expect_response(:tent, :schema => :status, :properties => { :id => get(:post_id), :entity => get(:entity) }) do
+      expect_response(:tent, :schema => :status, 200...300, :properties => { :id => get(:post_id), :entity => get(:entity) }) do
         client.post.get(get(:post_id), get(:entity))
       end
     end
 
     with_client :app, :server => :remote do |client|
-      expect_response(:tent, :schema => :status, :properties => { :id => get(:post_id) }) do
+      expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :id => get(:post_id) }) do
         client.post.get(get(:post_id))
       end
     end
