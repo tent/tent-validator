@@ -1,19 +1,10 @@
 module TentValidator
   module Spec
-    class HelloWorldValidator < ResponseValidator
-      register :hello_world
-
-      def validate(options)
-        expect(:body => 'Tent!')
-        super
-      end
-    end
-
     class AppsValidation < Validation
-      describe "GET /" do
+      describe "GET /apps" do
         with_client :app, :server => :remote do
-          expect_response :hello_world do
-            client.http.get('/')
+          expect_response :tent, :schema => :app, :list => true, :status => 200 do
+            client.app.list
           end
         end
       end
