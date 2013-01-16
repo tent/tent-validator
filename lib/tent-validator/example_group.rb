@@ -98,7 +98,7 @@ module TentValidator
 
     def with_client(type, options, &block)
       client = if options[:server] == :remote
-        TentClient.new(TentValidator.remote_server, TentValidator.remote_auth_details.merge(
+        TentClient.new(TentValidator.remote_server, auth_details_for_app_type(type).merge(
           :faraday_adapter => TentValidator.remote_adapter
         ))
       else
@@ -115,6 +115,17 @@ module TentValidator
 
     def expect_response(name, options = {}, &block)
       @expectations << Expectation.new(self, name, options, &block)
+    end
+
+    private
+
+    def auth_details_for_app_type(type)
+      case type
+      when :app
+        TentValidator.remote_auth_details
+      else
+        Hash.new
+      end
     end
   end
 end
