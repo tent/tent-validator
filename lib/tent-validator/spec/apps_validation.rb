@@ -18,10 +18,26 @@ module TentValidator
         end
       end
 
+      describe "OPTIONS /apps (when authorized)" do
+        with_client :app, :server => :remote do
+          expect_response :tent_cors, :status => 200 do
+            client.http.options("apps")
+          end
+        end
+      end
+
       describe "GET /apps (when unauthorized)" do
         with_client :no_auth, :server => :remote do
           expect_response :tent, :schema => :error, :status => 403 do
             client.app.list
+          end
+        end
+      end
+
+      describe "OPTIONS /apps (when unauthorized)" do
+        with_client :no_auth, :server => :remote do
+          expect_response :tent_cors, :status => 403 do
+            client.http.options("apps")
           end
         end
       end

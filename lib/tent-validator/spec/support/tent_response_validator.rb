@@ -4,8 +4,15 @@ module TentValidator
       register :tent
 
       validate_headers do
-        expect_valid_cors_headers
         expect_header('Content-Type', /\A#{Regexp.escape(TentD::API::MEDIA_TYPE)}/)
+      end
+    end
+
+    class TentCorsResponseValidator < ResponseValidator
+      register :tent_cors
+
+      validate_headers do
+        expect_valid_cors_headers
       end
 
       private
