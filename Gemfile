@@ -8,7 +8,7 @@ gem 'sidekiq'
 gem 'rack-test', :git => 'https://github.com/brynary/rack-test.git', :branch => 'master'
 gem 'tentd', :git => 'https://github.com/tent/tentd.git', :branch => 'master'
 gem 'tent-schemas', :git => 'git://github.com/tent/tent-schemas.git', :branch => 'master'
-gem 'json-schema', :git => 'git://github.com/hoxworth/json-schema.git', :branch => 'master'
+gem 'json-schema', :git => 'git://github.com/jvatic/json-schema.git', :branch => 'master'
 
 # TentValidator::App dependencies
 gem 'sinatra'
