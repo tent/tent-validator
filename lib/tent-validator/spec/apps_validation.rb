@@ -5,6 +5,7 @@ module TentValidator
       #   - set CORS headers
       #   - (when authorized) return a list of apps conforming to the app json schema
       #   - (when unauthorized) return 403 with a valid json error response
+      # TODO: validate pagination in link header
       list_apps = describe "GET /apps (when authorized)" do
         with_client :app, :server => :remote do
           expect_response :tent, :schema => :app, :list => true, :status => 200 do
@@ -39,13 +40,20 @@ module TentValidator
       #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
       #   - (when authorized and app not found) return 404 with a valid json error response
       #   - (when unauthorized) return 403 with a valid json error response
-      describe "GET /apps/:id", :depends_on => list_apps do
+      describe "GET /apps/:id (when authorized via scope)", :depends_on => list_apps do
         with_client :app, :server => :remote do
           expect_response :tent, :schema => :app, :status => 200, :properties => { :id => get(:app_id) } do
             client.app.get(get(:app_id))
           end
         end
       end
+
+      # 1. Create new app
+      # 2. Use auth credentials of new app to get that new app
+      # (depends on POST /apps)
+      describe "GET /apps/:id (when authorized via identity)"
+
+      describe "GET /apps/:id (when unauthorized)"
     end
   end
 end
