@@ -166,6 +166,11 @@ module TentValidator
       redirect '/'
     end
 
+    get '/results' do
+      authenticate!
+      erb :application
+    end
+
     get '/results.json' do
       authenticate!
 

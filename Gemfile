@@ -23,6 +23,8 @@ gem 'sass'
 gem 'coffee-script'
 gem 'uglifier'
 gem 'asset_sync', '~> 0.5.0'
+gem 'hogan_assets'
+gem 'marbles-js', :git => 'git://github.com/jvatic/marbles-js.git', :branch => 'master'
 gem 'puma'
 
 gem 'rack-ssl-enforcer'

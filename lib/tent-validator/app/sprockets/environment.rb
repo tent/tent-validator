@@ -1,5 +1,6 @@
 require 'logger'
 require 'sprockets'
+require 'marbles-js'
 
 module TentValidator
   class App
@@ -15,7 +16,9 @@ module TentValidator
 
         %w{ javascripts stylesheets images fonts }.each do |path|
           @assets.append_path(File.expand_path(File.join(File.dirname(__FILE__), '..', "assets", path)))
+          @assets.append_path(File.expand_path(File.join(File.dirname(__FILE__), '..', "vendor", "assets", path)))
         end
+        MarblesJS.sprockets_setup(@assets)
         @assets
       end
     end

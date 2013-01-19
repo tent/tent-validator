@@ -21,7 +21,7 @@
 
     <div class='container'>
       <div id='main'>
-        <%= yield %>
+        <%= yield if block_given? %>
       </div>
 
       <div id='footer' class='navbar-fixed-bottom'>
@@ -32,6 +32,8 @@
         <a href='mailto:contact@tent.is'>Contact</a>&nbsp;|&nbsp;
         &copy; 2012 Apollic Software, LLC  
       </div>
+
+      <script type='application/javascript' src="<%= asset_path("application.js") %>"></script>
     </div>
   </body>
 </html>
