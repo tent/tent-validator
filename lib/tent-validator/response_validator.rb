@@ -119,7 +119,7 @@ module TentValidator
 
       def schema_valid?
         return true unless schema
-        JSON::Validator.validate(schema, response.body, @schema_options)
+        JSON::Validator.fully_validate(schema, response.body, @schema_options).empty?
       end
 
       def as_json(options = {})
