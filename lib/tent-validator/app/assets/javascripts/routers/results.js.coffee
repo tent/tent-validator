@@ -4,4 +4,4 @@ TentValidator.Routers.results = new class ResultsRouter extends Marbles.Router
   }
 
   results: (params) =>
-    console.log("/results", arguments...)
+    new TentValidator.Views.Results

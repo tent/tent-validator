@@ -2,10 +2,12 @@
 #= require hogan
 #= require marbles
 #= require_self
+#= require ./http_client
 #= require_tree ./models
 #= require_tree ./collections
 #= require_tree ./templates
 #= require_tree ./helpers
+#= require_tree ./templates
 #= require_tree ./views
 #= require_tree ./routers
 

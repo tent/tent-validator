@@ -1,6 +1,7 @@
 require 'logger'
 require 'sprockets'
 require 'marbles-js'
+require 'hogan_assets'
 
 module TentValidator
   class App

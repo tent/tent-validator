@@ -1,0 +1,12 @@
+<li>
+  <section>
+    <header>{{name}} <strong>{{#passed}}√{{/passed}}{{^passed}}X{{/passed}}</strong></header>
+    {{^passed}}
+    <ul>
+      {{#results}}
+      {{>_result}}
+      {{/results}}
+    </ul>
+    {{/passed}}
+  </section>
+</li>

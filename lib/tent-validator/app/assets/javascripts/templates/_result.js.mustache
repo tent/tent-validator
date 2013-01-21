@@ -1,0 +1,44 @@
+<li>
+  <article>
+    <h3>Request</h3>
+    <pre>{{formatted.request.headers}}</pre>
+    <pre>{{formatted.request.body}}</pre>
+
+    <h3>Response</h3>
+
+    <h4>Status <strong>{{#status_passed}}√{{/status_passed}}{{^status_passed}}X{{/status_passed}}</strong></h4>
+
+    {{^status_passed}}
+    <h5>Expected</h5>
+    <pre>{{formatted.response.expected.status}}</pre>
+
+    <h5>Actual</h5>
+    <pre>{{formatted.response.status}}</pre>
+    {{/status_passed}}
+
+    <h4>Headers <strong>{{#headers_passed}}√{{/headers_passed}}{{^headers_passed}}X{{/headers_passed}}</strong></h4>
+
+    {{^headers_passed}}
+    <h5>Expected</h5>
+    <pre>{{formatted.response.expected.headers}}</pre>
+
+    <h5>Actual</h5>
+    <pre>{{formatted.response.headers}}</pre>
+    {{/headers_passed}}
+
+    <h4>Body <strong>{{#body_passed}}√{{/body_passed}}{{^body_passed}}X{{/body_passed}}</strong></h4>
+
+    {{^body_passed}}
+    <h5>Expected</h5>
+    <pre>{{formatted.response.expected.body}}</pre>
+
+    <h5>Actual</h5>
+    <pre>{{formatted.response.body}}</pre>
+    {{/body_passed}}
+
+    <h4>Schema <strong>{{#schema_passed}}√{{/schema_passed}}{{^schema_passed}}X{{/schema_passed}}</strong></h4>
+    {{^schema_passed}}
+    <pre>{{formatted.response.schema_errors}}</pre>
+    {{/schema_passed}}
+  </article>
+</li>
