@@ -150,7 +150,7 @@ module TentValidator
         run_validations_for(user)
       end
 
-      redirect '/'
+      redirect '/results'
     end
 
     get '/auth/failure' do
@@ -181,7 +181,7 @@ module TentValidator
     get '/run' do
       authenticate!
       run_validations_for(current_user)
-      redirect '/'
+      redirect '/results'
     end
   end
 end
