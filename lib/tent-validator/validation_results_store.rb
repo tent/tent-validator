@@ -23,6 +23,7 @@ module TentValidator
 
     def reset
       redis_client.del(results_redis_key)
+      redis_client.del(progress_redis_key)
     end
 
     def redis_client
