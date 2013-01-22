@@ -91,7 +91,12 @@ module TentValidator
       @state[key.to_s]
     end
 
+    def reset
+      @expectations = []
+    end
+
     def run
+      reset
       instance_eval(&@block) if @block
       Results.new(@expectations.map(&:run), self)
     end
