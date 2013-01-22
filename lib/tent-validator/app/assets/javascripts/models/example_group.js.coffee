@@ -24,6 +24,7 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
 
   toJSON: =>
     obj = super
+    obj.pending = !@get('results').length
     obj.results = _.map @get('results') || [], (result) =>
       _.extend {}, result, {
         status_passed: !result.failed_status_expectations.length

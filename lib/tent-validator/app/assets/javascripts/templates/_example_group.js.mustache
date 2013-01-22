@@ -1,6 +1,6 @@
 <li>
   <section>
-    <header>{{name}} <strong>{{#passed}}√{{/passed}}{{^passed}}X{{/passed}}</strong></header>
+    <header>{{name}} <strong>{{^pending}}{{#passed}}√{{/passed}}{{^passed}}X{{/passed}}{{/pending}}{{#pending}}(Pending){{/pending}}</strong></header>
     {{^passed}}
     <ul>
       {{#results}}
