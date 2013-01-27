@@ -81,17 +81,35 @@ module TentValidator
         end
       end
 
-      def initialize(expected_fields)
+      def initialize(expected_fields, expected_fields_exclude, options = {})
         @expected_fields = expected_fields
+        @expected_fields_exclude = expected_fields_exclude || []
+        @options = options
       end
 
       def validate(response)
-        return false unless response.body.kind_of?(Hash)
-        DeepJsonMatcher.new(response.body).match(@expected_fields)
+        validate_response_body(response.body, @options)
       end
 
       def expected_body
         @expected_fields
+      end
+
+      def expected_body_excludes
+        @expected_fields_exclude
+      end
+
+      private
+
+      def validate_response_body(body, options={})
+        if options[:list]
+          return false unless body.kind_of?(Array)
+          !body.any? { |item| !validate_response_body(item) }
+        else
+          return false unless body.kind_of?(Hash)
+          return false if @expected_fields_exclude.any? { |field| body.has_key?(field.to_s) }
+          DeepJsonMatcher.new(body).match(@expected_fields)
+        end
       end
     end
 
@@ -140,6 +158,7 @@ module TentValidator
 
           :expected_response_headers => expected_response_headers,
           :expected_response_body => expected_response_body,
+          :expected_response_body_excludes => expected_response_body_excludes,
           :expected_response_status => expected_response_status,
           :expected_response_schema => @schema,
 
@@ -179,6 +198,13 @@ module TentValidator
         expectations.inject({}) { |memo, expectation|
           next memo unless expectation.respond_to?(:expected_body)
           memo.merge(expectation.expected_body)
+        }
+      end
+
+      def expected_response_body_excludes
+        expectations.inject([]) { |memo, expectation|
+          next memo unless expectation.respond_to?(:expected_body_excludes)
+          memo + expectation.expected_body_excludes.to_a
         }
       end
 
@@ -239,7 +265,7 @@ module TentValidator
     def validate(options)
       validate_headers
       validate_status(options)
-      validate_body(options[:properties])
+      validate_body(options[:properties], options[:excluded_properties] || {})
       Result.new(
         :validator => self,
         :expectations => @expectations,
@@ -278,9 +304,9 @@ module TentValidator
       @expectations << StatusExpectation.new(value)
     end
 
-    def validate_body(expected_fields)
+    def validate_body(expected_fields, expected_fields_exclude = [])
       return unless expected_fields
-      @expectations << BodyExpectation.new(expected_fields)
+      @expectations << BodyExpectation.new(expected_fields, expected_fields_exclude, @options.slice(:list))
     end
   end
 end
