@@ -84,15 +84,19 @@ module TentValidator
       #   - create and return app
       #   - (when authorized to import) it should create app with specified credentials
       #   - (when authorized to import) it should create app with generated credentials when none specified
-      describe "POST /apps" do
+      create_app = describe "POST /apps" do
         with_client :no_auth, :server => :remote do
           app = JSONGenerator.generate(:app, :simple)
-          expect_response :tent, :schema => :app, :status => 200, :properties => app.merge(
+          expect_response(:tent, :schema => :app, :status => 200, :properties => app.merge(
             :mac_key_id => /\A\S+\Z/,
             :mac_algorithm => 'hmac-sha-256',
             :mac_key => /\A\S+\Z/
-          ) do
+          )) do
             client.app.create(app)
+          end.after do |result|
+            if result.response.success?
+              set(:app, result.response.body)
+            end
           end
         end
       end
@@ -119,13 +123,50 @@ module TentValidator
       #   - (when authorized and app exists) update app registration
       #   - TODO: should an app be able to request new auth credentials?
       #   - (when authorized with write_secrets and app exists) update auth credentials
-      #   - (when authorized and app not found) return 404 with valida json error response
+      #   - (when authorized and app not found) return 403 with valida json error response
       #   - (when unauthorized) return 404 with valid json error response
-      describe "PUT /apps/:id (when authorized)"
+      describe "PUT /apps/:id (when authorized via identity)", :depends_on => create_app do
+        app = get(:app)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        updated_app = JSONGenerator.generate(:app, :simple)
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => updated_app.merge('id' => app['id']), :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
+            client.app.update(app['id'], updated_app)
+          end
+        end
+      end
 
-      describe "PUT /apps/:id (when write_secrets authorized)"
+      describe "PUT /apps/:id (when authorized via scope)", :depends_on => create_app do
+        app = get(:app)
+        updated_app = JSONGenerator.generate(:app, :simple)
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => updated_app.merge('id' => app['id']), :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
+            client.app.update(app['id'], updated_app)
+          end
+        end
+      end
 
-      describe "PUT /apps/:id (when unauthorized)"
+      describe "PUT /apps/:id (when write_secrets authorized and secrets params passed)", :depends_on => create_app do
+        app = get(:app)
+        updated_app = JSONGenerator.generate(:app, :with_auth)
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => updated_app.merge('id' => app['id'])) do
+            client.app.update(app['id'] + "?secrets=true", updated_app)
+          end
+        end
+      end
+
+      describe "PUT /apps/:id (when unauthorized)", :depends_on => create_app do
+        app = get(:app)
+        updated_app = JSONGenerator.generate(:app, :simple)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.update(app['id'], updated_app)
+          end
+        end
+      end
 
       # 1. Create new app
       # 2. Use auth credentials of new app to get that new app
