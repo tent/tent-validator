@@ -24,9 +24,9 @@ module TentValidator
     def random_id
       SecureRandom.urlsafe_base64(16)
     end
-  end
-end
 
-Dir[File.join(File.expand_path(File.dirname(__FILE__)), 'json_generator', '*.rb')].each do |file|
-  require file
+    Dir[File.join(File.expand_path(File.dirname(__FILE__)), 'json_generator', '*.rb')].each do |file|
+      require file
+    end
+  end
 end
