@@ -111,6 +111,114 @@ module TentValidator
         end
       end
 
+      # GET /apps/:id should
+      #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
+      #   - (when authorized and app not found) return 404 with a valid json error response
+      #   - (when unauthorized) return 403 with a valid json error response
+      describe "GET /apps/:id (when authorized via scope)", :depends_on => list_apps do
+        with_client :app, :server => :remote do
+          expect_response :tent, :schema => :app, :status => 200, :properties => { :id => get(:app_id) }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key] do
+            client.app.get(get(:app_id))
+          end
+        end
+      end
+
+      describe "GET /apps/:id (when authorized via identity)", :depends_on => create_app do
+        app = get(:app)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => { :id => app['id'] }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
+            client.app.get(app['id'])
+          end
+        end
+      end
+
+      describe "GET /apps/:id (when unauthorized)", :depends_on => create_app do
+        app = get(:app)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.get(app['id'])
+          end
+        end
+      end
+
+      # POST /apps/:id/authorizations should
+      #   - when authorized for token exchange
+      #     - update/set expirey to something sooner than currently set
+      #     - return refresh_token, and mac auth credentials
+      #     - return expirey if set
+      #     - TODO: should this also cycle the mac auth credentials?
+      #   - when write_apps and write_secrets authorized
+      #     - create authorization with specified auth credentials
+      #     - create authorization and generate auth credentials when not specified
+      #   - when unauthorized
+      #     - return 403 with valid json error response
+      create_authorization = describe "POST /apps/:id/authorizations (when write_apps and write_secrets authorized)", :depends_on => create_app do
+        app = get(:app)
+        authorization = JSONGenerator.generate(:app_authorization, :simple)
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => authorization.merge(
+            :token_code => /\A\S+\Z/
+          )) do
+            client.app.authorization.create(app['id'], authorization)
+          end.after do |result|
+            if result.response.success?
+              set(:app_authorization, result.response.body)
+            end
+          end
+        end
+      end
+
+      describe "POST /apps/:id/authorizations (when authorized)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => {
+            :access_token => /\A\S+\Z/,
+            :token_type => 'mac',
+            :refresh_token => /\A\S+\Z/,
+            :mac_key => /\A\S+\Z/,
+            :mac_algorithm => 'hmac-sha-256',
+          }) do
+              client.app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac')
+          end
+        end
+      end
+
+      describe "POST /apps/:id/authorizations (when unauthorized)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac')
+          end
+        end
+      end
+
+      # PUT /apps/:id/authorizations/:id should
+      #   - when write_apps authorized
+      #     - update authorization
+      #     - TODO: test changing post types subscribed to updates notification subscription(s)
+      #   - when write_apps unauthorized
+      #     - return 404 with valid json error response
+      describe "PUT /apps/:id/authorization/:id (when write_apps authorized)"
+
+      describe "PUT /apps/:id/authorization/:id (when write_apps unauthorized)"
+
+      # DELETE /apps/:id/authorizations/:id should
+      #   - when authorized
+      #     - delete authorization
+      #   - when unauthorized
+      #     - return 404 with valid json error response
+      describe "DELETE /apps/:id/authorizations/:id (when authorized)"
+
+      describe "DELETE /apps/:id/authorizations/:id (when unauthorized)"
+
       # PUT /apps/:id should
       #   - (when authorized and app exists) update app registration
       #   - TODO: should an app be able to request new auth credentials?
@@ -159,75 +267,6 @@ module TentValidator
           end
         end
       end
-
-      # GET /apps/:id should
-      #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
-      #   - (when authorized and app not found) return 404 with a valid json error response
-      #   - (when unauthorized) return 403 with a valid json error response
-      describe "GET /apps/:id (when authorized via scope)", :depends_on => list_apps do
-        with_client :app, :server => :remote do
-          expect_response :tent, :schema => :app, :status => 200, :properties => { :id => get(:app_id) }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key] do
-            client.app.get(get(:app_id))
-          end
-        end
-      end
-
-      describe "GET /apps/:id (when authorized via identity)", :depends_on => create_app do
-        app = get(:app)
-        auth_details = {
-          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
-        }
-        with_client :custom, auth_details.merge(:server => :remote) do
-          expect_response(:tent, :schema => :app, :status => 200, :properties => { :id => app['id'] }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
-            client.app.get(app['id'])
-          end
-        end
-      end
-
-      describe "GET /apps/:id (when unauthorized)", :depends_on => create_app do
-        app = get(:app)
-        with_client :no_auth, :server => :remote do
-          expect_response(:tent, :schema => :error, :status => 403) do
-            client.app.get(app['id'])
-          end
-        end
-      end
-
-      # POST /apps/:id/authorizations should
-      #   - when authorized for token exchange
-      #     - update/set expirey to something sooner than currently set
-      #     - return refresh_token, and mac auth credentials
-      #     - return expirey if set
-      #     - TODO: should this also cycle the mac auth credentials?
-      #   - when write_apps and write_secrets authorized
-      #     - create authorization with specified auth credentials
-      #     - create authorization and generate auth credentials when not specified
-      #   - when unauthorized
-      #     - return 403 with valid json error response
-      describe "POST /apps/:id/authorizations (when authorized)"
-
-      describe "POST /apps/:id/authorizations (when write_apps and write_secrets authorized)"
-
-      describe "POST /apps/:id/authorizations (when unauthorized)"
-
-      # PUT /apps/:id/authorizations/:id should
-      #   - when write_apps authorized
-      #     - update authorization
-      #     - TODO: test changing post types subscribed to updates notification subscription(s)
-      #   - when write_apps unauthorized
-      #     - return 404 with valid json error response
-      describe "PUT /apps/:id/authorization/:id (when write_apps authorized)"
-
-      describe "PUT /apps/:id/authorization/:id (when write_apps unauthorized)"
-
-      # DELETE /apps/:id/authorizations/:id should
-      #   - when authorized
-      #     - delete authorization
-      #   - when unauthorized
-      #     - return 404 with valid json error response
-      describe "DELETE /apps/:id/authorizations/:id (when authorized)"
-
-      describe "DELETE /apps/:id/authorizations/:id (when unauthorized)"
 
       # DELETE /apps/:id should
       #   - when authorized
