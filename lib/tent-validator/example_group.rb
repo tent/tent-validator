@@ -1,4 +1,5 @@
 require 'tent-client'
+require 'tentd/core_ext/hash/slice'
 
 module TentValidator
   class ExampleGroup
@@ -115,7 +116,7 @@ module TentValidator
 
     def with_client(type, options, &block)
       client = if options[:server] == :remote
-        TentClient.new(TentValidator.remote_server, auth_details_for_app_type(type).merge(
+        TentClient.new(TentValidator.remote_server, auth_details_for_app_type(type, options).merge(
           :faraday_adapter => TentValidator.remote_adapter
         ))
       else
@@ -138,10 +139,12 @@ module TentValidator
 
     private
 
-    def auth_details_for_app_type(type)
+    def auth_details_for_app_type(type, options={})
       case type
       when :app
         TentValidator.remote_auth_details
+      when :custom
+        options.slice(:mac_key_id, :mac_algorithm, :mac_key)
       else
         Hash.new
       end
