@@ -27,6 +27,10 @@ module TentValidator
       @dependent_runners = []
 
       res
+    rescue => e
+      puts "#{e.inspect}"
+      puts e.backtrace.join("\n")
+      raise
     end
   end
 end
