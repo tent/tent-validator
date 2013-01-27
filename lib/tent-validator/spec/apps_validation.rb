@@ -57,7 +57,6 @@ module TentValidator
       end
 
       # GET /apps/:id should
-      #   - set CORS headers
       #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
       #   - (when authorized and app not found) return 404 with a valid json error response
       #   - (when unauthorized) return 404 with a valid json error response
@@ -70,13 +69,39 @@ module TentValidator
       end
 
       # POST /apps should
-      #   - set CORS headers
       #   - create and return app
       #   - (when authorized to import) it should create app with specified credentials
       #   - (when authorized to import) it should create app with generated credentials when none specified
-      describe "POST /apps"
+      describe "POST /apps" do
+        with_client :no_auth, :server => :remote do
+          app = JSONGenerator.generate(:app, :simple)
+          expect_response :tent, :schema => :app, :status => 200, :properties => app.merge(
+            :mac_key_id => /\A\S+\Z/,
+            :mac_algorithm => 'hmac-sha-256',
+            :mac_key => /\A\S+\Z/
+          ) do
+            client.app.create(app)
+          end
+        end
+      end
 
-      describe "POST /apps (when import authorized)"
+      describe "POST /apps (when import authorized)" do
+        with_client :app, :server => :remote do
+          app = JSONGenerator.generate(:app, :with_auth)
+          expect_response :tent, :schema => :app, :status => 200, :properties => app do
+            client.app.create(app)
+          end
+
+          simple_app = JSONGenerator.generate(:app, :simple)
+          expect_response :tent, :schema => :app, :status => 200, :properties => simple_app.merge(
+            :mac_key_id => /\A\S+\Z/,
+            :mac_algorithm => 'hmac-sha-256',
+            :mac_key => /\A\S+\Z/
+          ) do
+            client.app.create(simple_app)
+          end
+        end
+      end
 
       # PUT /apps/:id should
       #   - (when authorized and app exists) update app registration

@@ -73,6 +73,8 @@ module TentValidator
               end
             end
             res
+          when Regexp
+            !!expected.match(actual)
           else
             expected == actual
           end

@@ -10,6 +10,7 @@ module TentValidator
   autoload :ExampleGroupRunner, 'tent-validator/example_group_runner'
   autoload :ValidationRunner, 'tent-validator/validation_runner'
   autoload :ValidationResultsStore, 'tent-validator/validation_results_store'
+  autoload :JSONGenerator, 'tent-validator/json_generator'
   autoload :Spec, 'tent-validator/spec'
   autoload :App, 'tent-validator/app'
 

@@ -22,6 +22,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'celluloid'
   gem.add_runtime_dependency 'tent-schemas'
   gem.add_runtime_dependency 'json-schema'
+  gem.add_runtime_dependency 'faker'
 
   gem.add_development_dependency 'rspec', '~> 2.11'
   gem.add_development_dependency 'webmock'
