@@ -15,7 +15,7 @@ module TentValidator
     end
 
     def self.generate(name, method)
-      raise GeneratorNotFoundError unless generator = JSONGenerator.generators[name]
+      raise GeneratorNotFoundError.new(name) unless generator = JSONGenerator.generators[name]
       generator.new.send(method)
     end
 

@@ -45,12 +45,24 @@ module TentValidator
         @name = name
         @options = options
         @block = block
+        @after_hooks = []
       end
 
       def run
         result = ResponseValidator.validate(@name, @options, &@block)
         result.expectation = self
+        run_after_hooks(result)
         result
+      end
+
+      def run_after_hooks(result)
+        @after_hooks.each do |block|
+          block.call(result)
+        end
+      end
+
+      def after(&block)
+        @after_hooks << block if block
       end
     end
 
@@ -119,7 +131,9 @@ module TentValidator
     end
 
     def expect_response(name, options = {}, &block)
-      @expectations << Expectation.new(self, name, options, &block)
+      expectation = Expectation.new(self, name, options, &block)
+      @expectations << expectation
+      expectation
     end
 
     private

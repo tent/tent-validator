@@ -37,13 +37,13 @@ module TentValidator
       #   - (when unauthorized) return 403 with a valid json error response
       list_apps = describe "GET /apps (when authorized)" do
         with_client :app, :server => :remote do
-          expect_response :tent, :schema => :app, :list => true, :status => 200 do
-            res = client.app.list
-
-            # We can assume there is at least one app (this app)
-            set(:app_id, res.body.first['id'])
-
-            res
+          expect_response(:tent, :schema => :app, :list => true, :status => 200) do
+            client.app.list
+          end.after do |result|
+            if result.response.success?
+              # We can assume there is at least one app (this app)
+              set(:app_id, result.response.body.first['id'])
+            end
           end
         end
       end
