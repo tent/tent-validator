@@ -84,6 +84,7 @@ module TentValidator
       def initialize(expected_fields, expected_fields_exclude, options = {})
         @expected_fields = expected_fields
         @expected_fields_exclude = expected_fields_exclude || []
+        @expected_fields_exclude.each { |field| @expected_fields.delete(field); @expected_fields.delete(field.to_s) }
         @options = options
       end
 
