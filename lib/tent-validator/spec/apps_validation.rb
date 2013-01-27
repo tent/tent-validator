@@ -89,7 +89,7 @@ module TentValidator
         end
       end
 
-      describe "POST /apps (when import authorized)" do
+      import_app = describe "POST /apps (when import authorized)" do
         with_client :app, :server => :remote do
           app = JSONGenerator.generate(:app, :with_auth)
           expect_response :tent, :schema => :app, :status => 200, :properties => app do
@@ -97,12 +97,16 @@ module TentValidator
           end
 
           simple_app = JSONGenerator.generate(:app, :simple)
-          expect_response :tent, :schema => :app, :status => 200, :properties => simple_app.merge(
+          expect_response(:tent, :schema => :app, :status => 200, :properties => simple_app.merge(
             :mac_key_id => /\A\S+\Z/,
             :mac_algorithm => 'hmac-sha-256',
             :mac_key => /\A\S+\Z/
-          ) do
+          )) do
             client.app.create(simple_app)
+          end.after do |result|
+            if result.response.success?
+              set(:app, result.response.body)
+            end
           end
         end
       end
@@ -189,17 +193,6 @@ module TentValidator
         end
       end
 
-      # DELETE /apps/:id should
-      #   - when authorized
-      #     - delete app
-      #   - when unauthorized
-      #     - return 404 with valid json error response
-      describe "DELETE /apps/:id (when authorized via scope)"
-
-      describe "DELETE /apps/:id (when authorized via identity)"
-
-      describe "DELETE /apps/:id (when unauthorized)"
-
       # POST /apps/:id/authorizations should
       #   - when authorized for token exchange
       #     - update/set expirey to something sooner than currently set
@@ -235,6 +228,41 @@ module TentValidator
       describe "DELETE /apps/:id/authorizations/:id (when authorized)"
 
       describe "DELETE /apps/:id/authorizations/:id (when unauthorized)"
+
+      # DELETE /apps/:id should
+      #   - when authorized
+      #     - delete app
+      #   - when unauthorized
+      #     - return 403 with valid json error response
+      describe "DELETE /apps/:id (when authorized via scope)", :depends_on => import_app do
+        app = get(:app)
+        with_client :app, :server => :remote do
+          expect_response(:void, :status => 200) do
+            client.app.delete(app['id'])
+          end
+        end
+      end
+
+      describe "DELETE /apps/:id (when authorized via identity)", :depends_on => create_app do
+        app = get(:app)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:void, :status => 200) do
+            client.app.delete(app['id'])
+          end
+        end
+      end
+
+      describe "DELETE /apps/:id (when unauthorized)", :depends_on => list_apps do
+        app_id = get(:app_id)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :status => 403, :schema => :error) do
+            client.app.delete(app_id)
+          end
+        end
+      end
     end
   end
 end
