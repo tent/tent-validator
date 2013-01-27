@@ -206,9 +206,41 @@ module TentValidator
       #     - TODO: test changing post types subscribed to updates notification subscription(s)
       #   - when write_apps unauthorized
       #     - return 404 with valid json error response
-      describe "PUT /apps/:id/authorization/:id (when write_apps authorized)"
+      describe "PUT /apps/:id/authorization/:id (when write_apps authorized via scope)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        data = JSONGenerator.generate(:app_authorization, :simple)
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => data) do
+            client.app.authorization.update(app['id'], authorization['id'], data)
+          end
+        end
+      end
 
-      describe "PUT /apps/:id/authorization/:id (when write_apps unauthorized)"
+      describe "PUT /apps/:id/authorization/:id (when write_apps unauthorized)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        data = JSONGenerator.generate(:app_authorization, :simple)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.authorization.update(app['id'], authorization['id'], data)
+          end
+        end
+      end
+
+      describe "PUT /apps/:id/authorization/:id (when app mac authorized)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        data = JSONGenerator.generate(:app_authorization, :simple)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.authorization.update(app['id'], authorization['id'], data)
+          end
+        end
+      end
 
       # DELETE /apps/:id/authorizations/:id should
       #   - when authorized
