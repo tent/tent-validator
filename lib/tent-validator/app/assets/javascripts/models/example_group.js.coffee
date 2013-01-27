@@ -38,12 +38,12 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
           response:
             status: result.response_status
             headers: @formatHeaders(result.response_headers)
-            body: result.response_body
+            body: JSON.stringify(result.response_body)
             schema_errors: result.response_schema_errors.join("\n")
             expected:
               status: result.expected_response_status
               headers: @formatHeaders(result.expected_response_headers)
-              body: result.expected_response_body
+              body: JSON.stringify(result.expected_response_body)
       }
     obj
 
