@@ -68,18 +68,6 @@ module TentValidator
         end
       end
 
-      # GET /apps/:id should
-      #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
-      #   - (when authorized and app not found) return 404 with a valid json error response
-      #   - (when unauthorized) return 404 with a valid json error response
-      describe "GET /apps/:id (when authorized via scope)", :depends_on => list_apps do
-        with_client :app, :server => :remote do
-          expect_response :tent, :schema => :app, :status => 200, :properties => { :id => get(:app_id) }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key] do
-            client.app.get(get(:app_id))
-          end
-        end
-      end
-
       # POST /apps should
       #   - create and return app
       #   - (when authorized to import) it should create app with specified credentials
@@ -168,12 +156,38 @@ module TentValidator
         end
       end
 
-      # 1. Create new app
-      # 2. Use auth credentials of new app to get that new app
-      # (depends on POST /apps)
-      describe "GET /apps/:id (when authorized via identity)"
+      # GET /apps/:id should
+      #   - (when authorized and app exists) return app with spcified id conforming to the app json schema
+      #   - (when authorized and app not found) return 404 with a valid json error response
+      #   - (when unauthorized) return 403 with a valid json error response
+      describe "GET /apps/:id (when authorized via scope)", :depends_on => list_apps do
+        with_client :app, :server => :remote do
+          expect_response :tent, :schema => :app, :status => 200, :properties => { :id => get(:app_id) }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key] do
+            client.app.get(get(:app_id))
+          end
+        end
+      end
 
-      describe "GET /apps/:id (when unauthorized)"
+      describe "GET /apps/:id (when authorized via identity)", :depends_on => create_app do
+        app = get(:app)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => { :id => app['id'] }, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
+            client.app.get(app['id'])
+          end
+        end
+      end
+
+      describe "GET /apps/:id (when unauthorized)", :depends_on => create_app do
+        app = get(:app)
+        with_client :no_auth, :server => :remote do
+          expect_response(:tent, :schema => :error, :status => 403) do
+            client.app.get(app['id'])
+          end
+        end
+      end
 
       # DELETE /apps/:id should
       #   - when authorized
