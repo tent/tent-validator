@@ -18,8 +18,8 @@ module TentValidator
       dependent_runners_res = example_group.dependent_example_groups.map { |g|
         runner = ExampleGroupRunner.new_link(g)
         @dependent_runners << runner
-        runner.future.run
-      }.map(&:value).flatten(1)
+        runner.run
+      }.flatten(1)
 
       res = [example_group_res].concat(dependent_runners_res)
 
