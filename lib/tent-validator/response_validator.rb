@@ -66,6 +66,7 @@ module TentValidator
         def match(expected, actual=@actual)
           case expected
           when Hash
+            return false unless actual.kind_of?(Hash)
             res = true
             expected.each_pair do |k,v|
               unless match(v, actual[k.to_s])
