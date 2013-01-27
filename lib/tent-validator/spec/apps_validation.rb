@@ -37,13 +37,25 @@ module TentValidator
       #   - (when unauthorized) return 403 with a valid json error response
       list_apps = describe "GET /apps (when authorized)" do
         with_client :app, :server => :remote do
-          expect_response(:tent, :schema => :app, :list => true, :status => 200) do
+          expect_response(:tent, :schema => :app, :list => true, :status => 200, :excluded_properties => [:mac_key_id, :mac_algorithm, :mac_key]) do
             client.app.list
           end.after do |result|
             if result.response.success?
               # We can assume there is at least one app (this app)
               set(:app_id, result.response.body.first['id'])
             end
+          end
+        end
+      end
+
+      describe "GET /apps (when read_secrets authorized and secrets param present)" do
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app, :list => true, :status => 200, :properties => {
+            :mac_key_id => /\A\S+\Z/,
+            :mac_algorithm => 'hmac-sha-256',
+            :mac_key => /\A\S+\Z/
+          }) do
+            client.app.list(:secrets => true)
           end
         end
       end
