@@ -246,10 +246,45 @@ module TentValidator
       #   - when authorized
       #     - delete authorization
       #   - when unauthorized
-      #     - return 404 with valid json error response
-      describe "DELETE /apps/:id/authorizations/:id (when authorized)"
+      #     - return 403 with valid json error response
+      describe "DELETE /apps/:id/authorizations/:id (when authorized via scope)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        with_client :app, :server => :remote do
+          expect_response(:void, :status => 200) do
+            client.app.authorization.delete(app['id'], authorization['id'])
+          end
+        end
+      end
 
-      describe "DELETE /apps/:id/authorizations/:id (when unauthorized)"
+      describe "DELETE /apps/:id/authorizations/:id (when authorized via identity)", :depends_on => create_app do
+        app = get(:app)
+        authorization = JSONGenerator.generate(:app_authorization, :with_auth)
+        with_client :app, :server => :remote do
+          expect_response(:tent, :schema => :app_authorization, :status => 200) do
+            client.app.authorization.create(app['id'], authorization)
+          end
+        end
+
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        with_client :custom, auth_details.merge(:server => :remote) do
+          expect_response(:void, :status => 200) do
+            client.app.authorization.delete(app['id'], authorization[:id])
+          end
+        end
+      end
+
+      describe "DELETE /apps/:id/authorizations/:id (when unauthorized)", :depends_on => create_authorization do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        with_client :no_auth, :server => :remote do
+          expect_response(:void, :status => 403) do
+            client.app.authorization.delete(app['id'], authorization['id'])
+          end
+        end
+      end
 
       # PUT /apps/:id should
       #   - (when authorized and app exists) update app registration
