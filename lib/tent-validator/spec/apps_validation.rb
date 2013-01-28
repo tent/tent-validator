@@ -315,7 +315,7 @@ module TentValidator
         end
       end
 
-      describe "PUT /apps/:id (when write_secrets authorized and secrets params passed)", :depends_on => create_app do
+      describe "PUT /apps/:id (when write_secrets authorized and secrets params passed)", :depends_on => import_app do
         app = get(:app)
         updated_app = JSONGenerator.generate(:app, :with_auth)
         with_client :app, :server => :remote do
