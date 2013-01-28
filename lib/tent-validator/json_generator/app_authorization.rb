@@ -13,13 +13,13 @@ module TentValidator
       }.merge(options)
     end
 
-    def with_auth
+    def with_auth(options = {})
       simple.merge(
         :id => random_id,
         :mac_key_id => 'u:' + random_id,
         :mac_algorithm => 'hmac-sha-256',
         :mac_key => SecureRandom.hex(16)
-      )
+      ).merge(options)
     end
   end
 end
