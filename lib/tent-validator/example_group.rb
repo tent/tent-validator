@@ -109,8 +109,7 @@ module TentValidator
     end
 
     def run
-      reset
-      instance_eval(&@block) if @block
+      reset && instance_eval(&@block) if @block
       Results.new(@expectations.map(&:run), self)
     end
 
