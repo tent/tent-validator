@@ -9,6 +9,12 @@ module TentValidator
         end
       end
 
+      describe "OPTIONS /profile/:type" do
+        expect_response :tent_cors, :status => 200 do
+          clients(:app, :server => :remote).http.options("profile/#{URI.encode_www_form_component('https://tent.io/types/info/core/v0.1.0')}")
+        end
+      end
+
       create_authorizations = describe "Create authorizations" do
         # Create app
         app = JSONGenerator.generate(:app, :with_auth)
