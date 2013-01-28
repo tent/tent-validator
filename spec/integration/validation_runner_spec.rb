@@ -10,20 +10,16 @@ describe TentValidator::ValidationRunner do
     remote_validation = Class.new(TentValidator::Validation)
     remote_validation.class_eval do
       hello_world = describe "GET /" do
-        with_client :app, :server => :remote do
-          expect_response :void do
-            response = client.http.get('/')
-            set(:hello_world, response.body)
-            response
-          end
+        expect_response(:void) do
+          clients(:app, :server => :remote).http.get('/')
+        end.after do |result|
+          set(:hello_world, result.response.body)
         end
       end
 
       describe "POST /foo", :depends_on => hello_world do
-        with_client :app, :server => :remote do
-          expect_response :void do
-            client.http.post('/foo', get(:hello_world))
-          end
+        expect_response :void do
+          clients(:app, :server => :remote).http.post('/foo', get(:hello_world))
         end
       end
     end

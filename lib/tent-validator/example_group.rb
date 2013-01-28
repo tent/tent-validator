@@ -113,20 +113,13 @@ module TentValidator
       Results.new(@expectations.map(&:run), self)
     end
 
-    def with_client(type, options, &block)
-      client = if options[:server] == :remote
+    def clients(type, options = {})
+      if options[:server] == :remote
         TentClient.new(TentValidator.remote_server, auth_details_for_app_type(type, options).merge(
           :faraday_adapter => TentValidator.remote_adapter
         ))
       else
         TentClient.new("http://example.org", :faraday_adapter => TentValidator.local_adapter)
-      end
-
-      Context.new(env) do
-        env[:client] = client
-        env[:server] = options[:server] || :local
-
-        instance_eval(&block)
       end
     end
 

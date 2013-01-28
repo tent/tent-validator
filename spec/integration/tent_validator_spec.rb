@@ -18,10 +18,8 @@ describe TentValidator do
     remote_validation = Class.new(TentValidator::Validation)
     remote_validation.class_eval do
       describe "GET /" do
-        with_client :app, :server => :remote do
-          expect_response :void, :properties => { :id => 'Tent!' } do
-            client.http.post('/foo?bar=baz', { foo: 'bar' })
-          end
+        expect_response :void, :properties => { :id => 'Tent!' } do
+          clients(:app, :server => :remote).http.post('/foo?bar=baz', { foo: 'bar' })
         end
       end
     end
@@ -41,10 +39,8 @@ describe TentValidator do
     remote_validation = Class.new(TentValidator::Validation)
     remote_validation.class_eval do
       describe "GET /" do
-        with_client :app, :server => :remote do
-          expect_response :void, :properties => { :id => 'Tent!' } do
-            client.http.post('/foo?bar=baz', { foo: 'bar' })
-          end
+        expect_response :void, :properties => { :id => 'Tent!' } do
+          clients(:app, :server => :remote).http.post('/foo?bar=baz', { foo: 'bar' })
         end
       end
     end
@@ -62,10 +58,8 @@ describe TentValidator do
     local_validation = Class.new(TentValidator::Validation)
     local_validation.class_eval do
       describe "GET /" do
-        with_client :app, :server => :local do
-          expect_response :void do
-            client.http.get('/')
-          end
+        expect_response :void do
+          clients(:app, :server => :local).http.get('/')
         end
       end
     end
@@ -77,10 +71,8 @@ describe TentValidator do
     local_validation = Class.new(TentValidator::Validation)
     local_validation.class_eval do
       describe "GET /" do
-        with_client :app, :server => :local do
-          expect_response :void, :status => 200 do
-            client.http.get('/foo/bar/baz')
-          end
+        expect_response :void, :status => 200 do
+          clients(:app, :server => :local).http.get('/foo/bar/baz')
         end
       end
     end
