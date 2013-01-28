@@ -3,6 +3,12 @@ require 'tentd/core_ext/hash/slice'
 module TentValidator
   module Spec
     class GroupsValidation < Validation
+      describe "OPTIONS /groups" do
+        expect_response :tent_cors, :status => 200 do
+          clients(:app, :server => :remote).http.options("groups")
+        end
+      end
+
       create_authorizations = describe "Create authorizations" do
         # Create app
         app = JSONGenerator.generate(:app, :with_auth)
