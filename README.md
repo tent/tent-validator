@@ -30,31 +30,27 @@ end
 class PostsValidation < TentValidator::Validation
   create_post = describe "POST /posts" do
     data = {} # ...
-    with_client :app, :server => :remote do |client|
-      # expect valid status post json
-      expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :entity => get(:entity) }) do
-        # uses tent-client-ruby
-        res = client.post.create(data)
+    # expect valid status post json
+    expect_response(:tent, :schema => :status, :post_status => 200...300, :properties => { :entity => get(:entity) }) do
+      # uses tent-client-ruby
+      clients(:app, server: :remote).post.create(data)
+    end.after do |result|
+      if result.response.success?
+        set(:post_id, res.body['id']) # res.body['id'] => 'abc123'
       end
-      set(:post_id, res.body['id']) # res.body['id'] => 'abc123'
     end
   end
 
   describe "GET /posts/:id", :depends_on => create_post do
-    with_client :app, :server => :local do |client|
-      # expect valid status post json
-      expect_response(:tent, :schema => :status, 200...300, :properties => { :id => get(:post_id), :entity => get(:entity) }) do
-        client.post.get(get(:post_id), get(:entity))
-      end
+    # expect valid status post json
+    expect_response(:tent, :schema => :post_status, 200...300, :properties => { :id => get(:post_id), :entity => get(:entity) }) do
+      clients(:app, server: :local).post.get(get(:post_id), get(:entity))
     end
 
-    with_client :app, :server => :remote do |client|
-      expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :id => get(:post_id) }) do
-        client.post.get(get(:post_id))
-      end
+    expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :id => get(:post_id) }) do
+      clients(:app, server: :remote).post.get(get(:post_id))
     end
   end
-
 end
 
 posts_res = PostsValidation.run # => TentValidator::CombinedResults
@@ -69,9 +65,6 @@ posts_res.as_json == {
       :request_body => "",
 
       :response_headers => {},
-      :response_server => "",
-      :response_path => "",
-      :response_params => {},
       :response_body => "",
       :response_status => 200,
       :response_schema_errors => [],
@@ -83,7 +76,8 @@ posts_res.as_json == {
         :id => "abc123",
         :entity => "https://remote.example.com"
       },
-      :expected_response_schema => 'status',
+      :expected_response_body_excludes => [],
+      :expected_response_schema => 'post_status',
       :expected_response_status => "200...300",
 
       :failed_headers_expectations => [],
