@@ -81,6 +81,20 @@ module TentValidator
           clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).http.head('groups')
         end
       end
+
+      describe "GET /groups (when authorized)", :depends_on => create_group do
+        authorization = get(:authorized_app_authorization)
+        expect_response(:tent, :schema => :group, :list => true, :status => 200) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.list
+        end
+      end
+
+      describe "GET /groups (when unauthorized)", :depends_on => create_group do
+        authorization = get(:unauthorized_app_authorization)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.list
+        end
+      end
     end
   end
 end
