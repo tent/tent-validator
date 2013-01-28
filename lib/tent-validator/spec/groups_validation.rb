@@ -158,11 +158,25 @@ module TentValidator
         end
       end
 
+      describe "DELETE /groups/:id (when authorized but not found)", :depends_on => create_authorizations do
+        authorization = get(:authorized_app_authorization)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.delete('not-found')
+        end
+      end
+
       describe "DELETE /groups/:id (when unauthorized)", :depends_on => create_group do
         authorization = get(:unauthorized_app_authorization)
         group = get(:group) || {}
         expect_response(:tent, :schema => :error, :status => 403) do
           clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.delete(group['id'])
+        end
+      end
+
+      describe "DELETE /groups/:id (when unauthorized and not found)", :depends_on => create_authorizations do
+        authorization = get(:unauthorized_app_authorization)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.delete('not-found')
         end
       end
     end
