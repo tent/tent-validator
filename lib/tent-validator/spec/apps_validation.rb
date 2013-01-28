@@ -319,7 +319,7 @@ module TentValidator
         app = get(:app)
         updated_app = JSONGenerator.generate(:app, :with_auth)
         with_client :app, :server => :remote do
-          expect_response(:tent, :schema => :app, :status => 200, :properties => updated_app.merge('id' => app['id'])) do
+          expect_response(:tent, :schema => :app, :status => 200, :properties => updated_app.merge(:id => app['id'])) do
             client.app.update(app['id'] + "?secrets=true", updated_app)
           end
         end
