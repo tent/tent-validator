@@ -113,6 +113,22 @@ module TentValidator
           clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.update(group['id'], data)
         end
       end
+
+      describe "DELETE /groups/:id (when authorized)", :depends_on => create_group do
+        authorization = get(:authorized_app_authorization)
+        group = get(:group) || {}
+        expect_response(:void, :status => 200) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.delete(group['id'])
+        end
+      end
+
+      describe "DELETE /groups/:id (when unauthorized)", :depends_on => create_group do
+        authorization = get(:unauthorized_app_authorization)
+        group = get(:group) || {}
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.delete(group['id'])
+        end
+      end
     end
   end
 end
