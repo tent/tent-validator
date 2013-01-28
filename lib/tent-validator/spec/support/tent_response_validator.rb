@@ -6,7 +6,6 @@ module TentValidator
       validate_headers do
         expect_header('Content-Type', /\A#{Regexp.escape(TentD::API::MEDIA_TYPE)}/)
         expect_header('Count', /\A\d+\Z/)
-        expect_header('Content-Length', /\A\d+\Z/)
       end
     end
 
