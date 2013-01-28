@@ -22,6 +22,15 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
       str += "#{k}: #{val}\n"
     str
 
+  formatSchemaErrors: (result) =>
+    _.map(result.response_schema_errors, (error) =>
+      schema_keypath = error.match(/#\/(\S+)/)?[1]
+      if schema_keypath[0]?.match(/^\d+$/)
+        "#{error}\n\t#{JSON.stringify(result.response_body[schema_keypath[0]])}"
+      else
+        error
+    ).join("\n\n")
+
   toJSON: =>
     obj = super
     obj.pending = !@get('results').length
@@ -39,7 +48,7 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
             status: result.response_status
             headers: @formatHeaders(result.response_headers)
             body: JSON.stringify(result.response_body)
-            schema_errors: result.response_schema_errors.join("\n")
+            schema_errors: @formatSchemaErrors(result)
             expected:
               status: result.expected_response_status
               headers: @formatHeaders(result.expected_response_headers)
