@@ -161,6 +161,23 @@ module TentValidator
           :mac_algorithm => 'hmac-sha-256',
         }) do
           clients(:custom, auth_details.merge(:server => :remote)).app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac')
+        end.after do |result|
+          if result.response.success?
+            authorization['token_code'] = result.response.body['refresh_token']
+          end
+        end
+
+        tent_expires_at = Time.now.to_i + (86400 * 2) # 2 days from now
+
+        expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => {
+          :access_token => /\A\S+\Z/,
+          :token_type => 'mac',
+          :refresh_token => /\A\S+\Z/,
+          :mac_key => /\A\S+\Z/,
+          :mac_algorithm => 'hmac-sha-256',
+          :tent_expires_at => tent_expires_at
+        }) do
+          clients(:custom, auth_details.merge(:server => :remote)).app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac', :tent_expires_at => tent_expires_at)
         end
       end
 
