@@ -43,6 +43,48 @@ module TentValidator
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization2)
         end
       end
+
+      describe "GET /profile (public)", :depends_on => create_authorizations
+
+      describe "GET /profile (limited authorization)", :depends_on => create_authorizations
+
+      describe "GET /profile (full authorization)", :depends_on => create_authorizations
+
+      describe "PUT /profile/:type (when authorized and :type exists)", :depends_on => create_authorizations
+
+      describe "PUT /profile/:type (when authorized and :type does not exist)", :depends_on => create_authorizations
+
+      describe "PUT /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations
+
+      describe "PUT /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (public and exists)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (public and does not exist)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and exists when fully authorized)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and does not exist when fully authorized)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and exists when  specifically authorized)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and does not exist when  specifically authorized)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and exists when unauthorized)", :depends_on => create_authorizations
+
+      describe "GET /profile/:type (private and does not exist when unauthorized)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when specifically authorized and :type exists)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when specifically authorized and :type does not exist)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations
+
+      describe "DELETE /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations
     end
   end
 end
