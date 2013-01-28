@@ -75,7 +75,7 @@ module TentValidator
             end
             res
           when Regexp
-            !!expected.match(actual)
+            !!expected.match(actual.to_s)
           else
             expected == actual
           end
