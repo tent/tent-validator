@@ -31,6 +31,26 @@ module TentValidator
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization2)
         end
       end
+
+      create_group = describe "POST /groups (when authorized)", :depends_on => create_authorizations do
+        authorization = get(:authorized_app_authorization)
+        group = JSONGenerator.generate(:group, :simple)
+        expect_response(:tent, :schema => :group, :status => 200, :properties => group) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.create(group)
+        end.after do |result|
+          if result.response.success?
+            set(:group, result.response.body)
+          end
+        end
+      end
+
+      describe "POST /groups (when unauthorized)", :depends_on => create_authorizations do
+        authorization = get(:unauthorized_app_authorization)
+        group = JSONGenerator.generate(:group, :simple)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, authorization.slice(:mac_key_id, :mac_algorithm, :mac_key).merge(:server => :remote)).group.create(group)
+        end
+      end
     end
   end
 end
