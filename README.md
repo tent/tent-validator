@@ -2,6 +2,33 @@
 
 Tent protocol validator. **This is a WIP**
 
+## Running
+
+You will need redis, postgres, and a JavaScript runtime (eg. nodejs)
+
+**Environment Variables**
+
+```
+VALIDATOR_DATABASE_URL=postgres://localhost/tent-validator
+TENT_DATABASE_URL=postgres://localhost/tent-validator-tentd
+VALIDATOR_NOTIFICATION_URL=http://localhost:9292/webhooks
+COOKIE_SECRET=8a7f53069591896fa076227588c9b64b
+REDIS_URL=redis://127.0.0.1:6379/0
+REDIS_NAMESPACE=tent-validator
+```
+
+### Start webserver
+
+```
+bundle exec puma -p 9292
+```
+
+### Start Sidekiq
+
+```
+bundle exec sidekiq -r ./boot.rb
+```
+
 ## Writing validations
 
 The validation DSL aims to be simple and focused on testing the Tent protocol.
