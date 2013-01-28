@@ -135,7 +135,7 @@ module TentValidator
       #     - return 403 with valid json error response
       create_authorization = describe "POST /apps/:id/authorizations (when write_apps and write_secrets authorized)", :depends_on => create_app do
         app = get(:app)
-        authorization = JSONGenerator.generate(:app_authorization, :simple)
+        authorization = JSONGenerator.generate(:app_authorization, :simple, :scopes => %w[ read_apps ])
         expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => authorization.merge(
           :token_code => /\A\S+\Z/
         )) do
@@ -147,7 +147,7 @@ module TentValidator
         end
       end
 
-      describe "POST /apps/:id/authorizations (when authorized)", :depends_on => create_authorization do
+      token_exchange = describe "POST /apps/:id/authorizations (when authorized)", :depends_on => create_authorization do
         app = get(:app)
         authorization = get(:app_authorization)
         auth_details = {
@@ -167,7 +167,7 @@ module TentValidator
           end
         end
 
-        tent_expires_at = Time.now.to_i + (86400 * 2) # 2 days from now
+        tent_expires_at = Time.now.to_i + (86400 * 20) # 20 days from now
 
         expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => {
           :access_token => /\A\S+\Z/,
@@ -178,6 +178,50 @@ module TentValidator
           :tent_expires_at => tent_expires_at
         }) do
           clients(:custom, auth_details.merge(:server => :remote)).app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac', :tent_expires_at => tent_expires_at)
+        end.after do |result|
+          if result.response.success?
+            authorization.merge!(result.response.body)
+            authorization['token_code'] = result.response.body['refresh_token']
+          end
+        end
+      end
+
+      describe "POST /apps/:id/authorization (when refresh_token expired)", :depends_on => token_exchange do
+        app = get(:app)
+        authorization = get(:app_authorization)
+        auth_details = {
+          :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
+        }
+        tent_expires_at = Time.now.to_i - 1
+
+        expect_response(:void, :status => 200) do
+          auth = {
+            :mac_key_id => authorization['access_token'], :mac_algorithm => authorization['mac_algorithm'], :mac_key => authorization['mac_key']
+          }
+          clients(:custom, auth.merge(:server => :remote)).app.list
+        end
+
+        expect_response(:tent, :schema => :app_authorization, :status => 200, :properties => {
+          :access_token => /\A\S+\Z/,
+          :token_type => 'mac',
+          :refresh_token => /\A\S+\Z/,
+          :mac_key => /\A\S+\Z/,
+          :mac_algorithm => 'hmac-sha-256',
+          :tent_expires_at => tent_expires_at
+        }) do
+          clients(:custom, auth_details.merge(:server => :remote)).app.authorization.create(app['id'], :code => authorization['token_code'], :token_type => 'mac', :tent_expires_at => tent_expires_at)
+        end.after do |result|
+          if result.response.success?
+            authorization.merge!(result.response.body)
+          end
+        end
+
+        # as the authorization should now be expired, the mac_key_id should not be found causing a 401
+        expect_response(:tent, :schema => :error, :status => 401) do
+          auth = {
+            :mac_key_id => authorization['access_token'], :mac_algorithm => authorization['mac_algorithm'], :mac_key => authorization['mac_key']
+          }
+          clients(:custom, auth.merge(:server => :remote)).app.list
         end
       end
 

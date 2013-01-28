@@ -4,13 +4,13 @@ module TentValidator
   class AppAuthorizationJSONGenerator < JSONGenerator
     register :app_authorization
 
-    def simple
+    def simple(options = {})
       {
         :scopes => %w[ read_posts write_posts ],
         :profile_info_types => %w[ https://tent.io/types/info/basic/v0.1.0 ],
         :post_types => %w[ https://tent.io/types/post/status/v0.1.0 ],
         :notification_url => ENV['VALIDATOR_NOTIFICATION_URL']
-      }
+      }.merge(options)
     end
 
     def with_auth
