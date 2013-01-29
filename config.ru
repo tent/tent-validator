@@ -9,10 +9,5 @@ map '/' do
                               :expire_after => 2592000, # 1 month
                               :secret => ENV['COOKIE_SECRET'] || SecureRandom.hex
   use TentValidator::App, app_name: 'Tent Protocol Validator'
-  run lambda { |env| [404, { 'Content-Type' => 'text/plain' }, []] }
-end
-
-map '/tent' do
-  use SetEntity
-  run TentValidator.tentd
+  run TentServer.new
 end

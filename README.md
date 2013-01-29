@@ -15,6 +15,7 @@ VALIDATOR_NOTIFICATION_URL=http://localhost:9292/webhooks
 COOKIE_SECRET=8a7f53069591896fa076227588c9b64b
 REDIS_URL=redis://127.0.0.1:6379/0
 REDIS_NAMESPACE=tent-validator
+VALIDATOR_HOST=http://localhost:9292
 ```
 
 ### Start webserver

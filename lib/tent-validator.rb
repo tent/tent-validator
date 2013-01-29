@@ -45,4 +45,6 @@ module TentValidator
   def self.remote_adapter
     @remote_adapter ||= :tent_net_http
   end
+
+  require "tent-validator/tentd/model/user"
 end
