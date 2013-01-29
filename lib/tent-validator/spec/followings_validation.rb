@@ -30,6 +30,57 @@ module TentValidator
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization3)
         end
       end
+
+      describe "OPTIONS /followings"
+
+      describe "OPTIONS /followings/(:id|:entity)"
+
+      describe "OPTIONS /followings/:id/*"
+
+      describe "POST /followings (when authorized)"
+        # TODO: follow validator tent entity
+
+      describe "POST /followings (when authorized and already following)"
+
+      describe "POST /followings (when unauthorized)"
+
+      describe "PUT /followings/:id (when authorized via identity)"
+
+      describe "PUT /followings/:id (when authorized via scope)"
+
+      describe "PUT /followings/:id (when authorized via scope and does not exist)"
+
+      describe "PUT /followings/:id (when unauthorized)"
+
+      describe "GET /followings/:id (when authorized via identity)"
+
+      describe "GET /followings/:id (when authorized via scope)"
+
+      describe "GET /followings/:id (when unauthorized)"
+
+      describe "GET /followings/:entity (when authorized via identity)"
+
+      describe "GET /followings/:entity (when authorized via scope)"
+
+      describe "GET /followings/:entity (when unauthorized)"
+
+      describe "GET /followings/:id/* (when authorized)"
+
+      describe "GET /followings/:id/* (when unauthorized)"
+
+      describe "GET /followings (when authorized)"
+
+      describe "GET /followings (when unauthorized)"
+
+      describe "HEAD /followings (when authorized)"
+
+      describe "HEAD /followings (when unauthorized)"
+
+      describe "DELETE /followings/:id (when authorized via identity)"
+
+      describe "DELETE /followings/:id (when authorized via scope)"
+
+      describe "DELETE /followings/:id (when unauthorized)"
     end
   end
 end
