@@ -119,6 +119,21 @@ posts_res.as_json == {
 TentValidator::Validation.run # run all validations
 ```
 
+### Creating tentd users
+
+The validator is backed by a multi-tenent instance of tentd. It is used for testing interaction between servers.
+
+```ruby
+# Create new user
+user = TentD::Model::User.generate
+user.entity # => http://localhost:9292/8f05dbf7abf57a0363279032a4cbdf72/tent
+
+# Create app authorization for user
+authorization_attributes = {}
+auth = user.create_authorization(authorization_attributes) # => TentD::Model::AppAuthorization
+auth.auth_details # => { :mac_key_id => ... }
+```
+
 ## Contributing
 
 1. Fork it
