@@ -37,6 +37,11 @@
     <pre>{{formatted.response.expected.body_excludes}}</pre>
     {{/expected_response_body_excludes.length}}
 
+    {{#expected_response_body_includes.length}}
+    <h5>Expected to include</h5>
+    <pre>{{formatted.response.expected.body_includes}}</pre>
+    {{/expected_response_body_includes.length}}
+
     <h5>Actual</h5>
     <pre>{{formatted.response.body}}</pre>
     {{/body_passed}}

@@ -113,5 +113,37 @@ describe TentValidator::ExampleGroup do
       res = example_group.run
       expect(res.passed?).to be_false
     end
+
+    it "should validate response properties present" do
+      example_group.expect_response(:void, :properties_present => [:foo]) { response }
+
+      response.stubs(:body => {
+        "foo" => "bar"
+      })
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      response.stubs(:body => {
+        "baz" => 20
+      })
+      res = example_group.run
+      expect(res.passed?).to be_false
+    end
+
+    it "should validate response properties absent" do
+      example_group.expect_response(:void, :properties_absent => [:baz]) { response }
+
+      response.stubs(:body => {
+        "foo" => "bar"
+      })
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      response.stubs(:body => {
+        "baz" => 20
+      })
+      res = example_group.run
+      expect(res.passed?).to be_false
+    end
   end
 end
