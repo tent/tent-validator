@@ -43,7 +43,7 @@ module TentValidator
         end
 
         # Create explicitly authorized authorization
-        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => [get(:example_profile_type_uri)])
+        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => [get(:example_profile_type_uri), get(:bogus_profile_type_uri)])
         set(:explicit_authorization, authorization2)
         set(:explicit_authorization_details, authorization2.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
@@ -59,9 +59,10 @@ module TentValidator
         end
       end
 
-      describe "PUT /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations do
+      update_basic = describe "PUT /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations do
         auth_details = get(:full_authorization_details)
         data = JSONGenerator.generate(:profile, :basic)
+        set(:basic_profile_type_data, data)
         type = get(:basic_profile_type_uri)
         expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
           clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
@@ -144,26 +145,89 @@ module TentValidator
         end
       end
 
-      describe "GET /profile/:type (public and exists)", :depends_on => create_authorizations
-        # TODO: validate presence of basic profile type
+      describe "GET /profile/:type (public and exists)", :depends_on => update_basic do
+        type = get(:basic_profile_type_uri)
+        data = get(:basic_profile_type_data)
+        expect_response(:tent, :status => 200, :properties => data.merge(:version => /\A\d+\Z/)) do
+          clients(:no_auth, :server => :remote).profile.type.get(type)
+        end
 
-      describe "GET /profile/:type (does not exist when no authorization)", :depends_on => create_authorizations
-        # TODO: lookup bogus type
+        expect_response(:tent, :status => 200, :properties => { :version => 1 }) do
+          clients(:no_auth, :server => :remote).profile.type.get(type, :version => 1)
+        end
+      end
 
-      describe "GET /profile/:type (private and exists when fully authorized)", :depends_on => create_type
-        # TODO: lookup private section created in a PUT validation
+      describe "GET /profile/:type (public and specified version does not exist)", :depends_on => update_basic do
+        type = get(:basic_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:no_auth, :server => :remote).profile.type.get(type, :version => -200000000)
+        end
+      end
 
-      describe "GET /profile/:type (does not exist when fully authorized)", :depends_on => create_authorizations
-        # TODO: lookup bogus type
+      describe "GET /profile/:type (does not exist when no authorization)", :depends_on => create_authorizations do
+        type = get(:bogus_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:no_auth, :server => :remote).profile.type.get(type)
+        end
+      end
 
-      describe "GET /profile/:type (private and exists when explicitly authorized)", :depends_on => create_type
-        # TODO: lookup private section created in a PUT validation
+      describe "GET /profile/:type (private and exists when fully authorized)", :depends_on => create_type do
+        auth_details = get(:full_authorization_details)
+        type = get(:other_profile_type_uri)
+        data = get(:other_profile_type_data)
+        expect_response(:tent, :status => 200, :properties => data.merge(:version => /\A\d+\Z/)) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type)
+        end
 
-      describe "GET /profile/:type (does not exist when explicitly authorized)", :depends_on => create_authorizations
-        # TODO: lookup bogus type for which authorization has explicit access to
+        expect_response(:tent, :status => 200, :properties => { :version => 1 }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type, :version => 1)
+        end
+      end
 
-      describe "GET /profile/:type (private and exists when unauthorized)", :depends_on => create_type
-        # TODO: lookup private section created in a PUT validation
+      describe "GET /profile/:type (private and specified version does not exist when fully authorized)", :depends_on => create_type do
+        auth_details = get(:full_authorization_details)
+        type = get(:other_profile_type_uri)
+        expect_response(:tent, :scheme => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type, :version => -200000000)
+        end
+      end
+
+      describe "GET /profile/:type (does not exist when fully authorized)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        type = get(:bogus_profile_type_uri)
+        expect_response(:tent, :scheme => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type)
+        end
+      end
+
+      describe "GET /profile/:type (private and exists when explicitly authorized)", :depends_on => update_another_type do
+        auth_details = get(:explicit_authorization_details)
+        data = get(:example_profile_type_data)
+        type = get(:example_profile_type_uri)
+        expect_response(:tent, :status => 200, :properties => data.merge(:version => /\A\d+\Z/)) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type)
+        end
+
+        expect_response(:tent, :status => 200, :properties => { :version => 1 }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type, :version => 1)
+        end
+      end
+
+      describe "GET /profile/:type (does not exist when explicitly authorized)", :depends_on => create_authorizations do
+        auth_details = get(:explicit_authorization_details)
+        type = get(:bogus_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type)
+        end
+      end
+
+      describe "GET /profile/:type (private and exists when unauthorized)", :depends_on => create_type do
+        auth_details = get(:explicit_unauthorization_details)
+        type = get(:other_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.type.get(type)
+        end
+      end
 
       describe "DELETE /profile/:type (when fully authorized and :type exists)", :depends_on => create_type do
         auth_details = get(:full_authorization_details)
