@@ -44,47 +44,71 @@ module TentValidator
         end
       end
 
-      describe "GET /profile (public)", :depends_on => create_authorizations
+      describe "PUT /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations
+        # TODO: update basic profile (ensure public)
 
-      describe "GET /profile (limited authorization)", :depends_on => create_authorizations
+      create_type = describe "PUT /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: create new private profile section (ensure this gets deleted in a DELETE validation)
 
-      describe "GET /profile (full authorization)", :depends_on => create_authorizations
+      describe "PUT /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_authorizations
+        # TODO: update core profile
 
-      describe "PUT /profile/:type (when authorized and :type exists)", :depends_on => create_authorizations
-
-      describe "PUT /profile/:type (when authorized and :type does not exist)", :depends_on => create_authorizations
+      create_another_type = describe "PUT /profile/:type (when explicitly authorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: create another type for which authorization has explicit permission
 
       describe "PUT /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations
+        # TODO: attempt to update core profile with restricted authorization
 
       describe "PUT /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: attempt to update bogus section with restricted authorization
+
+      describe "GET /profile (public)", :depends_on => create_authorizations
+        # TODO: validate presence of core profile type
+
+      describe "GET /profile (private when fully authorized)", :depends_on => create_type
+        # TODO: validate presence of private section created in a PUT validation
+
+      describe "GET /profile (private when explicitly authorized)", :depends_on => create_another_type
+        # TODO: validate presence of private section created in another PUT validation
 
       describe "GET /profile/:type (public and exists)", :depends_on => create_authorizations
+        # TODO: validate presence of basic profile type
 
-      describe "GET /profile/:type (public and does not exist)", :depends_on => create_authorizations
+      describe "GET /profile/:type (does not exist when no authorization)", :depends_on => create_authorizations
+        # TODO: lookup bogus type
 
-      describe "GET /profile/:type (private and exists when fully authorized)", :depends_on => create_authorizations
+      describe "GET /profile/:type (private and exists when fully authorized)", :depends_on => create_type
+        # TODO: lookup private section created in a PUT validation
 
-      describe "GET /profile/:type (private and does not exist when fully authorized)", :depends_on => create_authorizations
+      describe "GET /profile/:type (does not exist when fully authorized)", :depends_on => create_authorizations
+        # TODO: lookup bogus type
 
-      describe "GET /profile/:type (private and exists when  specifically authorized)", :depends_on => create_authorizations
+      describe "GET /profile/:type (private and exists when explicitly authorized)", :depends_on => create_type
+        # TODO: lookup private section created in a PUT validation
 
-      describe "GET /profile/:type (private and does not exist when  specifically authorized)", :depends_on => create_authorizations
+      describe "GET /profile/:type (does not exist when explicitly authorized)", :depends_on => create_authorizations
+        # TODO: lookup bogus type for which authorization has explicit access to
 
-      describe "GET /profile/:type (private and exists when unauthorized)", :depends_on => create_authorizations
+      describe "GET /profile/:type (private and exists when unauthorized)", :depends_on => create_type
+        # TODO: lookup private section created in a PUT validation
 
-      describe "GET /profile/:type (private and does not exist when unauthorized)", :depends_on => create_authorizations
-
-      describe "DELETE /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations
+      describe "DELETE /profile/:type (when fully authorized and :type exists)", :depends_on => create_type
+        # TODO: delete type created in a PUT validation
 
       describe "DELETE /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: attempt to deleted bogus type
 
-      describe "DELETE /profile/:type (when specifically authorized and :type exists)", :depends_on => create_authorizations
+      describe "DELETE /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_another_type
+        # TODO: delete type created in another PUT validation
 
-      describe "DELETE /profile/:type (when specifically authorized and :type does not exist)", :depends_on => create_authorizations
+      describe "DELETE /profile/:type (when explicitly authorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: attempt to delete a bugus type for which authorization has explicit permission
 
       describe "DELETE /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations
+        # TODO: attempt to delete core profile
 
       describe "DELETE /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations
+        # TODO: attempt to delete bogus profile section
     end
   end
 end
