@@ -26,21 +26,29 @@ module TentValidator
           end
         end
 
-        # Create authorized authorization
+        # Create fully authorized authorization
         authorization = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => %w[ all ])
-        set(:authorized_app_authorization, authorization)
+        set(:full_authorization, authorization)
+        set(:full_authorization_details, authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization)
-        end.after do |result|
-          if result.response.success?
-          end
         end
 
-        # Create unauthorized authorization
-        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => %w[])
-        set(:unauthorized_app_authorization, authorization2)
+        # Create explicitly authorized authorization
+        set(:explicit_authorization_type, 'https://example.org/types/info/example/v0.1.0')
+        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => [get(:explicit_authorization_type)])
+        set(:explicit_authorization, authorization2)
+        set(:explicit_authorization_details, authorization2.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization2)
+        end
+
+        # Create fully unauthorized authorization
+        authorization3 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => %w[])
+        set(:explicit_unauthorization, authorization3)
+        set(:explicit_unauthorization_details, authorization3.slice(:mac_key_id, :mac_key, :mac_algorithm))
+        expect_response(:tent, :schema => :app_authorization, :status => 200) do
+          clients(:app, :server => :remote).app.authorization.create(app[:id], authorization3)
         end
       end
 
