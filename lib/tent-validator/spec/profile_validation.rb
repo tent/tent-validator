@@ -16,6 +16,13 @@ module TentValidator
       end
 
       create_authorizations = describe "Create authorizations" do
+        # Shared vars
+        set(:basic_profile_type_uri, 'https://tent.io/types/info/basic/v0.1.0')
+        set(:core_profile_type_uri, 'https://tent.io/types/info/core/v0.1.0')
+        set(:example_profile_type_uri, 'https://example.org/types/info/example/v0.1.0')
+        set(:other_profile_type_uri, 'https://example.com/types/info/other/v0.1.0')
+        set(:bogus_profile_type_uri, 'https://example.com/types/info/bogus/v0.1.0')
+
         # Create app
         app = JSONGenerator.generate(:app, :with_auth)
         expect_response(:tent, :schema => :app, :status => 200, :properties => app) do
@@ -35,8 +42,7 @@ module TentValidator
         end
 
         # Create explicitly authorized authorization
-        set(:explicit_authorization_type, 'https://example.org/types/info/example/v0.1.0')
-        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => [get(:explicit_authorization_type)])
+        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_profile write_profile ], :profile_info_types => [get(:example_profile_type_uri)])
         set(:explicit_authorization, authorization2)
         set(:explicit_authorization_details, authorization2.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
@@ -52,23 +58,59 @@ module TentValidator
         end
       end
 
-      describe "PUT /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations
-        # TODO: update basic profile (ensure public)
+      describe "PUT /profile/:type (when fully authorized and :type exists)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        data = JSONGenerator.generate(:profile, :basic)
+        type = get(:basic_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
-      create_type = describe "PUT /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations
-        # TODO: create new private profile section (ensure this gets deleted in a DELETE validation)
+      create_type = describe "PUT /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        data = JSONGenerator.generate(:profile, :other)
+        type = get(:other_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
-      describe "PUT /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_authorizations
-        # TODO: update core profile
+      create_another_type = describe "PUT /profile/:type (when explicitly authorized and :type does not exist)", :depends_on => create_authorizations do
+        auth_details = get(:explicit_authorization_details)
+        data = JSONGenerator.generate(:profile, :example)
+        type = get(:example_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
-      create_another_type = describe "PUT /profile/:type (when explicitly authorized and :type does not exist)", :depends_on => create_authorizations
-        # TODO: create another type for which authorization has explicit permission
+      update_another_type = describe "PUT /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_another_type do
+        auth_details = get(:explicit_authorization_details)
+        data = JSONGenerator.generate(:profile, :example)
+        type = get(:example_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
-      describe "PUT /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations
-        # TODO: attempt to update core profile with restricted authorization
+      describe "PUT /profile/:type (when unauthorized and :type exists)", :depends_on => create_authorizations do
+        auth_details = get(:explicit_unauthorization_details)
+        data = JSONGenerator.generate(:profile, :core)
+        type = get(:core_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
-      describe "PUT /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations
-        # TODO: attempt to update bogus section with restricted authorization
+      describe "PUT /profile/:type (when unauthorized and :type does not exist)", :depends_on => create_authorizations do
+        auth_details = get(:explicit_unauthorization_details)
+        data = JSONGenerator.generate(:profile, :bogus)
+        type = get(:bogus_profile_type_uri)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
+        end
+      end
 
       describe "GET /profile (public)", :depends_on => create_authorizations
         # TODO: validate presence of core profile type
@@ -76,7 +118,7 @@ module TentValidator
       describe "GET /profile (private when fully authorized)", :depends_on => create_type
         # TODO: validate presence of private section created in a PUT validation
 
-      describe "GET /profile (private when explicitly authorized)", :depends_on => create_another_type
+      describe "GET /profile (private when explicitly authorized)", :depends_on => update_another_type
         # TODO: validate presence of private section created in another PUT validation
 
       describe "GET /profile/:type (public and exists)", :depends_on => create_authorizations
@@ -106,7 +148,7 @@ module TentValidator
       describe "DELETE /profile/:type (when fully authorized and :type does not exist)", :depends_on => create_authorizations
         # TODO: attempt to deleted bogus type
 
-      describe "DELETE /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_another_type
+      describe "DELETE /profile/:type (when explicitly authorized and :type exists)", :depends_on => update_another_type
         # TODO: delete type created in another PUT validation
 
       describe "DELETE /profile/:type (when explicitly authorized and :type does not exist)", :depends_on => create_authorizations
