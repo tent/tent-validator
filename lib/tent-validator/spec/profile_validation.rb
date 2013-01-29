@@ -21,6 +21,7 @@ module TentValidator
         set(:core_profile_type_uri, 'https://tent.io/types/info/core/v0.1.0')
         set(:example_profile_type_uri, 'https://example.org/types/info/example/v0.1.0')
         set(:other_profile_type_uri, 'https://example.com/types/info/other/v0.1.0')
+        set(:yet_another_profile_type_uri, 'https://example.com/types/info/yet-another/v0.1.0')
         set(:bogus_profile_type_uri, 'https://example.com/types/info/bogus/v0.1.0')
 
         # Create app
@@ -71,6 +72,7 @@ module TentValidator
         auth_details = get(:full_authorization_details)
         data = JSONGenerator.generate(:profile, :other)
         type = get(:other_profile_type_uri)
+        set(:other_profile_type_data, data)
         expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
           clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
         end
@@ -88,6 +90,7 @@ module TentValidator
       update_another_type = describe "PUT /profile/:type (when explicitly authorized and :type exists)", :depends_on => create_another_type do
         auth_details = get(:explicit_authorization_details)
         data = JSONGenerator.generate(:profile, :example)
+        set(:example_profile_type_data, data)
         type = get(:example_profile_type_uri)
         expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => data.merge(:version => /\A\d+\Z/) }) do
           clients(:custom, auth_details.merge(:server => :remote)).profile.update(type, data)
@@ -112,14 +115,34 @@ module TentValidator
         end
       end
 
-      describe "GET /profile (public)", :depends_on => create_authorizations
-        # TODO: validate presence of core profile type
+      describe "GET /profile (public)", :depends_on => create_type do
+        type = get(:core_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties_present => [type], :properties_absent => [get(:example_profile_type_uri), get(:other_profile_type_uri)]) do
+          clients(:no_auth, :server => :remote).profile.get
+        end
+      end
 
-      describe "GET /profile (private when fully authorized)", :depends_on => create_type
-        # TODO: validate presence of private section created in a PUT validation
+      describe "GET /profile (private when fully authorized)", :depends_on => create_type do
+        auth_details = get(:full_authorization_details)
+        type = get(:other_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => get(:other_profile_type_data).merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.get
+        end
+      end
 
-      describe "GET /profile (private when explicitly authorized)", :depends_on => update_another_type
-        # TODO: validate presence of private section created in another PUT validation
+      describe "GET /profile (private when explicitly authorized)", :depends_on => update_another_type do
+        other_type = get(:yet_another_profile_type_uri)
+        other_type_data = JSONGenerator.generate(:profile, :other)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { other_type => other_type_data.merge(:version => /\A\d+\Z/) }) do
+          clients(:custom, get(:full_authorization_details).merge(:server => :remote)).profile.update(other_type, other_type_data)
+        end
+
+        auth_details = get(:explicit_authorization_details)
+        type = get(:example_profile_type_uri)
+        expect_response(:tent, :schema => :profile, :status => 200, :properties => { type => get(:example_profile_type_data).merge(:version => /\A\d+\Z/) }, :properties_absent => [other_type]) do
+          clients(:custom, auth_details.merge(:server => :remote)).profile.get
+        end
+      end
 
       describe "GET /profile/:type (public and exists)", :depends_on => create_authorizations
         # TODO: validate presence of basic profile type
