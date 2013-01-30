@@ -14,7 +14,7 @@ module TentValidator
     end
 
     def in_progress=(state)
-      redis_client.set(progress_redis_key, state.to_json)
+      redis_client.set(progress_redis_key, Yajl::Encoder.encode(state))
     end
 
     def in_progress?

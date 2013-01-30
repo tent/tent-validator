@@ -71,7 +71,7 @@ module TentValidator
       end
 
       def json(data)
-        [200, { 'Content-Type' => 'application/json' }, [data.to_json]]
+        [200, { 'Content-Type' => 'application/json' }, [Yajl::Encoder.encode(data)]]
       end
 
       def run_validations_for(user)
