@@ -28,7 +28,7 @@ module TentValidator
 
       res
     rescue => e
-      puts "#{e.inspect}"
+      p e
       puts e.backtrace.join("\n")
       raise
     end

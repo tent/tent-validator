@@ -148,7 +148,12 @@ module TentValidator
 
       def schema_valid?
         return true unless schema
-        JSON::Validator.fully_validate(schema, response.body, @schema_options).empty?
+        scheme_errors.empty?
+      end
+
+      def scheme_errors
+        return [] unless schema
+        @scheme_errors ||= JSON::Validator.fully_validate(schema, response.body, @schema_options)
       end
 
       def as_json(options = {})
@@ -163,7 +168,7 @@ module TentValidator
           :response_headers => response.headers,
           :response_body => response.body,
           :response_status => response.status,
-          :response_schema_errors => @schema ? JSON::Validator.fully_validate(schema, response.body, @schema_options) : [],
+          :response_schema_errors => scheme_errors,
 
           :expected_response_headers => expected_response_headers,
           :expected_response_body => expected_response_body,
