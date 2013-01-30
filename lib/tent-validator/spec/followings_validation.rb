@@ -49,8 +49,14 @@ module TentValidator
         end
       end
 
-      describe "POST /followings (when authorized)"
-        # TODO: follow validator tent entity
+      describe "POST /followings (when authorized)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        user = TentD::Model::User.generate
+        set(:user_id, user.id)
+        expect_response(:tent, :schema => :following, :status => 200, :properties => { :entity => user.entity }) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.create(user.entity)
+        end
+      end
 
       describe "POST /followings (when authorized and already following)"
 
