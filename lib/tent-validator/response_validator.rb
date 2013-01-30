@@ -1,5 +1,6 @@
 require 'tent-schemas'
 require 'json-schema'
+require 'tent-validator/json_schema_ref_lookup'
 require 'tentd/core_ext/hash/slice'
 
 module TentValidator
