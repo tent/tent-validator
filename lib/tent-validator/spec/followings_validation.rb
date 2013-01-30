@@ -31,11 +31,23 @@ module TentValidator
         end
       end
 
-      describe "OPTIONS /followings"
+      describe "OPTIONS /followings" do
+        expect_response :tent_cors, :status => 200 do
+          clients(:no_auth, :server => :remote).http.options("followings")
+        end
+      end
 
-      describe "OPTIONS /followings/(:id|:entity)"
+      describe "OPTIONS /followings/(:id|:entity)" do
+        expect_response :tent_cors, :status => 200 do
+          clients(:no_auth, :server => :remote).http.options("followings/abc")
+        end
+      end
 
-      describe "OPTIONS /followings/:id/*"
+      describe "OPTIONS /followings/:id/*" do
+        expect_response :tent_cors, :status => 200 do
+          clients(:no_auth, :server => :remote).http.options("followings/abc/cde")
+        end
+      end
 
       describe "POST /followings (when authorized)"
         # TODO: follow validator tent entity
