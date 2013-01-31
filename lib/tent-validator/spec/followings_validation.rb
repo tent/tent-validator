@@ -111,7 +111,7 @@ module TentValidator
         end
       end
 
-      describe "PUT /followings/:id (when authorized)", :depends_on => follow do
+      update_follow = describe "PUT /followings/:id (when authorized)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
         following = get(:following) || {}
         data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
@@ -119,6 +119,10 @@ module TentValidator
         expected_data.delete("groups")
         expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data, :properties_absent => [:groups]) do
           clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
+        end.after do |result|
+          if result.response.success?
+            set(:following, result.response.body)
+          end
         end
       end
 
@@ -139,13 +143,43 @@ module TentValidator
         end
       end
 
-      describe "GET /followings/:id (when authorized and has read_groups scope)"
+      describe "GET /followings/:id (when authorized and has read_groups scope)", :depends_on => update_follow do
+        auth_details = get(:full_authorization_with_groups_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['id'])
+        end
+      end
 
-      describe "GET /followings/:id (when authorized and has read_secrets scope)"
+      describe "GET /followings/:id (when authorized without secrest param and has read_secrets scope)", :depends_on => update_follow do
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.get(following['id'])
+        end
+      end
 
-      describe "GET /followings/:id (when authorized)"
+      describe "GET /followings/:id (when authorized with secrest param and has read_secrets scope)", :depends_on => update_follow do
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_present => [:mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.get(following['id'], :secrets => true)
+        end
+      end
 
-      describe "GET /followings/:id (when unauthorized)"
+      describe "GET /followings/:id (when authorized)", :depends_on => update_follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:groups, :mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['id'])
+        end
+      end
+
+      describe "GET /followings/:id (when unauthorized and following private)", :depends_on => update_follow do
+        auth_details = get(:explicit_unauthorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['id'])
+        end
+      end
 
       describe "GET /followings/:entity (when authorized and has read_groups scope)"
 
