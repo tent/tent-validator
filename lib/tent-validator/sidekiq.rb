@@ -16,6 +16,7 @@ module TentValidator
     ValidationInProgressError = Class.new(StandardError)
 
     def perform(msg)
+      TentValidator.remote_entity = msg['remote_entity']
       TentValidator.remote_server = msg['remote_server']
       TentValidator.remote_auth_details = msg['remote_auth_details'].inject({}) { |memo, (k,v)|
         memo[k.to_sym] = v

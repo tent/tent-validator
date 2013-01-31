@@ -96,12 +96,18 @@ module TentValidator
       !!@pending
     end
 
+    def default_state
+      @default_state ||= {
+        :remote_entity => TentValidator.remote_entity
+      }
+    end
+
     def set(key, value)
       @state[key.to_s] = value
     end
 
     def get(key)
-      @state[key.to_s]
+      @state[key.to_s] || default_state[key.to_sym]
     end
 
     def reset

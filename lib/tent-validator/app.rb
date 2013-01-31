@@ -78,6 +78,7 @@ module TentValidator
         validation_id = SecureRandom.uuid
         user.update(:validation_id => validation_id)
         ValidationWorker.perform_async(
+          :remote_entity => user.entity,
           :remote_server => user.primary_server,
           :remote_auth_details => user.auth_details,
           :validation_id => validation_id
