@@ -107,11 +107,18 @@ module TentValidator
         @expected_fields_include
       end
 
+      def expected_body_size
+        @options[:size]
+      end
+
       private
 
       def validate_response_body(body, options={})
         if options[:list]
           return false unless body.kind_of?(Array)
+          if options[:size]
+            return false unless body.size == options[:size]
+          end
           !body.any? { |item| !validate_response_body(item) }
         else
           return false unless body.kind_of?(Hash)
@@ -175,6 +182,7 @@ module TentValidator
           :expected_response_body => expected_response_body,
           :expected_response_body_excludes => expected_response_body_excludes,
           :expected_response_body_includes => expected_response_body_includes,
+          :expected_response_body_size => expected_response_body_size,
           :expected_response_status => expected_response_status,
           :expected_response_schema => @schema,
 
@@ -228,6 +236,13 @@ module TentValidator
         expectations.inject([]) { |memo, expectation|
           next memo unless expectation.respond_to?(:expected_body_includes)
           memo + expectation.expected_body_includes.to_a
+        }
+      end
+
+      def expected_response_body_size
+        expectations.inject(nil) { |memo, expectation|
+          next memo unless expectation.respond_to?(:expected_body_size)
+          expectation.expected_body_size
         }
       end
 
@@ -328,8 +343,8 @@ module TentValidator
     end
 
     def validate_body(options)
-      return unless options[:properties] || options[:properties_present].to_a.any? || options[:properties_absent].to_a.any? || options[:excluded_properties].to_a.any?
-      @expectations << BodyExpectation.new(options[:properties], options[:excluded_properties], options.slice(:list, :properties_present, :properties_absent))
+      return unless options[:properties] || options[:properties_present].to_a.any? || options[:properties_absent].to_a.any? || options[:excluded_properties].to_a.any? || (options[:list] && options[:size])
+      @expectations << BodyExpectation.new(options[:properties], options[:excluded_properties], options.slice(:list, :size, :properties_present, :properties_absent))
     end
   end
 end

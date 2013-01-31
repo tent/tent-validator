@@ -40,6 +40,7 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
         headers_passed: !result.failed_headers_expectations.length
         body_passed: !result.failed_body_expectations.length
         schema_passed: !result.response_schema_errors.length
+        expected_response_body_size_given: result.expected_response_body_size != null
         formatted:
           request:
             headers: "#{result.request_method} #{result.request_url}\n" + @formatHeaders(result.request_headers)

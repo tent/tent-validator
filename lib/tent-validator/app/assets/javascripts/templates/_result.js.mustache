@@ -42,6 +42,10 @@
     <pre>{{formatted.response.expected.body_includes}}</pre>
     {{/expected_response_body_includes.length}}
 
+    {{#expected_response_body_size_given}}
+    <h5>Expected to have exactly <strong>{{expected_response_body_size}}</strong> items</h5>
+    {{/expected_response_body_size_given}}
+
     <h5>Actual</h5>
     <pre>{{formatted.response.body}}</pre>
     {{/body_passed}}
