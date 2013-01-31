@@ -4,7 +4,7 @@ module TentValidator
   class AppJSONGenerator < JSONGenerator
     register :app
 
-    def simple
+    def simple(options ={})
       {
         :name => Faker::Name.name,
         :description => Faker::Lorem.paragraph,
@@ -15,7 +15,7 @@ module TentValidator
           :write_profile => Faker::Lorem.paragraph,
           :read_followings => Faker::Lorem.paragraph
         }
-      }
+      }.merge(options)
     end
 
     def with_auth

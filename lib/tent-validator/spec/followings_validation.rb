@@ -227,9 +227,49 @@ module TentValidator
         end
       end
 
-      describe "GET /followings/:id/* (when authorized)"
+      describe "GET /followings/:id/* (when authorized)", :depends_on => update_follow do
+        remote_entity = get(:remote_entity)
+        post = JSONGenerator.generate(:post, :status, :permissions => {
+          :public => false,
+          :entities => { remote_entity => true }
+        })
+        user = TentD::Model::User.first(:id => get(:user_id))
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => post) do
+          clients(:app, :server => :local, :user => get(:user_id)).post.create(post)
+        end.after do |result|
+          if result.response.success?
+            set(:post_id, result.response.body['id'])
+          end
+        end
 
-      describe "GET /followings/:id/* (when unauthorized)"
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => post.merge(:permissions => { :public => false})) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.proxy(following['id']).post.get(get(:post_id))
+        end
+      end
+
+      describe "GET /followings/:id/* (when unauthorized)", :depends_on => update_follow do
+        remote_entity = get(:remote_entity)
+        post = JSONGenerator.generate(:post, :status, :permissions => {
+          :public => false,
+          :entities => { remote_entity => true }
+        })
+        user = TentD::Model::User.first(:id => get(:user_id))
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => post) do
+          clients(:app, :server => :local, :user => get(:user_id)).post.create(post)
+        end.after do |result|
+          if result.response.success?
+            set(:post_id, result.response.body['id'])
+          end
+        end
+
+        auth_details = get(:explicit_unauthorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.proxy(following['id']).post.get(get(:post_id))
+        end
+      end
 
       describe "GET /followings (when authorized and has read_groups scope)"
 
