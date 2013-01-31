@@ -14,12 +14,20 @@ module TentValidator
           end
         end
 
-        # Create fully authorized authorization
+        # Create fully authorized authorization (with read_groups)
         authorization = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_followings write_followings read_groups ])
-        set(:full_authorization, authorization)
-        set(:full_authorization_details, authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+        set(:full_authorization_with_groups, authorization)
+        set(:full_authorization_with_groups_details, authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization)
+        end
+
+        # Create fully authorized authorization (without read_groups)
+        authorization2 = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_followings write_followings ])
+        set(:full_authorization, authorization2)
+        set(:full_authorization_details, authorization2.slice(:mac_key_id, :mac_key, :mac_algorithm))
+        expect_response(:tent, :schema => :app_authorization, :status => 200) do
+          clients(:app, :server => :remote).app.authorization.create(app[:id], authorization2)
         end
 
         # Create fully unauthorized authorization
@@ -93,7 +101,7 @@ module TentValidator
       end
 
       describe "PUT /followings/:id (when authorized and has read_groups scope)", :depends_on => follow do
-        auth_details = get(:full_authorization_details)
+        auth_details = get(:full_authorization_with_groups_details)
         following = get(:following) || {}
         data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
         expected_data = data.dup
@@ -103,7 +111,16 @@ module TentValidator
         end
       end
 
-      describe "PUT /followings/:id (when authorized)", :depends_on => follow
+      describe "PUT /followings/:id (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
+        expected_data = data.dup
+        expected_data.delete("groups")
+        expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data, :properties_absent => [:groups]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
+        end
+      end
 
       describe "PUT /followings/:id (when authorized and does not exist)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
@@ -162,7 +179,7 @@ module TentValidator
         end
 
         expect_response(:tent, :schema => :follow, :status => 200) do
-          clients(:app, :server => :local, :user => get(:user_id)).follower.get(get(:following)["remote_id"])
+          clients(:app, :server => :local, :user => get(:user_id)).follower.get(following["remote_id"])
         end
       end
 
@@ -174,7 +191,7 @@ module TentValidator
         end
 
         expect_response(:tent, :schema => :error, :status => 404) do
-          clients(:app, :server => :local, :user => get(:user_id)).follower.get(get(:following)["remote_id"])
+          clients(:app, :server => :local, :user => get(:user_id)).follower.get(following["remote_id"])
         end
       end
     end
