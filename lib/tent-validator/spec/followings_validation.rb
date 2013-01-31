@@ -92,7 +92,7 @@ module TentValidator
         end
       end
 
-      describe "PUT /followings/:id (when authorized)", :depends_on => follow do
+      describe "PUT /followings/:id (when authorized and has read_groups scope)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
         following = get(:following) || {}
         data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
@@ -102,6 +102,8 @@ module TentValidator
           clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
         end
       end
+
+      describe "PUT /followings/:id (when authorized)", :depends_on => follow
 
       describe "PUT /followings/:id (when authorized and does not exist)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
@@ -120,9 +122,17 @@ module TentValidator
         end
       end
 
+      describe "GET /followings/:id (when authorized and has read_groups scope)"
+
+      describe "GET /followings/:id (when authorized and has read_secrets scope)"
+
       describe "GET /followings/:id (when authorized)"
 
       describe "GET /followings/:id (when unauthorized)"
+
+      describe "GET /followings/:entity (when authorized and has read_groups scope)"
+
+      describe "GET /followings/:entity (when authorized and has read_secrets scope)"
 
       describe "GET /followings/:entity (when authorized)"
 
@@ -131,6 +141,10 @@ module TentValidator
       describe "GET /followings/:id/* (when authorized)"
 
       describe "GET /followings/:id/* (when unauthorized)"
+
+      describe "GET /followings (when authorized and has read_groups scope)"
+
+      describe "GET /followings (when authorized and has read_secrets scope)"
 
       describe "GET /followings (when authorized)"
 
