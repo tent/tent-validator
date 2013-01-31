@@ -49,7 +49,7 @@ module TentValidator
         end
       end
 
-      describe "POST /followings (when authorized)", :depends_on => create_authorizations do
+      follow = describe "POST /followings (when authorized)", :depends_on => create_authorizations do
         auth_details = get(:full_authorization_details)
         user = TentD::Model::User.generate
         set(:user_id, user.id)
@@ -58,9 +58,21 @@ module TentValidator
         end
       end
 
-      describe "POST /followings (when authorized and already following)"
+      describe "POST /followings (when authorized and already following)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        user = TentD::Model::User.first(:id => get(:user_id))
+        expect_response(:tent, :schema => :error, :status => 409) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.create(user.entity)
+        end
+      end
 
-      describe "POST /followings (when unauthorized)"
+      describe "POST /followings (when unauthorized)", :depends_on => create_authorizations do
+        auth_details = get(:explicit_unauthorization_details)
+        user = TentD::Model::User.generate
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.create(user.entity)
+        end
+      end
 
       describe "PUT /followings/:id (when authorized via identity)"
 
