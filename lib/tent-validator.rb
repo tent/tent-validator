@@ -38,8 +38,14 @@ module TentValidator
     @tentd ||= TentD.new(:job_backend => 'sidekiq', :database => ENV['TENT_DATABASE_URL'])
   end
 
-  def self.local_adapter
-    @local_adapter ||= [:tent_rack, tentd]
+  UserNotFoundError = Class.new(StandardError)
+  def self.local_adapter(options = {})
+    [:tent_rack, lambda { |env|
+      user = TentD::Model::User.current = TentD::Model::User.first(:id => options[:user])
+      raise UserNotFoundError.new("Expected :user => id option to be a valid user id") unless user
+      env['tent.entity'] = user.entity
+      tentd.call(env)
+    }]
   end
 
   def self.remote_adapter

@@ -119,7 +119,7 @@ module TentValidator
           :faraday_adapter => TentValidator.remote_adapter
         ))
       else
-        TentClient.new("http://example.org", :faraday_adapter => TentValidator.local_adapter)
+        TentClient.new("http://example.org", :faraday_adapter => TentValidator.local_adapter(options))
       end
     end
 
