@@ -20,7 +20,7 @@ module TentValidator
       end
 
       describe "HEAD /apps (when unauthorized)" do
-        expect_response :void, :status => 403 do
+        expect_response :status => 403 do
           clients(:no_auth, :server => :remote).http.head("apps")
         end
       end
@@ -194,7 +194,7 @@ module TentValidator
         }
         tent_expires_at = Time.now.to_i - 1
 
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           auth = {
             :mac_key_id => authorization['access_token'], :mac_algorithm => authorization['mac_algorithm'], :mac_key => authorization['mac_key']
           }
@@ -277,7 +277,7 @@ module TentValidator
       describe "DELETE /apps/:id/authorizations/:id (when authorized via scope)", :depends_on => create_authorization do
         app = get(:app)
         authorization = get(:app_authorization)
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:app, :server => :remote).app.authorization.delete(app['id'], authorization['id'])
         end
       end
@@ -292,7 +292,7 @@ module TentValidator
         auth_details = {
           :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
         }
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:custom, auth_details.merge(:server => :remote)).app.authorization.delete(app['id'], authorization[:id])
         end
       end
@@ -300,7 +300,7 @@ module TentValidator
       describe "DELETE /apps/:id/authorizations/:id (when unauthorized)", :depends_on => create_authorization do
         app = get(:app)
         authorization = get(:app_authorization)
-        expect_response(:void, :status => 403) do
+        expect_response(:status => 403) do
           clients(:no_auth, :server => :remote).app.authorization.delete(app['id'], authorization['id'])
         end
       end
@@ -353,7 +353,7 @@ module TentValidator
       #     - return 403 with valid json error response
       describe "DELETE /apps/:id (when authorized via scope)", :depends_on => import_app do
         app = get(:app)
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:app, :server => :remote).app.delete(app['id'])
         end
       end
@@ -363,7 +363,7 @@ module TentValidator
         auth_details = {
           :mac_key_id => app['mac_key_id'], :mac_algorithm => app['mac_algorithm'], :mac_key => app['mac_key']
         }
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:custom, auth_details.merge(:server => :remote)).app.delete(app['id'])
         end
       end

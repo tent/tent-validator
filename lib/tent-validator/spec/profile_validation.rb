@@ -232,7 +232,7 @@ module TentValidator
       describe "DELETE /profile/:type (when fully authorized and :type exists)", :depends_on => create_type do
         auth_details = get(:full_authorization_details)
         type = get(:other_profile_type_uri)
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:custom, auth_details.merge(:server => :remote)).profile.type.delete(type)
         end
       end
@@ -248,7 +248,7 @@ module TentValidator
       describe "DELETE /profile/:type (when explicitly authorized and :type exists)", :depends_on => update_another_type do
         auth_details = get(:explicit_authorization_details)
         type = get(:example_profile_type_uri)
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:custom, auth_details.merge(:server => :remote)).profile.type.delete(type)
         end
       end

@@ -155,7 +155,7 @@ module TentValidator
       describe "DELETE /followings/:id (when authorized)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
         following = get(:following) || {}
-        expect_response(:void, :status => 200) do
+        expect_response(:status => 200) do
           clients(:custom, auth_details.merge(:server => :remote)).following.delete(following['id'])
         end
 

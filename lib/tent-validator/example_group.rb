@@ -124,6 +124,7 @@ module TentValidator
     end
 
     def expect_response(name, options = {}, &block)
+      name, options = [:void, name] if name.kind_of?(Hash)
       expectation = Expectation.new(self, name, options, &block)
       @expectations << expectation
       expectation
