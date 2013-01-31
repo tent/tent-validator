@@ -271,13 +271,38 @@ module TentValidator
         end
       end
 
-      describe "GET /followings (when authorized and has read_groups scope)"
+      describe "GET /followings (when authorized and has read_groups scope)", :depends_on => follow do
+        auth_details = get(:full_authorization_with_groups_details)
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :properties_present => [:groups], :properties_absent => [:mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:limit => 1)
+        end
+      end
 
-      describe "GET /followings (when authorized and has read_secrets scope)"
+      describe "GET /followings (when authorized without secrets param and has read_secrets scope)", :depends_on => follow do
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :properties_absent => [:mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.list(:limit => 1)
+        end
+      end
 
-      describe "GET /followings (when authorized)"
+      describe "GET /followings (when authorized with secrets param and has read_secrets scope)", :depends_on => follow do
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :properties_present => [:mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.list(:limit => 1, :secrets => true)
+        end
+      end
 
-      describe "GET /followings (when unauthorized)"
+      describe "GET /followings (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :properties_absent => [:groups, :mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:limit => 1)
+        end
+      end
+
+      describe "GET /followings (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :permissions => { :public => true }) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list
+        end
+      end
 
       describe "HEAD /followings (when authorized)"
 
