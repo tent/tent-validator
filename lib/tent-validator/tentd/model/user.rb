@@ -37,8 +37,19 @@ module TentD
         ENV['VALIDATOR_HOST'] + path
       end
 
-      def self.create_authorization(attributes)
-        # TODO: create app and authorization
+      def app_authorization
+        @app_authorization ||= find_or_create_app_authorization
+      end
+
+      def find_or_create_app_authorization
+        name = "Local Validator"
+        if (app = apps_dataset.where(:name => name).first) && (auth = app.authorizations.first)
+          return auth
+        end
+
+        # Create app and authorization with full access
+        app = App.create(TentValidator::JSONGenerator.generate(:app, :simple, :scopes => {}, :name => name, :user_id => id))
+        AppAuthorization.create(TentValidator::JSONGenerator.generate(:app_authorization, :simple, :scopes => %w[ read_posts write_posts import_posts read_profile write_profile read_followers write_followers read_followings write_followings read_groups write_groups read_permissions write_permissions read_apps write_apps read_secrets write_secrets ], :post_types => %w[ all ], :profile_info_types => %w[ all ], :app_id => app.id))
       end
 
       def create_core_profile

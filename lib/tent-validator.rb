@@ -31,19 +31,19 @@ module TentValidator
   Faraday.register_middleware :adapter, :tent_net_http => TentNetHttpFaradayAdapter
 
   class << self
-    attr_accessor :remote_server, :remote_auth_details
+    attr_accessor :remote_entity, :remote_server, :remote_auth_details
   end
 
   def self.tentd
     @tentd ||= TentD.new(:job_backend => 'sidekiq', :database => ENV['TENT_DATABASE_URL'])
   end
 
-  UserNotFoundError = Class.new(StandardError)
-  def self.local_adapter(options = {})
+  def self.local_adapter(user)
     [:tent_rack, lambda { |env|
-      user = TentD::Model::User.current = TentD::Model::User.first(:id => options[:user])
-      raise UserNotFoundError.new("Expected :user => id option to be a valid user id") unless user
       env['tent.entity'] = user.entity
+      match = env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
+      env['PATH_INFO'] = $3
+      env['SCRIPT_NAME'] = $1
       tentd.call(env)
     }]
   end

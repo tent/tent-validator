@@ -113,13 +113,16 @@ module TentValidator
       Results.new(@expectations.map(&:run), self)
     end
 
+    UserNotFoundError = Class.new(StandardError)
     def clients(type, options = {})
       if options[:server] == :remote
         TentClient.new(TentValidator.remote_server, auth_details_for_app_type(type, options).merge(
           :faraday_adapter => TentValidator.remote_adapter
         ))
       else
-        TentClient.new("http://example.org", :faraday_adapter => TentValidator.local_adapter(options))
+        user = TentD::Model::User.current = TentD::Model::User.first(:id => options[:user])
+        raise UserNotFoundError.new("Expected :user => id option to be a valid user id") unless user
+        TentClient.new(user.entity, user.app_authorization.auth_details.merge(:faraday_adapter => TentValidator.local_adapter(user)))
       end
     end
 
