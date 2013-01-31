@@ -9,9 +9,11 @@ require 'tent-validator'
 Dir["#{File.dirname(__FILE__)}/support/*.rb"].each { |f| require f }
 
 ENV['RACK_ENV'] ||= 'test'
+ENV['VALIDATOR_HOST'] ||= 'https://example.org'
 
 require 'sequel'
 DB = Sequel.connect(ENV['TEST_DATABASE_URL'] || 'postgres://localhost/tent_server_test')
+require 'tent-validator/tentd/model/user'
 
 RSpec.configure do |config|
   config.include WebMock::API

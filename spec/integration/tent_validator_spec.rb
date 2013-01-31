@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe TentValidator do
   let(:http_stubs) { Array.new }
+  let(:user) { TentD::Model::User.generate }
 
   before do
     TentValidator.remote_server = "https://remote.example.org/tent"
@@ -56,10 +57,11 @@ describe TentValidator do
 
   it "should test successful response from local server" do
     local_validation = Class.new(TentValidator::Validation)
+    user_id = user.id
     local_validation.class_eval do
       describe "GET /" do
         expect_response :void do
-          clients(:app, :server => :local).http.get('/')
+          clients(:app, :server => :local, :user => user_id).http.get('/')
         end
       end
     end
@@ -68,11 +70,12 @@ describe TentValidator do
   end
 
   it "should test unsuccessful response from local server" do
+    user_id = user.id
     local_validation = Class.new(TentValidator::Validation)
     local_validation.class_eval do
       describe "GET /" do
         expect_response :void, :status => 200 do
-          clients(:app, :server => :local).http.get('/foo/bar/baz')
+          clients(:app, :server => :local, :user => user_id).http.get('/foo/bar/baz')
         end
       end
     end

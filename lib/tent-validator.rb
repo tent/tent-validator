@@ -42,8 +42,8 @@ module TentValidator
     [:tent_rack, lambda { |env|
       env['tent.entity'] = user.entity
       match = env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
-      env['PATH_INFO'] = $3
-      env['SCRIPT_NAME'] = $1
+      env['PATH_INFO'] = $3.to_s
+      env['SCRIPT_NAME'] = $1.to_s
       tentd.call(env)
     }]
   end

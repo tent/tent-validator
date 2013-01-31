@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe TentValidator::ExampleGroup do
   let(:example_group) { described_class.new }
+  let(:user) { TentD::Model::User.generate }
 
   context "without block" do
     it "should have pending flag" do
@@ -55,9 +56,8 @@ describe TentValidator::ExampleGroup do
     end
 
     it "should return client for local app authorization" do
-      client = example_group.clients(:app, :server => :local)
+      client = example_group.clients(:app, :server => :local, :user => user.id)
       expect(client).to be_a(TentClient)
-      expect(client.faraday_adapter).to eql(TentValidator.local_adapter)
     end
   end
 

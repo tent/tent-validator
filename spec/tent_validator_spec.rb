@@ -24,11 +24,10 @@ describe TentValidator do
 
   describe ".local_adapter" do
     it "should return tentd adapter" do
-      adapter = described_class.local_adapter
+      adapter = described_class.local_adapter(stub(:entity => 'http://example.org'))
       expect(adapter).to_not be_nil
       expect(adapter.size).to eql(2)
       expect(adapter.first.to_s).to match(/rack\Z/)
-      expect(adapter.last).to eql(described_class.tentd)
     end
   end
 end
