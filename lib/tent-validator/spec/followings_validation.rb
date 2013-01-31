@@ -70,6 +70,10 @@ module TentValidator
             set(:following, result.response.body)
           end
         end
+
+        expect_response(:tent, :schema => :follow, :status => 200) do
+          clients(:app, :server => :local, :user => user.id).follower.get(get(:following)["remote_id"])
+        end
       end
 
       describe "POST /followings (when authorized and already following)", :depends_on => follow do
