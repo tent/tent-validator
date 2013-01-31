@@ -181,13 +181,43 @@ module TentValidator
         end
       end
 
-      describe "GET /followings/:entity (when authorized and has read_groups scope)"
+      describe "GET /followings/:entity (when authorized and has read_groups scope)", :depends_on => update_follow do
+        auth_details = get(:full_authorization_with_groups_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['entity'])
+        end
+      end
 
-      describe "GET /followings/:entity (when authorized and has read_secrets scope)"
+      describe "GET /followings/:entity (when authorized without secrets param and has read_secrets scope)", :depends_on => update_follow do
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.get(following['entity'])
+        end
+      end
 
-      describe "GET /followings/:entity (when authorized)"
+      describe "GET /followings/:entity (when authorized with secrets param and has read_secrets scope)", :depends_on => update_follow do
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_present => [:mac_key_id, :mac_key, :mac_algorithm]) do
+          clients(:app, :server => :remote).following.get(following['entity'], :secrets => true)
+        end
+      end
 
-      describe "GET /followings/:entity (when unauthorized)"
+      describe "GET /followings/:entity (when authorized)", :depends_on => update_follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :following, :status => 200, :properties => following, :properties_absent => [:groups, :mac_key, :mac_key_id, :mac_algorithm]) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['entity'])
+        end
+      end
+
+      describe "GET /followings/:entity (when unauthorized and following private)", :depends_on => update_follow do
+        auth_details = get(:explicit_unauthorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get(following['entity'])
+        end
+      end
 
       describe "GET /followings/:id/* (when authorized)"
 
