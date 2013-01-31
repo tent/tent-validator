@@ -105,14 +105,20 @@ module TentValidator
 
       describe "PUT /followings/:id (when authorized and does not exist)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
-        following = get(:following) || {}
         data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
         expect_response(:tent, :schema => :error, :status => 404) do
           clients(:custom, auth_details.merge(:server => :remote)).following.update('bugus-id', data)
         end
       end
 
-      describe "PUT /followings/:id (when unauthorized)"
+      describe "PUT /followings/:id (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        following = get(:following) || {}
+        data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
+        end
+      end
 
       describe "GET /followings/:id (when authorized)"
 
