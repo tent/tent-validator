@@ -15,7 +15,7 @@ module TentValidator
         end
 
         # Create fully authorized authorization
-        authorization = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_followings write_followings ])
+        authorization = JSONGenerator.generate(:app_authorization, :with_auth, :scopes => %w[ read_followings write_followings read_groups ])
         set(:full_authorization, authorization)
         set(:full_authorization_details, authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
@@ -28,6 +28,16 @@ module TentValidator
         set(:explicit_unauthorization_details, authorization3.slice(:mac_key_id, :mac_key, :mac_algorithm))
         expect_response(:tent, :schema => :app_authorization, :status => 200) do
           clients(:app, :server => :remote).app.authorization.create(app[:id], authorization3)
+        end
+
+        # Create group
+        group_data = JSONGenerator.generate(:group, :simple)
+        expect_response(:tent, :schema => :group, :status => 200, :properties => group_data) do
+          clients(:app, :server => :remote).group.create(group_data)
+        end.after do |result|
+          if result.response.success?
+            set(:group, result.response.body)
+          end
         end
       end
 
@@ -55,6 +65,10 @@ module TentValidator
         set(:user_id, user.id)
         expect_response(:tent, :schema => :following, :status => 200, :properties => { :entity => user.entity }) do
           clients(:custom, auth_details.merge(:server => :remote)).following.create(user.entity)
+        end.after do |result|
+          if result.response.success?
+            set(:following, result.response.body)
+          end
         end
       end
 
@@ -74,23 +88,33 @@ module TentValidator
         end
       end
 
-      describe "PUT /followings/:id (when authorized via identity)"
+      describe "PUT /followings/:id (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
+        expected_data = data.dup
+        expected_data["groups"] = [get(:group).slice("id")]
+        expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
+        end
+      end
 
-      describe "PUT /followings/:id (when authorized via scope)"
-
-      describe "PUT /followings/:id (when authorized via scope and does not exist)"
+      describe "PUT /followings/:id (when authorized and does not exist)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        data = { "permissions" => { "public" => false }, "groups" => [get(:group)] }
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.update('bugus-id', data)
+        end
+      end
 
       describe "PUT /followings/:id (when unauthorized)"
 
-      describe "GET /followings/:id (when authorized via identity)"
-
-      describe "GET /followings/:id (when authorized via scope)"
+      describe "GET /followings/:id (when authorized)"
 
       describe "GET /followings/:id (when unauthorized)"
 
-      describe "GET /followings/:entity (when authorized via identity)"
-
-      describe "GET /followings/:entity (when authorized via scope)"
+      describe "GET /followings/:entity (when authorized)"
 
       describe "GET /followings/:entity (when unauthorized)"
 
@@ -106,9 +130,7 @@ module TentValidator
 
       describe "HEAD /followings (when unauthorized)"
 
-      describe "DELETE /followings/:id (when authorized via identity)"
-
-      describe "DELETE /followings/:id (when authorized via scope)"
+      describe "DELETE /followings/:id (when authorized)"
 
       describe "DELETE /followings/:id (when unauthorized)"
     end
