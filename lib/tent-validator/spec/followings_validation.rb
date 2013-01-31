@@ -173,6 +173,14 @@ module TentValidator
         end
       end
 
+      describe "GET /followings/(:id|:entity) (when authorized and does not exist)", :depends_on => update_follow do
+        auth_details = get(:full_authorization_details)
+        following = get(:following) || {}
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.get('bogus-id')
+        end
+      end
+
       describe "GET /followings/:id (when unauthorized and following private)", :depends_on => update_follow do
         auth_details = get(:explicit_unauthorization_details)
         following = get(:following) || {}
