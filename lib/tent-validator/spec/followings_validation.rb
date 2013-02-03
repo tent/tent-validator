@@ -305,6 +305,14 @@ module TentValidator
         expect_response(:tent, :schema => :following, :list => true, :status => 200, :properties_absent => [:groups, :mac_key_id, :mac_key, :mac_algorithm]) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:limit => 1)
         end
+
+        # TODO: with before_id
+        # TODO: with since_id
+        # TODO: with before_id and since_id
+        # TODO: with limit
+        # TODO: with before_id and limit
+        # TODO: with since_id and limit
+        # TODO: with before_id, since_id, and limit
       end
 
       describe "GET /followings (when unauthorized)", :depends_on => follow do
