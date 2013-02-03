@@ -1,4 +1,5 @@
 require 'tentd/core_ext/hash/slice'
+require 'faker'
 
 module TentValidator
   module Spec
@@ -80,6 +81,35 @@ module TentValidator
         end
 
         expect_response(:tent, :schema => :follow, :status => 200) do
+          clients(:app, :server => :local, :user => user.id).follower.get(get(:following)["remote_id"])
+        end
+      end
+
+      follow_explicit = describe "POST /followings (when authorized)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        user = TentD::Model::User.generate
+        set(:user_id, user.id)
+        group = get(:group)
+        data = {
+          :entity => user.entity,
+          :types => %w[ https://tent.io/types/post/status/v0.1.0 ],
+          :licenses => [Faker::Internet.url],
+          :groups => [group],
+          :permissions => {
+            :public => false,
+          }
+        }
+        expected_data = data.dup
+        expected_data[:groups] = [{ :id => group['id'] }]
+        expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.create(data[:entity], data)
+        end.after do |result|
+          if result.response.success?
+            set(:following, result.response.body)
+          end
+        end
+
+        expect_response(:tent, :schema => :follow, :status => 200, :data => data.slice(:entity, :licenses, :types).merge(:public => false)) do
           clients(:app, :server => :local, :user => user.id).follower.get(get(:following)["remote_id"])
         end
       end
