@@ -84,6 +84,16 @@ module TentValidator
         end
       end
 
+      import = describe "POST /followings (when write_secrets authorized)", :depends_on => create_authorizations do
+        core_profile = JSONGenerator.generate(:profile, :core)
+        data = JSONGenerator.generate(:following, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile })
+        expected_data = data.dup
+        [:mac_key_id, :mac_key, :mac_algorithm].each { |key| expected_data.delete(key) }
+        expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
+          clients(:app, :server => :remote).following.create(data[:entity], data)
+        end
+      end
+
       describe "POST /followings (when authorized and already following)", :depends_on => follow do
         auth_details = get(:full_authorization_details)
         user = TentD::Model::User.first(:id => get(:user_id))
