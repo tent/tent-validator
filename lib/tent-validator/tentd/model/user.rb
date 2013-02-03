@@ -64,6 +64,14 @@ module TentD
           :public => true
         )
       end
+
+      def profile
+        _user = User.current
+        User.current = self
+        profile = ProfileInfo.get_profile
+        User.current = _user
+        profile
+      end
     end
   end
 end
