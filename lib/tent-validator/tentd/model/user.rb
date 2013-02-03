@@ -9,6 +9,9 @@ module TentD
         add_column :entity, 'text'
         add_column :public_id, 'text'
       end
+
+      # Load newly created columns
+      User.send(:set_columns, User.db[:users].naked.columns)
     end
 
     # reopening class defined in tentd/model/user.rb
