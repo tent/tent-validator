@@ -81,12 +81,12 @@ module TentValidator
         end
 
         expect_response(:tent, :schema => :follow, :status => 200) do
-          clients(:app, :server => :local, :user => user.id).follower.get(get(:following)["remote_id"])
+          clients(:app, :server => :local, :user => user.id).follower.get((get(:following) || {})["remote_id"])
         end
       end
 
       follow_explicit = describe "POST /followings (when authorized)", :depends_on => create_authorizations do
-        auth_details = get(:full_authorization_details)
+        auth_details = get(:full_authorization_with_groups_details)
         user = TentD::Model::User.generate
         set(:user_id, user.id)
         group = get(:group)
@@ -110,7 +110,7 @@ module TentValidator
         end
 
         expect_response(:tent, :schema => :follow, :status => 200, :data => data.slice(:entity, :licenses, :types).merge(:public => false)) do
-          clients(:app, :server => :local, :user => user.id).follower.get(get(:following)["remote_id"])
+          clients(:app, :server => :local, :user => user.id).follower.get((get(:following) || {})["remote_id"])
         end
       end
 
