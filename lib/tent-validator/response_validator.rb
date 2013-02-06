@@ -65,7 +65,7 @@ module TentValidator
         end
 
         def match(expected, actual=@actual)
-          case expected
+          passed = case expected
           when Hash
             return false unless actual.kind_of?(Hash)
             res = true
@@ -77,9 +77,19 @@ module TentValidator
             res
           when Regexp
             !!expected.match(actual.to_s)
+          when Array
+            return false unless actual.kind_of?(Array)
+            res = true
+            expected.each do |expected_value|
+              unless actual.any? { |actual_value| match(expected_value, actual_value) }
+                res = false
+              end
+            end
+            res
           else
             expected == actual
           end
+          passed
         end
       end
 

@@ -215,28 +215,56 @@ describe TentValidator::ResponseValidator do
   end
 
   context "validate body (json)" do
-    let(:options) {
-      {
-        :properties => {
-          :id => 'foobar'
+    context 'when object' do
+      let(:options) {
+        {
+          :properties => {
+            :id => 'foobar'
+          }
         }
       }
-    }
 
-    it "exact match key when passing" do
-      validator_class = Class.new(described_class)
-      env.body = { 'id' => 'foobar' }
-      expect(
-        validator_class.new(response, block, options).validate(options)
-      ).to be_passed
+      it "exact match key when passing" do
+        validator_class = Class.new(described_class)
+        env.body = { 'id' => 'foobar' }
+        expect(
+          validator_class.new(response, block, options).validate(options)
+        ).to be_passed
+      end
+
+      it "exact match key when failing" do
+        validator_class = Class.new(described_class)
+        env.body = { 'id' => 'baz' }
+        expect(
+          validator_class.new(response, block, options).validate(options)
+        ).to_not be_passed
+      end
     end
 
-    it "exact match key when failing" do
-      validator_class = Class.new(described_class)
-      env.body = { 'id' => 'baz' }
-      expect(
-        validator_class.new(response, block, options).validate(options)
-      ).to_not be_passed
+    context 'when array of objects' do
+      let(:options) {
+        {
+          :properties => {
+            :foos => [{ :bar => 'baz' }]
+          }
+        }
+      }
+
+      it "exact match when passing" do
+        validator_class = Class.new(described_class)
+        env.body = { 'foos' => [{ 'bar' => 'baz' }, { 'nothing' => 'real' }] }
+        expect(
+          validator_class.new(response, block, options).validate(options)
+        ).to be_passed
+      end
+
+      it "exact match key when failing" do
+        validator_class = Class.new(described_class)
+        env.body = { 'foos' => [{ 'expected' => 'something else' }] }
+        expect(
+          validator_class.new(response, block, options).validate(options)
+        ).to_not be_passed
+      end
     end
   end
 
