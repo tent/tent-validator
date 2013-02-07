@@ -336,13 +336,65 @@ module TentValidator
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:limit => 1)
         end
 
-        # TODO: with before_id
-        # TODO: with since_id
-        # TODO: with before_id and since_id
-        # TODO: with limit
-        # TODO: with before_id and limit
-        # TODO: with since_id and limit
-        # TODO: with before_id, since_id, and limit
+        # import a few followings
+        followings = []
+        4.times do
+          core_profile = JSONGenerator.generate(:profile, :core)
+          data = JSONGenerator.generate(:following, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile })
+          expected_data = data.dup
+          [:mac_key_id, :mac_key, :mac_algorithm, :groups].each { |key| expected_data.delete(key) }
+          followings << expected_data
+          expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
+            clients(:app, :server => :remote).following.create(data[:entity], data)
+          end
+        end
+
+        # validate before_id param
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.last[:id] }],
+                        :list_properties_present => followings.slice(0, followings.size-1).reverse) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:before_id => followings.last[:id])
+        end
+
+        # validate since_id param
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.first[:id] }],
+                        :list_properties_present => followings.slice(1, followings.size).reverse) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id])
+        end
+
+        # validate before_id and since_id params
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
+                        :list_properties_present => followings.slice(1, followings.size-2).reverse, :size => followings.size-2) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :before_id => followings.last[:id])
+        end
+
+        # validate with limit param
+        expect_response(:tent, :schema => :following, :list => true, :status => 200, :size => 3) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:limit => 3)
+        end
+
+        # validate with before_id and limit params
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.last[:id] }],
+                        :list_properties_present => followings.slice(followings.size-3, followings.size-2).reverse, :size => 2) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:before_id => followings.last[:id], :limit => 2)
+        end
+
+        # validate since_id and limit params
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.first[:id] }],
+                        :list_properties_present => followings.slice(1, 2).reverse, :size => 2) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :limit => 2)
+        end
+
+        # validate before_id, since_id, and limit params
+        expect_response(:tent, :schema => :following, :list => true, :status => 200,
+                        :list_properties_absent => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
+                        :list_properties_present => followings.slice(1, 2).reverse, :size => 2) do
+          clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :before_id => followings.last[:id], :limit => 2)
+        end
       end
 
       describe "GET /followings (when unauthorized)", :depends_on => follow do
