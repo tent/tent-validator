@@ -404,9 +404,18 @@ module TentValidator
         end
       end
 
-      describe "HEAD /followings (when authorized)"
+      describe "HEAD /followings (with authorization)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent_head, :status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).http.head('followings')
+        end
+      end
 
-      describe "HEAD /followings (when unauthorized)"
+      describe "HEAD /followings (without authorization)" do
+        expect_response(:tent_head, :status => 200) do
+          clients(:no_auth, :server => :remote).http.head('followings')
+        end
+      end
 
       describe "DELETE /followings/:id (when unauthorized)", :depends_on => follow do
         auth_details = get(:explicit_unauthorization_details)
