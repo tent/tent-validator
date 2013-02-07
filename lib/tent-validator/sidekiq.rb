@@ -24,6 +24,7 @@ module TentValidator
       }
 
       @validation_id = msg['validation_id']
+      @remote_entity = msg['remote_entity']
       raise ValidationInProgressError if results_store.in_progress?
 
       results_store.start
@@ -39,7 +40,7 @@ module TentValidator
     private
 
     def results_store
-      @results_store ||= ValidationResultsStore.new(@validation_id)
+      @results_store ||= ValidationResultsStore.new(@validation_id, @remote_entity)
     end
 
     def example_group_completed(results)

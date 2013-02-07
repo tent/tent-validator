@@ -1,16 +1,17 @@
 module TentValidator
   class ValidationResultsStore
-    def initialize(validation_id)
+    def initialize(validation_id, remote_entity)
       @validation_id = validation_id
+      @remote_entity = remote_entity
     end
 
     def start
       reset
-      in_progress = true
+      self.in_progress = true
     end
 
     def stop
-      in_progress = false
+      self.in_progress = false
     end
 
     def in_progress=(state)
@@ -43,7 +44,7 @@ module TentValidator
     end
 
     def progress_redis_key
-      @progress_key ||= "#{results_redis_key}:running"
+      @progress_key ||= "#{results_redis_key.sub(@validation_id, @remote_entity)}:running"
     end
 
     def append_results(results)
