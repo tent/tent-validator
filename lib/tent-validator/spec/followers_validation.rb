@@ -62,6 +62,61 @@ module TentValidator
         end
       end
 
+      import = describe "POST /followers (when write_secrets and write_followers authorized)"
+
+      follow = describe "POST /followers (without authorization)", :depends_on => create_authorizations do
+        user = TentD::Model::User.generate
+        follower_id = nil
+        expect_response(:tent, :schema => :following, :status => 200, :properties_present => [:remote_id]) do
+          clients(:app, :server => :local, :user => user.id).following.create(TentValidator.remote_entity)
+        end.after do |result|
+          if result.response.success?
+            follower_id = result.response.body['remote_id']
+          end
+        end
+
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent, :schema => :follow, :status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(follower_id)
+        end
+      end
+
+      describe "GET /followers/:id (when authorized)", :depends_on => follow
+
+      describe "GET /followers/:id (when read_groups authorized)", :depends_on => follow
+
+      describe "GET /followers/:id (when unauthorized)", :depends_on => follow
+
+      describe "GET /followers/:entity (when authorized)", :depends_on => follow
+
+      describe "GET /followers/:entity (when read_groups authorized)", :depends_on => follow
+
+      describe "GET /followers/:entity (when unauthorized)", :depends_on => follow
+
+      describe "HEAD /followers (with authorization)"
+
+      describe "HEAD /followers (without authorization)"
+
+      # GET /followings
+      #
+      # - with all param combinations
+      #   - before_id
+      #   - since_id
+      #   - limit
+
+      describe "GET /followers (with authorization)"
+
+      describe "GET /followers (with authorization when read_groups authorized)"
+
+      describe "GET /followers (without authorization)"
+
+      describe "PUT /followers/:id (when authorized)"
+
+      describe "PUT /followers/:id (when unauthorized)"
+
+      describe "DELETE /followers/:id (when authorized)"
+
+      describe "DELETE /followers/:id (when unauthorized)"
     end
   end
 end
