@@ -1,12 +1,15 @@
 require "tent-validator/version"
 require "tent-validator/sidekiq"
 require "tentd"
+require "tent-validator/core_ext/hash"
 
 module TentValidator
   autoload :Validation, 'tent-validator/validation'
   autoload :ExampleGroup, 'tent-validator/example_group'
   autoload :Results, 'tent-validator/results'
   autoload :ResponseValidator, 'tent-validator/response_validator'
+  autoload :ParamValidator, 'tent-validator/param_validator'
+  autoload :MergedParamValidator, 'tent-validator/param_validator/merged'
   autoload :ExampleGroupRunner, 'tent-validator/example_group_runner'
   autoload :ValidationRunner, 'tent-validator/validation_runner'
   autoload :ValidationResultsStore, 'tent-validator/validation_results_store'
