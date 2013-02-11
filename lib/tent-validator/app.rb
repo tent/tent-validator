@@ -175,7 +175,7 @@ module TentValidator
     get '/results.json' do
       authenticate!
 
-      results_store = ValidationResultsStore.new(current_user.validation_id)
+      results_store = ValidationResultsStore.new(current_user.validation_id, current_user.entity)
       json results_store.results
     end
 
