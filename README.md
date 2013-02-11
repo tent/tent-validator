@@ -55,6 +55,36 @@ class TentResponseValidator < TentValidator::ResponseValidator
   end
 end
 
+class SinceIdParamValidator < TentValidator::ParamValidator
+  register :since_id
+
+  # when :since_id comnbined with :limit, block called with TentValidator::MergedParamValidator instance
+  with :limit do |instance|
+    instance.response_expectation_options[:body_begins_with].slice!(0, instance.client_options[:limit])
+  end
+
+  # when :since_id combined with :before_id but not :limit
+  with :before_id, :not => :limit do
+  end
+
+  # when :since_id combined with :before_id_entity but not :since_id_entity or :limit
+  with :before_id_entity, :not => [:since_id_entity, :limit] do
+  end
+
+  def generate_response_expectation_options
+    {
+      :body_begins_with => resources[1..-1],
+      :body_excludes => Array(resources.first)
+    }
+  end
+
+  def generate_client_params
+    {
+      :since_id => @resources.first['id']
+    }
+  end
+end
+
 class PostsValidation < TentValidator::Validation
   create_post = describe "POST /posts" do
     data = {} # ...
@@ -78,6 +108,14 @@ class PostsValidation < TentValidator::Validation
     expect_response(:tent, :schema => :status, :status => 200...300, :properties => { :id => get(:post_id) }) do
       clients(:app, server: :remote).post.get(get(:post_id))
     end
+  end
+
+  describe "GET /groups" do
+    resources = 4.times.map { create_resource(:group, :server => :remote) }.reverse
+    validate_params(:limit, :before_id, :since_id, :resources => resources).
+      expect_response(:tent, :schema => :group, :list => true) do |params|
+        clients(:app, :server => :remote).group.list(params)
+      end
   end
 end
 
