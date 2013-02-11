@@ -311,7 +311,7 @@ module TentValidator
 
     def self.validate(name, options={}, &block)
       raise ValidatorNotFoundError.new(name) unless ResponseValidator.validators && validator = ResponseValidator.validators[name.to_s]
-      response = yield
+      response = block.arity == 1 ? yield(options[:client_params]) : yield
       validator.new(response, block, options).validate(options)
     end
 

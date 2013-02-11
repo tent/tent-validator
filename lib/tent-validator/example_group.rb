@@ -67,6 +67,37 @@ module TentValidator
       end
     end
 
+    class ParamExpectation
+      def initialize(context, param_names, param_options)
+        @context = context
+        @param_names = param_names
+        @param_options = param_options
+      end
+
+      def expect_response(name, options = {}, &block)
+        param_name_combinations.each do |param_names|
+          validator = param_validator(param_names.first).merge(*param_names[1..-1].map { |param_name|
+            param_validator(param_name)
+          })
+          opts = validator.response_expectation_options.deep_merge(:client_params => validator.client_params).deep_merge(options)
+          @context.expect_response(name, opts, &block)
+        end
+      end
+
+      private
+
+      def param_name_combinations
+        # all combinations of param names
+        @param_names.size.times.inject([]) do |memo, i|
+          memo + @param_names.combination(i + 1).to_a
+        end
+      end
+
+      def param_validator(param_name)
+        ParamValidator.find(param_name).new(@param_options)
+      end
+    end
+
     attr_reader :description, :env, :state, :dependent_example_groups
 
     def initialize(description="", options = {}, &block)
@@ -137,6 +168,11 @@ module TentValidator
       expectation = Expectation.new(self, name, options, &block)
       @expectations << expectation
       expectation
+    end
+
+    def validate_params(*args)
+      options = args.last.kind_of?(Hash) ? args.pop : Hash.new
+      ParamExpectation.new(self, args, options)
     end
 
     private

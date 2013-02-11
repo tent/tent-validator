@@ -4,6 +4,9 @@ describe TentValidator::ExampleGroup do
   let(:example_group) { described_class.new }
   let(:user) { TentD::Model::User.generate }
 
+  let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
+  let(:response) { Faraday::Response.new(env) }
+
   context "without block" do
     it "should have pending flag" do
       example_group = described_class.new
@@ -62,8 +65,6 @@ describe TentValidator::ExampleGroup do
   end
 
   describe "#expect_response" do
-    let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
-    let(:response) { Faraday::Response.new(env) }
     before do
       foobar_schema = {
         "title" => "Foobar",
@@ -185,6 +186,106 @@ describe TentValidator::ExampleGroup do
       response.stubs(:body => [{ "baz" => "bar" }, { "bar" => "foo" }])
       res = example_group.run
       expect(res.passed?).to be_false
+    end
+  end
+
+  describe "#validate_params" do
+    it 'should use specified param validators' do
+      validator = Class.new(TentValidator::ParamValidator)
+      validator.class_eval do
+        register :blip
+
+        define_method :generate_client_params do
+          {
+            :magnification => 10
+          }
+        end
+
+        define_method :generate_response_expectation_options do
+          {
+            :properties => {
+              'foo' => 'bar'
+            }
+          }
+        end
+      end
+
+      actual_client_params = nil
+      example_group.validate_params(:blip).expect_response(:void, :properties => { 'blender' => 'carrots' }) { |params|
+        actual_client_params = params
+        response
+      }
+
+      response.stubs(:body => { 'foo' => 'bar', 'blender' => 'carrots' })
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      response.stubs(:body => { 'blender' => 'carrots' })
+      res = example_group.run
+      expect(res.passed?).to be_false
+
+      expect(actual_client_params).to eql({ :magnification => 10 })
+    end
+
+    it 'should use all specified params validators' do
+      validator = Class.new(TentValidator::ParamValidator)
+      validator.class_eval do
+        register :blip
+
+        define_method :generate_client_params do
+          {
+            :magnification => 10
+          }
+        end
+
+        define_method :generate_response_expectation_options do
+          {
+            :properties => {
+              'foo' => 'bar'
+            }
+          }
+        end
+      end
+
+      other_validator = Class.new(TentValidator::ParamValidator)
+      other_validator.class_eval do
+        register :damok
+
+        define_method :generate_client_params do
+          {
+            :ocean => true
+          }
+        end
+
+        define_method :generate_response_expectation_options do
+          {
+            :properties => {
+              'Damok' => 'on the ocean',
+              'Jilad' => 'on the ocean'
+            }
+          }
+        end
+      end
+
+      actual_client_params = nil
+      example_group.validate_params(:blip, :damok).expect_response(:void, :properties => { 'blender' => 'carrots' }) { |params|
+        actual_client_params = params
+        response
+      }
+
+      response.stubs(:body => { 'Damok' => 'on the ocean', 'Jilad' => 'on the ocean', 'foo' => 'bar', 'blender' => 'carrots' })
+      res = example_group.run
+      expect(res.passed?).to be_true
+
+      response.stubs(:body => { 'foo' => 'bar', 'blender' => 'carrots' })
+      res = example_group.run
+      expect(res.passed?).to be_false
+
+      response.stubs(:body => { 'Damok' => 'on the ocean', 'Jilad' => 'on the ocean', 'blender' => 'carrots' })
+      res = example_group.run
+      expect(res.passed?).to be_false
+
+      expect(actual_client_params).to eql({ :magnification => 10, :ocean => true })
     end
   end
 end
