@@ -351,22 +351,22 @@ module TentValidator
 
         # validate before_id param
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.last[:id] }],
-                        :list_properties_present => followings.slice(0, followings.size-1).reverse) do
+                        :body_excludes => [{ :id => followings.last[:id] }],
+                        :body_begins_with => followings.slice(0, followings.size-1).reverse) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:before_id => followings.last[:id])
         end
 
         # validate since_id param
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.first[:id] }],
-                        :list_properties_present => followings.slice(1, followings.size).reverse) do
+                        :body_excludes => [{ :id => followings.first[:id] }],
+                        :body_begins_with => followings.slice(1, followings.size).reverse) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id])
         end
 
         # validate before_id and since_id params
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
-                        :list_properties_present => followings.slice(1, followings.size-2).reverse, :size => followings.size-2) do
+                        :body_excludes => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
+                        :body_begins_with => followings.slice(1, followings.size-2).reverse, :size => followings.size-2) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :before_id => followings.last[:id])
         end
 
@@ -377,22 +377,22 @@ module TentValidator
 
         # validate with before_id and limit params
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.last[:id] }],
-                        :list_properties_present => followings.slice(followings.size-3, followings.size-2).reverse, :size => 2) do
+                        :body_excludes => [{ :id => followings.last[:id] }],
+                        :body_begins_with => followings.slice(followings.size-3, followings.size-2).reverse, :size => 2) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:before_id => followings.last[:id], :limit => 2)
         end
 
         # validate since_id and limit params
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.first[:id] }],
-                        :list_properties_present => followings.slice(1, 2).reverse, :size => 2) do
+                        :body_excludes => [{ :id => followings.first[:id] }],
+                        :body_begins_with => followings.slice(1, 2).reverse, :size => 2) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :limit => 2)
         end
 
         # validate before_id, since_id, and limit params
         expect_response(:tent, :schema => :following, :list => true, :status => 200,
-                        :list_properties_absent => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
-                        :list_properties_present => followings.slice(1, 2).reverse, :size => 2) do
+                        :body_excludes => [{ :id => followings.first[:id] }, { :id => followings.last[:id] }],
+                        :body_begins_with => followings.slice(1, 2).reverse, :size => 2) do
           clients(:custom, auth_details.merge(:server => :remote)).following.list(:since_id => followings.first[:id], :before_id => followings.last[:id], :limit => 2)
         end
       end

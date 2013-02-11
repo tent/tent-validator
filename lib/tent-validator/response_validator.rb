@@ -98,8 +98,8 @@ module TentValidator
         @expected_fields_exclude = options[:properties_absent] || expected_fields_exclude || []
         @expected_fields_exclude.each { |field| @expected_fields.delete(field); @expected_fields.delete(field.to_s) }
         @expected_fields_include = options[:properties_present] || []
-        @list_properties_absent = options[:list_properties_absent] || []
-        @list_properties_present = options[:list_properties_present] || []
+        @body_excludes = options[:body_excludes] || []
+        @body_begins_with = options[:body_begins_with] || []
         @options = options
       end
 
@@ -108,7 +108,7 @@ module TentValidator
       end
 
       def expected_body
-        @list_properties_present.any? ? @list_properties_present : @expected_fields
+        @body_begins_with.any? ? @body_begins_with : @expected_fields
       end
 
       def expected_body_excludes
@@ -131,8 +131,8 @@ module TentValidator
           if options[:size]
             return false unless body.size == options[:size]
           end
-          if @list_properties_present.any?
-            @list_properties_present.each_with_index { |p, i|
+          if @body_begins_with.any?
+            @body_begins_with.each_with_index { |p, i|
               return false unless body[i] && DeepJsonMatcher.new(body[i]).match(p)
             }
             return true
@@ -143,7 +143,7 @@ module TentValidator
           return false unless body.kind_of?(Hash)
           return false if @expected_fields_exclude.any? { |field| body.has_key?(field.to_s) }
           return false if @expected_fields_include.any? { |field| !body.has_key?(field.to_s) }
-          return false if @list_properties_absent.any? { |item| DeepJsonMatcher.new(body).match(item) }
+          return false if @body_excludes.any? { |item| DeepJsonMatcher.new(body).match(item) }
           return true if @expected_fields.keys.empty?
           DeepJsonMatcher.new(body).match(@expected_fields)
         end
@@ -367,8 +367,8 @@ module TentValidator
     end
 
     def validate_body(options)
-      return unless options[:properties] || options[:properties_present].to_a.any? || options[:properties_absent].to_a.any? || options[:excluded_properties].to_a.any? || (options[:list] && options[:size]) || (options[:list] && (options[:list_properties_present] || options[:list_properties_absent]))
-      @expectations << BodyExpectation.new(options[:properties], options[:excluded_properties], options.slice(:list, :size, :properties_present, :properties_absent, :list_properties_present, :list_properties_absent))
+      return unless options[:properties] || options[:properties_present].to_a.any? || options[:properties_absent].to_a.any? || options[:excluded_properties].to_a.any? || (options[:list] && options[:size]) || (options[:list] && (options[:body_begins_with] || options[:body_excludes]))
+      @expectations << BodyExpectation.new(options[:properties], options[:excluded_properties], options.slice(:list, :size, :properties_present, :properties_absent, :body_begins_with, :body_excludes))
     end
   end
 end

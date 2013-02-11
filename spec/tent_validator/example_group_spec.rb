@@ -159,7 +159,7 @@ describe TentValidator::ExampleGroup do
     end
 
     it "should validate list properties absent" do
-      example_group.expect_response(:void, :list => true, :list_properties_absent => [{:foo => 'bar'}]) { response }
+      example_group.expect_response(:void, :list => true, :body_excludes => [{:foo => 'bar'}]) { response }
 
       response.stubs(:body => [{ "baz" => "bar" }, { "bar" => "foo" }])
       res = example_group.run
@@ -171,7 +171,7 @@ describe TentValidator::ExampleGroup do
     end
 
     it "should validate list properties present" do
-      example_group.expect_response(:void, :list => true, :list_properties_present => [{:foo => 'bar'}, {:baz => "bar"}]) { response }
+      example_group.expect_response(:void, :list => true, :body_begins_with => [{:foo => 'bar'}, {:baz => "bar"}]) { response }
 
       response.stubs(:body => [{ "foo" => "bar" }, { "baz" => "bar" }])
       res = example_group.run
