@@ -11,6 +11,7 @@ module TentValidator
   autoload :ParamValidator, 'tent-validator/param_validator'
   autoload :MergedParamValidator, 'tent-validator/param_validator/merged'
   autoload :LimitParamValidator, 'tent-validator/param_validator/limit'
+  autoload :BeforeIdParamValidator, 'tent-validator/param_validator/before_id'
   autoload :ExampleGroupRunner, 'tent-validator/example_group_runner'
   autoload :ValidationRunner, 'tent-validator/validation_runner'
   autoload :ValidationResultsStore, 'tent-validator/validation_results_store'
