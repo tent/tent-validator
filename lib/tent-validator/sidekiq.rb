@@ -25,7 +25,7 @@ module TentValidator
 
       @validation_id = msg['validation_id']
       @remote_entity = msg['remote_entity']
-      return if results_store.in_progress?
+      return (puts "Validator already running for #{@remote_entity}!") if results_store.in_progress?
 
       results_store.start
       Spec.run do |results|

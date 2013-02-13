@@ -9,7 +9,7 @@ end
 module TentValidator
   module Spec
     def self.run(&block)
-      return unless verify_authorization
+      return (puts "Invalid app authorization for #{TentValidator.remote_entity}!") unless verify_authorization
       FollowersValidation.run(&block)
       FollowingsValidation.run(&block)
       ProfileValidation.run(&block)
