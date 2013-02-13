@@ -2,7 +2,7 @@ module TentValidator
   class SinceIdParamValidator < ParamValidator
     register :since_id
 
-    with :limit do |instance|
+    with :limit, :not => :before_id do |instance|
       instance.response_expectation_options[:body_begins_with] = instance.response_expectation_options[:body_begins_with].reverse.slice(0, instance.client_params[:limit]).reverse
     end
 
