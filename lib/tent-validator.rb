@@ -12,6 +12,7 @@ module TentValidator
   autoload :ValidationRunner, 'tent-validator/validation_runner'
   autoload :ValidationResultsStore, 'tent-validator/validation_results_store'
   autoload :JSONGenerator, 'tent-validator/json_generator'
+  autoload :ResourceFactory, 'tent-validator/resource_factory'
   autoload :Spec, 'tent-validator/spec'
   autoload :App, 'tent-validator/app'
 

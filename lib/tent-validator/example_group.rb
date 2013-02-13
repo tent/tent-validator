@@ -175,6 +175,10 @@ module TentValidator
       ParamExpectation.new(self, args, options)
     end
 
+    def create_resource(type, client_options, *args)
+      ResourceFactory.create_resource(self, client_options, type, *args)
+    end
+
     private
 
     def auth_details_for_app_type(type, options={})

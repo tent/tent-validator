@@ -337,19 +337,12 @@ module TentValidator
         end
 
         # import a few followings
-        followings = []
-        4.times do
+        followings = 4.times.map {
           core_profile = JSONGenerator.generate(:profile, :core)
-          data = JSONGenerator.generate(:following, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile })
-          expected_data = data.dup
-          [:mac_key_id, :mac_key, :mac_algorithm, :groups].each { |key| expected_data.delete(key) }
-          followings << expected_data.inject({}) { |m, (k,v)| m[k.to_s] = v; m }
-          expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
-            clients(:app, :server => :remote).following.create(data[:entity], data)
-          end
-        end
+          create_resource(:following, { :server => :remote }, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile })
+        }.reverse
 
-        validate_params(:before_id, :since_id, :limit, :resources => followings.reverse).
+        validate_params(:before_id, :since_id, :limit, :resources => followings).
           expect_response(:tent, :schema => :following, :list => true, :status => 200) do |params|
             clients(:custom, auth_details.merge(:server => :remote)).following.list(params)
           end
