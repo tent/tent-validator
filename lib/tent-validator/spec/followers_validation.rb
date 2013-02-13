@@ -62,7 +62,20 @@ module TentValidator
         end
       end
 
-      import = describe "POST /followers (when write_secrets and write_followers authorized)"
+      import = describe "POST /followers (when write_secrets and write_followers authorized)" do
+        data = JSONGenerator.generate(:follower, :with_auth)
+        expected_data = data.dup
+        %w[ mac_key_id mac_key mac_algorithm ].each { |k| expected_data.delete(k) || expected_data.delete(k.to_sym) }
+
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => expected_data) do
+          clients(:app, :server => :remote).follower.create(data)
+        end
+
+        # ensure mac auth got imported
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data) do
+          clients(:app, :server => :remote).follower.get(data[:id], :secrets => true)
+        end
+      end
 
       # create following on local server which will send request to create a follower on remote server
       follow = describe "POST /followers (without authorization)", :depends_on => create_authorizations do
