@@ -13,7 +13,7 @@ describe TentValidator::LimitParamValidator do
       validator = described_class.new(:resources => resources)
       expect(validator.client_params[:limit]).to_not be_nil
       expect(validator.client_params[:limit] > 0).to be_true
-      expect(validator.client_params[:limit] <= 15).to be_true
+      expect(validator.client_params[:limit] < 15).to be_true
       expect(validator.client_params[:limit]).to eql(validator.response_expectation_options[:size])
     end
   end

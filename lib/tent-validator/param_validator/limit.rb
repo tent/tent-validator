@@ -10,7 +10,7 @@ module TentValidator
 
     def generate_client_params
       {
-        :limit => [rand(resources.size + 1), 1].max
+        :limit => [rand(resources.size - 1), 1].max
       }
     end
   end
