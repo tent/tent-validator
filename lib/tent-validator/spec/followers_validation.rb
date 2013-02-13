@@ -64,6 +64,7 @@ module TentValidator
 
       import = describe "POST /followers (when write_secrets and write_followers authorized)"
 
+      # create following on local server which will send request to create a follower on remote server
       follow = describe "POST /followers (without authorization)", :depends_on => create_authorizations do
         user = TentD::Model::User.generate
         follower_id = nil
