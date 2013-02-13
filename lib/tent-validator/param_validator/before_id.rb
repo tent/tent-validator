@@ -6,6 +6,11 @@ module TentValidator
       instance.response_expectation_options[:body_begins_with] = instance.response_expectation_options[:body_begins_with].slice(0, instance.client_params[:limit])
     end
 
+    with :since_id do |instance|
+      instance.response_expectation_options[:body_begins_with] = instance.resources[1..-2]
+      instance.response_expectation_options[:body_excludes] = [instance.resources.first, instance.resources.last]
+    end
+
     def generate_response_expectation_options
       {
         :body_begins_with => resources[1..-1],
