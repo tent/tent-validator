@@ -146,9 +146,18 @@ module TentValidator
         end
       end
 
-      describe "HEAD /followers (with authorization)"
+      describe "HEAD /followers (with authorization)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent_head, :status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).http.head('followers')
+        end
+      end
 
-      describe "HEAD /followers (without authorization)"
+      describe "HEAD /followers (without authorization)", :depends_on => follow do
+        expect_response(:tent_head, :status => 200) do
+          clients(:no_auth, :server => :remote).http.head('followers')
+        end
+      end
 
       # GET /followings
       #
