@@ -80,32 +80,71 @@ module TentValidator
       # create following on local server which will send request to create a follower on remote server
       follow = describe "POST /followers (without authorization)", :depends_on => create_authorizations do
         user = TentD::Model::User.generate
+        set(:user_id, user.id)
         follower_id = nil
-        expect_response(:tent, :schema => :following, :status => 200, :properties_present => [:remote_id]) do
-          clients(:app, :server => :local, :user => user.id).following.create(TentValidator.remote_entity)
+        expect_response(:tent, :schema => :following, :status => 200, :properties_present => [:remote_id], :properties => { :permissions => { :public => false } }) do
+          clients(:app, :server => :local, :user => user.id).following.create(TentValidator.remote_entity, { :permissions => { :public => false } }, :secrets => true)
         end.after do |result|
           if result.response.success?
             follower_id = result.response.body['remote_id']
+            set(:follower_id, follower_id)
+            set(:follower_entity, user.entity)
+            set(:following_id, result.response.body['id'])
+            set(:following_mac, result.response.body.slice('mac_key_id', 'mac_key', 'mac_algorithm').inject({}) { |m, (k,v)| m[k.to_sym] = v; m })
           end
         end
 
         auth_details = get(:full_authorization_details)
-        expect_response(:tent, :schema => :follow, :status => 200) do
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => { :entity => user.entity, :permissions => { :public => false }}) do
           clients(:custom, auth_details.merge(:server => :remote)).follower.get(follower_id)
         end
       end
 
-      describe "GET /followers/:id (when authorized)", :depends_on => follow
+      describe "GET /followers/:id (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => { :entity => get(:follower_entity), :id => get(:follower_id), :permissions => { :public => false } }) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(get(:follower_id))
+        end
+      end
 
-      describe "GET /followers/:id (when read_groups authorized)", :depends_on => follow
+      describe "GET /followers/:id (when read_groups authorized)", :depends_on => create_authorizations do
+        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)])
 
-      describe "GET /followers/:id (when unauthorized)", :depends_on => follow
+        auth_details = get(:full_authorization_with_groups_details)
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => follower.merge('groups' => [{ :id => get(:group)['id'] }])) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(follower['id'])
+        end
+      end
 
-      describe "GET /followers/:entity (when authorized)", :depends_on => follow
+      describe "GET /followers/:id (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        expect_response(:tent, :schema => :error, :status => 404, :properties_present => [:error]) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(get(:follower_id))
+        end
+      end
 
-      describe "GET /followers/:entity (when read_groups authorized)", :depends_on => follow
+      describe "GET /followers/:entity (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => { :entity => get(:follower_entity), :id => get(:follower_id), :permissions => { :public => false } }) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(get(:follower_entity))
+        end
+      end
 
-      describe "GET /followers/:entity (when unauthorized)", :depends_on => follow
+      describe "GET /followers/:entity (when read_groups authorized)", :depends_on => follow do
+        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)])
+
+        auth_details = get(:full_authorization_with_groups_details)
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => follower.merge('groups' => [{ :id => get(:group)['id'] }])) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(follower['entity'])
+        end
+      end
+
+      describe "GET /followers/:entity (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        expect_response(:tent, :schema => :error, :status => 404, :properties_present => [:error]) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(get(:follower_entity))
+        end
+      end
 
       describe "HEAD /followers (with authorization)"
 
