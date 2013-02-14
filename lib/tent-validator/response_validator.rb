@@ -170,7 +170,7 @@ module TentValidator
 
       def schema
         return unless @schema
-        raise SchemaNotFoundError unless schema = TentSchemas[@schema]
+        raise SchemaNotFoundError.new(@schema) unless schema = TentSchemas[@schema]
         schema
       end
 
