@@ -189,8 +189,17 @@ module TentValidator
         end
       end
 
+      describe "PUT /followers/:id (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        data = {
+          :types => %w[ https://tent.io/types/post/bogus/v0.1.0 ],
+          :licenses => [Faker::Internet.url, Faker::Internet.url]
+        }
 
-      describe "PUT /followers/:id (when unauthorized)"
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.update(get(:follower_id), data)
+        end
+      end
 
       describe "DELETE /followers/:id (when authorized)"
 
