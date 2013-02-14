@@ -2,7 +2,7 @@ Dir[File.join(File.expand_path(File.dirname(__FILE__)), 'spec', 'support', '*.rb
   require file
 end
 
-%w( followers followings profile groups apps ).each do |validation_name|
+%w( posts followers followings profile groups apps ).each do |validation_name|
   require "tent-validator/spec/#{validation_name}_validation"
 end
 
@@ -10,6 +10,7 @@ module TentValidator
   module Spec
     def self.run(&block)
       return (puts "Invalid app authorization for #{TentValidator.remote_entity}!") unless verify_authorization
+      PostsValidation.run(&block)
       FollowersValidation.run(&block)
       FollowingsValidation.run(&block)
       ProfileValidation.run(&block)
