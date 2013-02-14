@@ -163,7 +163,32 @@ module TentValidator
 
       describe "GET /followers (without authorization)"
 
-      describe "PUT /followers/:id (when authorized)"
+      describe "PUT /followers/:id (when authorized via app with read_groups)", :depends_on => follow do
+        auth_details = get(:full_authorization_with_groups_details)
+        data = {
+          :groups => [get(:group)],
+          :types => %w[ https://tent.io/types/post/photo/v0.1.0 ],
+          :licenses => [Faker::Internet.url, Faker::Internet.url]
+        }
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data.merge(:id => get(:follower_id), :groups => [get(:group).slice('id')])) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.update(get(:follower_id), data)
+        end
+      end
+
+      describe "PUT /followers/:id (when authorized via identity)", :depends_on => follow do
+        data = {
+          :types => %w[ https://tent.io/types/post/essay/v0.1.0 ],
+          :licenses => [Faker::Internet.url, Faker::Internet.url]
+        }
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data.merge(:id => get(:follower_id))) do
+          clients(:custom, get(:following_mac).merge(:server => :remote)).follower.update(get(:follower_id), data)
+        end
+
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data.merge(:id => get(:follower_id))) do
+          clients(:app, :server => :remote).follower.get(get(:follower_id))
+        end
+      end
+
 
       describe "PUT /followers/:id (when unauthorized)"
 
