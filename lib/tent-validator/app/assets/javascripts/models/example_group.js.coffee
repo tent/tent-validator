@@ -22,13 +22,18 @@ TentValidator.Models.ExampleGroup = class ExampleGroupModel extends Marbles.Mode
       str += "#{k}: #{val}\n"
     str
 
+  sliceSchemaErrors: (schema_keypath, object) =>
+    paths = schema_keypath?.split('/')
+    return unless paths
+    for path in paths
+      continue unless object
+      object = object[path]
+    object
+
   formatSchemaErrors: (result) =>
     _.map(result.response_schema_errors, (error) =>
-      schema_keypath = error.match(/#\/(\S+)/)?[1]
-      if schema_keypath[0]?.match(/^\d+$/)
-        "#{error}\n\t#{JSON.stringify(result.response_body[schema_keypath[0]])}"
-      else
-        error
+      schema_keypath = error.match(/#\/(\S+)/)?[1].replace(/'$/, '')
+      "#{error}\n\t#{JSON.stringify(@sliceSchemaErrors(schema_keypath, result.response_body))}"
     ).join("\n\n")
 
   toJSON: =>
