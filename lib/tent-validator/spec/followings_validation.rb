@@ -77,11 +77,13 @@ module TentValidator
         end.after do |result|
           if result.response.success?
             set(:following, result.response.body)
+            set(:following_id, result.response.body['id'])
+            set(:follower_id, result.response.body['remote_id'])
           end
         end
 
         expect_response(:tent, :schema => :follow, :status => 200) do
-          clients(:app, :server => :local, :user => user.id).follower.get((get(:following) || {})["remote_id"])
+          clients(:app, :server => :local, :user => user.id).follower.get(get(:follower_id))
         end
       end
 
@@ -148,6 +150,29 @@ module TentValidator
         expected_data["groups"] = [get(:group).slice("id")]
         expect_response(:tent, :schema => :following, :status => 200, :properties => expected_data) do
           clients(:custom, auth_details.merge(:server => :remote)).following.update(following['id'], data)
+        end
+      end
+
+      # Updating local following types / licenses should update coresponding follower on remote server
+      describe "PUT /followers/:id via PUT /followings/:id", :depends_on => follow do
+        data = {
+          :types => %w[ https://tent.io/types/post/status/v0.1.0 ]
+        }
+        expect_response(:tent, :schema => :following, :status => 200) do
+          clients(:app, :server => :remote).following.update(get(:following_id), data)
+        end
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data) do
+          clients(:app, :server => :local, :user => get(:user_id)).follower.get(get(:follower_id))
+        end
+
+        data = {
+          :licenses => [Faker::Internet.url, Faker::Internet.url]
+        }
+        expect_response(:tent, :schema => :following, :status => 200) do
+          clients(:app, :server => :remote).following.update(get(:following_id), data)
+        end
+        expect_response(:tent, :schema => :follow, :status => 200, :properties => data) do
+          clients(:app, :server => :local, :user => get(:user_id)).follower.get(get(:follower_id))
         end
       end
 
