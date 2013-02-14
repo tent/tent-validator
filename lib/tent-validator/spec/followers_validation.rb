@@ -201,9 +201,23 @@ module TentValidator
         end
       end
 
-      describe "DELETE /followers/:id (when authorized)"
+      describe "DELETE /followers/:id (when unauthorized)", :depends_on => follow do
+        auth_details = get(:explicit_unauthorization_details)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.delete(get(:follower_id))
+        end
+      end
 
-      describe "DELETE /followers/:id (when unauthorized)"
+      describe "DELETE /followers/:id (when authorized)", :depends_on => follow do
+        auth_details = get(:full_authorization_details)
+        expect_response(:status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.delete(get(:follower_id))
+        end
+
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).follower.get(get(:follower_id))
+        end
+      end
     end
   end
 end
