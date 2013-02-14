@@ -166,11 +166,61 @@ module TentValidator
       #   - since_id
       #   - limit
 
-      describe "GET /followers (with authorization)"
+      describe "GET /followers (with authorization)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
 
-      describe "GET /followers (with authorization when read_groups authorized)"
+        # import a few followers
+        users = 4.times.map { TentD::Model::User.generate }
+        followers = users.map { |user|
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity)
+        }.reverse
 
-      describe "GET /followers (without authorization)"
+        validate_params(:before_id, :since_id, :limit, :resources => followers).
+          expect_response(:tent, :schema => :follow, :list => true, :status => 200, :properties_absent => [:mac_key_id, :mac_key, :mac_algorithm, :groups]) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).follower.list(params)
+          end
+      end
+
+      describe "GET /followers (with authorization, read_secrets, and read_groups)", :depends_on => create_authorizations do
+        # import a few followers
+        users = 4.times.map { TentD::Model::User.generate }
+        followers = users.map { |user|
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false })
+        }.reverse
+
+        validate_params(:before_id, :since_id, :limit, :resources => followers).
+          expect_response(:tent, :schema => :follow, :list => true, :status => 200, :properties_present => [:mac_key_id, :mac_key, :mac_algorithm, :groups]) do |params|
+            clients(:app, :server => :remote).follower.list(params.merge(:secrets => true))
+          end
+      end
+
+      describe "GET /followers (with authorization when read_groups authorized)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_with_groups_details)
+
+        # import a few followers
+        users = 4.times.map { TentD::Model::User.generate }
+        followers = users.map { |user|
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false })
+        }.reverse
+
+        validate_params(:before_id, :since_id, :limit, :resources => followers).
+          expect_response(:tent, :schema => :follow, :list => true, :status => 200, :properties_absent => [:mac_key_id, :mac_key, :mac_algorithm], :properties_present => [:groups]) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).follower.list(params)
+          end
+      end
+
+      describe "GET /followers (without authorization)", :depends_on => create_authorizations do
+        # import a few followers
+        users = 4.times.map { TentD::Model::User.generate }
+        followers = users.map { |user|
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => true })
+        }.reverse
+
+        validate_params(:before_id, :since_id, :limit, :resources => followers).
+          expect_response(:tent, :schema => :follow, :list => true, :status => 200, :properties_absent => [:mac_key_id, :mac_key, :mac_algorithm, :groups, :licenses, :types, :notification_path], :properties => { :permissions => { :public => true } }) do |params|
+            clients(:no_auth, :server => :remote).follower.list(params)
+          end
+      end
 
       describe "PUT /followers/:id (when authorized via app with read_groups)", :depends_on => follow do
         auth_details = get(:full_authorization_with_groups_details)
