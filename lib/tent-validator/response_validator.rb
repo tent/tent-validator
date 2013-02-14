@@ -99,7 +99,10 @@ module TentValidator
         @expected_fields_exclude.each { |field| @expected_fields.delete(field); @expected_fields.delete(field.to_s) }
         @expected_fields_include = options[:properties_present] || []
         @body_excludes = options[:body_excludes] || []
-        @body_begins_with = options[:body_begins_with] || []
+        @body_begins_with = (options[:body_begins_with] || [])
+        @body_begins_with.each do |item|
+          @expected_fields_exclude.each { |field| item.delete(field.to_sym) || item.delete(field.to_s) }
+        end
         @options = options
       end
 
