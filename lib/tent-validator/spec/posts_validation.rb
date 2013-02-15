@@ -178,7 +178,34 @@ module TentValidator
       # - published_at
       # - mentions
       # - views
-      describe "POST /posts (when not authorized)"
+      describe "POST /posts (when not authorized)", :depends_on => create_authorizations do
+        base_data = {
+          :entity => Faker::Internet.url,
+          :app => { :name => Faker::Name.name, :url => Faker::Internet.url }
+        }
+
+        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }).merge(base_data)
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
+          clients(:no_auth, :server => :remote).post.create(data)
+        end
+
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:no_auth, :server => :remote).post.create(data.merge(:entity => TentValidator.remote_entity))
+        end
+
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:no_auth, :server => :remote).post.create(data.merge(:entity => get(:follow_entity)))
+        end
+
+        photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
+        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
+        photo_attachments_embeded = photo_attachments.map do |a|
+          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
+        end
+        expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
+          clients(:no_auth, :server => :remote).post.create(photo_data, :attachments => photo_attachments)
+        end
+      end
 
       describe "GET /posts/:id (when authorized via app)"
 
