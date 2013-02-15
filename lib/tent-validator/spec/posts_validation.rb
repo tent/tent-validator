@@ -132,6 +132,28 @@ module TentValidator
         end
       end
 
+      describe "POST /posts (when authorized via app with only read_posts)", :depends_on => create_authorizations do
+        app = get(:app)
+        auth_details = get(:full_read_authorization_details)
+        base_data = {
+          :app => app.slice(:name, :url),
+          :entity => TentValidator.remote_entity
+        }
+
+        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }).merge(base_data)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
+        end
+
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data.merge(:entity => Faker::Internet.url))
+        end
+
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data.merge(:entity => get(:follow_entity)))
+        end
+      end
+
       # - following entity
       # - permissions
       # - app_name
