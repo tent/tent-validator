@@ -79,6 +79,114 @@ module TentValidator
           clients(:no_auth, :server => :remote).http.options("posts/abc/attachments/fed")
         end
       end
+
+      # - native entity only
+      # - permissions
+      # - app_name
+      # - app_url
+      # - type
+      # - licenses
+      # - content
+      # - published_at
+      # - mentions
+      # - views
+      describe "POST /posts (when authorized via app)"
+
+      # - any entity
+      # - permissions
+      # - app_name
+      # - app_url
+      # - type
+      # - licenses
+      # - content
+      # - published_at
+      # - received_at
+      # - mentions
+      # - views
+      describe "POST /posts (when authorized via app with write_secrets)"
+
+      # - following entity
+      # - permissions
+      # - app_name
+      # - app_url
+      # - type
+      # - licenses
+      # - content
+      # - published_at
+      # - mentions
+      # - views
+      describe "POST /posts (when authorized via follow relationship)"
+
+      # - any entity (except native or any following entities)
+      # - permissions
+      # - app_name
+      # - app_url
+      # - type
+      # - licenses
+      # - content
+      # - published_at
+      # - mentions
+      # - views
+      describe "POST /posts (when not authorized)"
+
+      describe "GET /posts/:id (when authorized via app)"
+
+      # 403
+      describe "GET /posts/:id (when authorized via app only for write_posts)"
+
+      # 403 if post type not authorized
+      describe "GET /posts/:id (when authorized via app for specific post type)"
+
+      describe "GET /posts/:id (when authorized via follow relationship)"
+
+      describe "GET /posts/:id (when not authorized)"
+
+      # - licenses
+      # - mentions
+      # - views
+      describe "PUT /posts/:id (when authorized via app)"
+
+      # - licenses
+      # - mentions
+      # - views
+      # 403 if post type not authorized
+      describe "PUT /posts/:id (when authorized via app for specific post type)"
+
+      # 403
+      describe "PUT /posts/:id (when authorized via app only for read_posts)"
+
+      # 403
+      describe "PUT /posts/:id (when not authorized)"
+
+      describe "DELETE /posts/:id (when authorized via app)"
+
+      # 403
+      describe "DELETE /posts/:id (when authorized via app only for read_posts)"
+
+      # 403
+      describe "DELETE /posts/:id (when not authorized)"
+
+      describe "GET /posts (when authorized via app)"
+
+      describe "GET /posts (when authorized via app only for write_posts)"
+
+      describe "GET /posts (when authorized via app for specific post type)"
+
+      describe "GET /posts (when authorized via follow relationship)"
+
+      describe "GET /posts (when not authorized)"
+
+      # TODO: GET /posts/:id/versions
+      # TODO: GET /posts/:id/attachments/:name
+      # TODO: GET /posts/:id/mentions
+      # TODO: POST /posts/:id/attachments
+      # TODO: POST /posts with attachments
+      # TODO: GET /posts/:entity/:id
+      # TODO: GET /posts/:entity/:id/attachments/:name
+      # TODO: GET /posts/:entity/:id/mentions
+      # TODO: GET /posts/:entity/:id/versions
+      # TODO: GET /notifications/:following_id
+      # TODO: POST /notifications/:following_id
     end
   end
 end
