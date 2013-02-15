@@ -174,7 +174,13 @@ module TentValidator
       def schema
         return unless @schema
         raise SchemaNotFoundError.new(@schema) unless schema = TentSchemas[@schema]
-        schema
+        if @schema =~ /\Apost_/
+          raise SchemaNotFoundError.new(:post) unless base_schema = TentSchemas[:post].dup
+          base_schema["properties"]["content"]["properties"] = schema["properties"]
+          base_schema
+        else
+          schema
+        end
       end
 
       def schema_valid?
