@@ -364,7 +364,7 @@ module TentValidator
         # import a few followings
         followings = 4.times.map {
           core_profile = JSONGenerator.generate(:profile, :core)
-          create_resource(:following, { :server => :remote }, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile })
+          create_resource(:following, { :server => :remote }, :with_auth, :groups => [{ :id => get(:group)['id'] }], :entity => core_profile["entity"], :profile => { TentD::Model::ProfileInfo::TENT_PROFILE_TYPE_URI => core_profile }).expected_data
         }.reverse
 
         validate_params(:before_id, :since_id, :limit, :resources => followings).

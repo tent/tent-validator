@@ -108,7 +108,7 @@ module TentValidator
       end
 
       describe "GET /followers/:id (when read_groups authorized)", :depends_on => create_authorizations do
-        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)])
+        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)]).expected_data
 
         auth_details = get(:full_authorization_with_groups_details)
         expect_response(:tent, :schema => :follow, :status => 200, :properties => follower.merge('groups' => [{ :id => get(:group)['id'] }])) do
@@ -131,7 +131,7 @@ module TentValidator
       end
 
       describe "GET /followers/:entity (when read_groups authorized)", :depends_on => follow do
-        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)])
+        follower = create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :groups => [get(:group)]).expected_data
 
         auth_details = get(:full_authorization_with_groups_details)
         expect_response(:tent, :schema => :follow, :status => 200, :properties => follower.merge('groups' => [{ :id => get(:group)['id'] }])) do
@@ -172,7 +172,7 @@ module TentValidator
         # import a few followers
         users = 4.times.map { TentD::Model::User.generate }
         followers = users.map { |user|
-          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity)
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity).expected_data
         }.reverse
 
         validate_params(:before_id, :since_id, :limit, :resources => followers).
@@ -185,7 +185,7 @@ module TentValidator
         # import a few followers
         users = 4.times.map { TentD::Model::User.generate }
         followers = users.map { |user|
-          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false })
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false }).data
         }.reverse
 
         validate_params(:before_id, :since_id, :limit, :resources => followers).
@@ -200,7 +200,7 @@ module TentValidator
         # import a few followers
         users = 4.times.map { TentD::Model::User.generate }
         followers = users.map { |user|
-          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false })
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => false }).expected_data
         }.reverse
 
         validate_params(:before_id, :since_id, :limit, :resources => followers).
@@ -213,7 +213,7 @@ module TentValidator
         # import a few followers
         users = 4.times.map { TentD::Model::User.generate }
         followers = users.map { |user|
-          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => true })
+          create_resource(:follower, { :server => :remote, :schema => :follow }, :with_auth, :entity => user.entity, :permissions => { :public => true }).expected_data
         }.reverse
 
         validate_params(:before_id, :since_id, :limit, :resources => followers).
