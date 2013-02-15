@@ -184,5 +184,9 @@ module TentValidator
       run_validations_for(current_user)
       redirect '/results'
     end
+
+    post '/webhooks' do
+      status 200
+    end
   end
 end
