@@ -89,13 +89,24 @@ module TentValidator
       # - mentions
       # - views
       describe "POST /posts (when authorized via app)", :depends_on => create_authorizations do
+        app = get(:app)
         auth_details = get(:full_authorization_details)
 
-        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }, :licenses => [Faker::Internet.url, Faker::Internet.url], :published_at => Time.now.to_i, :mentions => [{ :entity => Faker::Internet.url }, { :entity => Faker::Internet.url, :post => 'abc' }])
+        status_data = JSONGenerator.generate(:post, :status, :permissions => { :public => false })
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(:app => app.slice(:name, :url))) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(status_data)
+        end
 
-        app = get(:app)
-        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data.merge(:app => app.slice(:name, :url))) do
-          clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
+        custom_data = JSONGenerator.generate(:post, :custom, :permissions => { :public => false })
+        views = {
+          :soap => ['bars/soap'],
+          :candy => ['bars/candy'],
+          :bars => ['bars'],
+          :kit => ['foos/kips/kit'],
+          :variety => ['bars/candy', 'foos/kips/klop', 'foos/bar']
+        }
+        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data.merge(:app => app.slice(:name, :url))) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(custom_data.merge(:views => views))
         end
       end
 
