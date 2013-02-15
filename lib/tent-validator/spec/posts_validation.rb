@@ -93,7 +93,8 @@ module TentValidator
 
         data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }, :licenses => [Faker::Internet.url, Faker::Internet.url], :published_at => Time.now.to_i, :mentions => [{ :entity => Faker::Internet.url }, { :entity => Faker::Internet.url, :post => 'abc' }])
 
-        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
+        app = get(:app)
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data.merge(:app => app.slice(:name, :url))) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
         end
       end
