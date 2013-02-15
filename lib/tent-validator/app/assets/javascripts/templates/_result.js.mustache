@@ -28,7 +28,7 @@
 
     <h4>Body <strong>{{#body_passed}}√{{/body_passed}}{{^body_passed}}X{{/body_passed}}</strong></h4>
 
-    {{^body_passed}}
+    {{^body_and_schema_passed}}
     <h5>Expected</h5>
     <pre>{{formatted.response.expected.body}}</pre>
 
@@ -48,7 +48,7 @@
 
     <h5>Actual</h5>
     <pre>{{formatted.response.body}}</pre>
-    {{/body_passed}}
+    {{/body_and_schema_passed}}
 
     <h4>Schema <strong>{{#schema_passed}}√{{/schema_passed}}{{^schema_passed}}X{{/schema_passed}}</strong></h4>
     {{^schema_passed}}
