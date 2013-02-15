@@ -16,8 +16,14 @@ module TentValidator
         app_authorization = create_resource(:app_authorization, { :server => :remote, :client_args => [app[:id]] }, :with_auth, :scopes => %w[ read_posts ], :post_types => %w[ all ]).data
         set(:full_read_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
 
+        app_authorization = create_resource(:app_authorization, { :server => :remote, :client_args => [app[:id]] }, :with_auth, :scopes => %w[ write_posts ], :post_types => %w[ all ]).data
+        set(:full_write_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
         app_authorization = create_resource(:app_authorization, { :server => :remote, :client_args => [app[:id]] }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ https://tent.io/types/post/status/v0.1.0 ]).data
-        set(:limited_read_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+        set(:limited_status_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
+        app_authorization = create_resource(:app_authorization, { :server => :remote, :client_args => [app[:id]] }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ https://tent.io/types/post/photo/v0.1.0 ]).data
+        set(:limited_photo_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
 
         following = create_resource(:following, { :server => :remote }, :with_auth)
         set(:follow_auth_details, following.data.slice(:mac_key_id, :mac_key, :mac_algorithm))
@@ -92,20 +98,24 @@ module TentValidator
       # - published_at
       # - mentions
       # - views
-      describe "POST /posts (when authorized via app)", :depends_on => create_authorizations do
+      create_post = describe "POST /posts (when authorized via app)", :depends_on => create_authorizations do
         app = get(:app)
         auth_details = get(:full_authorization_details)
-        base_expected_data = {
+        base_data = {
           :app => app.slice(:name, :url),
           :entity => TentValidator.remote_entity
         }
 
-        status_data = JSONGenerator.generate(:post, :status, :permissions => { :public => false })
-        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(base_expected_data)) do
+        status_data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }).merge(base_data)
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(status_data)
+        end.after do |result|
+          if result.response.success?
+            set(:status_post, status_data.merge(:id => result.response.body['id']))
+          end
         end
 
-        custom_data = JSONGenerator.generate(:post, :custom, :permissions => { :public => false })
+        custom_data = JSONGenerator.generate(:post, :custom, :permissions => { :public => false }).merge(base_data)
         views = {
           :soap => ['bars/soap'],
           :candy => ['bars/candy'],
@@ -113,21 +123,21 @@ module TentValidator
           :kit => ['foos/kips/kit'],
           :variety => ['bars/candy', 'foos/kips/klop', 'foos/bar']
         }
-        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data.merge(base_expected_data)) do
+        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(custom_data.merge(:views => views))
         end
 
-        essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false })
-        expect_response(:tent, :schema => :post_essay, :status => 200, :properties => essay_data.merge(base_expected_data)) do
+        essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false }).merge(base_data)
+        expect_response(:tent, :schema => :post_essay, :status => 200, :properties => essay_data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(essay_data.merge(:entity => Faker::Internet.url))
         end
 
-        photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false})
+        photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
         photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
         photo_attachments_embeded = photo_attachments.map do |a|
           { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
         end
-        expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(base_expected_data).merge(:attachments => photo_attachments_embeded)) do
+        expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
         end
       end
@@ -164,7 +174,7 @@ module TentValidator
       # - published_at
       # - mentions
       # - views
-      describe "POST /posts (when authorized via follow relationship)", :depends_on => create_authorizations do
+      follow_create_post = describe "POST /posts (when authorized via follow relationship)", :depends_on => create_authorizations do
         auth_details = get(:follow_auth_details)
         base_data = {
           :entity => get(:follow_entity),
@@ -174,6 +184,10 @@ module TentValidator
         data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }).merge(base_data)
         expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
+        end.after do |result|
+          if result.response.success?
+            set(:status_post, data.merge(:id => result.response.body['id']))
+          end
         end
 
         expect_response(:tent, :schema => :error, :status => 403) do
@@ -229,17 +243,78 @@ module TentValidator
         end
       end
 
-      describe "GET /posts/:id (when authorized via app)"
+      describe "GET /posts/:id (when authorized via app)", :depends_on => create_post do
+        auth_details = get(:full_authorization_details)
+        post = get(:status_post)
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => post) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.get(post[:id])
+        end
+      end
 
-      # 403
-      describe "GET /posts/:id (when authorized via app only for write_posts)"
+      describe "GET /posts/:id (when authorized via app only for write_posts)", :depends_on => create_post do
+        auth_details = get(:full_write_authorization_details)
+        post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.get(post[:id])
+        end
+      end
 
-      # 403 if post type not authorized
-      describe "GET /posts/:id (when authorized via app for specific post type)"
+      # 404 if post type not authorized
+      describe "GET /posts/:id (when authorized via app for specific post type)", :depends_on => create_post do
+        post = get(:status_post)
 
-      describe "GET /posts/:id (when authorized via follow relationship)"
+        status_auth_details = get(:limited_status_authorization_details)
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => post) do
+          clients(:custom, status_auth_details.merge(:server => :remote)).post.get(post[:id])
+        end
 
-      describe "GET /posts/:id (when not authorized)"
+        photo_auth_details = get(:limited_photo_authorization_details)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, photo_auth_details.merge(:server => :remote)).post.get(post[:id])
+        end
+      end
+
+      describe "GET /posts/:id (when authorized via follow relationship)", :depends_on => follow_create_post do
+        auth_details = get(:follow_auth_details)
+
+        public_post = JSONGenerator.generate(:post, :status, :permissions => { :public => true })
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => public_post) do
+          clients(:app, :server => :remote).post.create(public_post)
+        end.after do |result|
+          if result.response.success?
+            public_post[:id] = result.response.body['id']
+          end
+        end
+
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => public_post) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.get(public_post[:id])
+        end
+
+        private_post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.get(private_post[:id])
+        end
+      end
+
+      describe "GET /posts/:id (when not authorized)", :depends_on => create_post do
+        public_post = JSONGenerator.generate(:post, :status, :permissions => { :public => true })
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => public_post) do
+          clients(:app, :server => :remote).post.create(public_post)
+        end.after do |result|
+          if result.response.success?
+            public_post[:id] = result.response.body['id']
+          end
+        end
+
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => public_post) do
+          clients(:no_auth, :server => :remote).post.get(public_post[:id])
+        end
+
+        private_post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:no_auth, :server => :remote).post.get(private_post[:id])
+        end
+      end
 
       # - licenses
       # - mentions
