@@ -18,6 +18,10 @@ module TentValidator
 
         app_authorization = create_resource(:app_authorization, { :server => :remote, :client_args => [app[:id]] }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ https://tent.io/types/post/status/v0.1.0 ]).data
         set(:limited_read_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
+        following = create_resource(:following, { :server => :remote }, :with_auth)
+        set(:follow_auth_details, following.data.slice(:mac_key_id, :mac_key, :mac_algorithm))
+        set(:follow_entity, following.data.entity)
       end
 
       describe "OPTIONS /posts" do
@@ -138,7 +142,18 @@ module TentValidator
       # - published_at
       # - mentions
       # - views
-      describe "POST /posts (when authorized via follow relationship)"
+      describe "POST /posts (when authorized via follow relationship)", :depends_on => create_authorizations do
+        auth_details = get(:follow_auth_details)
+
+        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }, :entity => get(:follow_entity), :app => { :name => Faker::Name.name, :url => Faker::Internet.url })
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
+        end
+
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data.merge(:entity => TentValidator.remote_entity))
+        end
+      end
 
       # - any entity (except native or any following entities)
       # - permissions
