@@ -144,14 +144,27 @@ module TentValidator
       # - views
       describe "POST /posts (when authorized via follow relationship)", :depends_on => create_authorizations do
         auth_details = get(:follow_auth_details)
+        base_data = {
+          :entity => get(:follow_entity),
+          :app => { :name => Faker::Name.name, :url => Faker::Internet.url }
+        }
 
-        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }, :entity => get(:follow_entity), :app => { :name => Faker::Name.name, :url => Faker::Internet.url })
+        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }).merge(base_data)
         expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
         end
 
         expect_response(:tent, :schema => :error, :status => 403) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(data.merge(:entity => TentValidator.remote_entity))
+        end
+
+        photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
+        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
+        photo_attachments_embeded = photo_attachments.map do |a|
+          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
+        end
+        expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
         end
       end
 
