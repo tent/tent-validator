@@ -82,15 +82,21 @@ module TentValidator
 
       # - native entity only
       # - permissions
-      # - app_name
-      # - app_url
       # - type
       # - licenses
       # - content
       # - published_at
       # - mentions
       # - views
-      describe "POST /posts (when authorized via app)"
+      describe "POST /posts (when authorized via app)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+
+        data = JSONGenerator.generate(:post, :status, :permissions => { :public => false }, :licenses => [Faker::Internet.url, Faker::Internet.url], :published_at => Time.now.to_i, :mentions => [{ :entity => Faker::Internet.url }, { :entity => Faker::Internet.url, :post => 'abc' }])
+
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => data) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(data)
+        end
+      end
 
       # - any entity
       # - permissions
