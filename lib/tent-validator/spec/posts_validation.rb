@@ -3,6 +3,23 @@ require 'tentd/core_ext/hash/slice'
 module TentValidator
   module Spec
     class PostsValidation < Validation
+      create_authorizations = describe "Create authorizations" do
+        app = create_resource(:app, { :server => :remote }, :with_auth)
+        set(:app, app)
+
+        app_authorization = create_resource(:app_authorization, { :server => :remote }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ all ])
+        set(:full_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
+        app_authorization = create_resource(:app_authorization, { :server => :remote }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ https://tent.io/types/post/status/v0.1.0 ])
+        set(:limited_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
+        app_authorization = create_resource(:app_authorization, { :server => :remote }, :with_auth, :scopes => %w[ read_posts ], :post_types => %w[ all ])
+        set(:full_read_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+
+        app_authorization = create_resource(:app_authorization, { :server => :remote }, :with_auth, :scopes => %w[ read_posts write_posts ], :post_types => %w[ https://tent.io/types/post/status/v0.1.0 ])
+        set(:limited_read_authorization_details, app_authorization.slice(:mac_key_id, :mac_key, :mac_algorithm))
+      end
+
       describe "OPTIONS /posts" do
         expect_response :tent_cors, :status => 200 do
           clients(:no_auth, :server => :remote).http.options("posts")
