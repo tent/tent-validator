@@ -19,7 +19,7 @@ module TentValidator
           :text => Faker::Lorem.paragraph.slice(0, 256),
           :location => {
             :type => 'Point',
-            :coordinates => [Faker::Address.longitude, Faker::Address.latitude]
+            :coordinates => [Faker::Address.longitude.to_f, Faker::Address.latitude.to_f]
           }
         }
       ).merge(options)
