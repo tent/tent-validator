@@ -91,9 +91,13 @@ module TentValidator
       describe "POST /posts (when authorized via app)", :depends_on => create_authorizations do
         app = get(:app)
         auth_details = get(:full_authorization_details)
+        base_expected_data = {
+          :app => app.slice(:name, :url),
+          :entity => TentValidator.remote_entity
+        }
 
         status_data = JSONGenerator.generate(:post, :status, :permissions => { :public => false })
-        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(:app => app.slice(:name, :url))) do
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(base_expected_data)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(status_data)
         end
 
@@ -105,23 +109,16 @@ module TentValidator
           :kit => ['foos/kips/kit'],
           :variety => ['bars/candy', 'foos/kips/klop', 'foos/bar']
         }
-        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data.merge(:app => app.slice(:name, :url))) do
+        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data.merge(base_expected_data)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(custom_data.merge(:views => views))
         end
-      end
 
-      # - any entity
-      # - permissions
-      # - app_name
-      # - app_url
-      # - type
-      # - licenses
-      # - content
-      # - published_at
-      # - received_at
-      # - mentions
-      # - views
-      describe "POST /posts (when authorized via app with write_secrets)"
+        essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false })
+        entity = Faker::Internet.url
+        expect_response(:tent, :schema => :post_essay, :status => 200, :properties => essay_data.merge(base_expected_data)) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(essay_data.merge(:entity => Faker::Internet.url))
+        end
+      end
 
       # - following entity
       # - permissions
