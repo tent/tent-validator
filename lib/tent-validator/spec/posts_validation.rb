@@ -114,9 +114,17 @@ module TentValidator
         end
 
         essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false })
-        entity = Faker::Internet.url
         expect_response(:tent, :schema => :post_essay, :status => 200, :properties => essay_data.merge(base_expected_data)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(essay_data.merge(:entity => Faker::Internet.url))
+        end
+
+        photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false})
+        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
+        photo_attachments_embeded = photo_attachments.map do |a|
+          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
+        end
+        expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(base_expected_data).merge(:attachments => photo_attachments_embeded)) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
         end
       end
 

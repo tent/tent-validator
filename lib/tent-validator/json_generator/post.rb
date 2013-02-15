@@ -68,5 +68,11 @@ module TentValidator
         }
       ).merge(options)
     end
+
+    def attachments(n=1)
+      n.times.map do |i|
+        { :category => 'photos', :filename => "fake_photo#{i}.jpg", :data => "Photo #{1} data would go here", :type => 'image/jpeg' }
+      end
+    end
   end
 end
