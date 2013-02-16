@@ -70,9 +70,14 @@ module TentValidator
     end
 
     def attachments(n=1)
-      n.times.map do |i|
+      _attachments_data = n.times.map do |i|
         { :category => 'photos', :filename => "fake_photo#{i}.jpg", :data => "Photo #{1} data would go here", :type => 'image/jpeg' }
       end
+      _embeded_attachments = _attachments_data.map do |a|
+        { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
+      end
+
+      [_attachments_data, _embeded_attachments]
     end
   end
 end

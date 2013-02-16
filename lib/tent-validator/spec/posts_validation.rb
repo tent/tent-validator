@@ -125,6 +125,10 @@ module TentValidator
         }
         expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(custom_data.merge(:views => views))
+        end.after do |result|
+          if result.response.success?
+            set(:custom_post, custom_data.merge(:id => result.response.body['id']))
+          end
         end
 
         essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false }).merge(base_data)
@@ -133,10 +137,7 @@ module TentValidator
         end
 
         photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
-        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
-        photo_attachments_embeded = photo_attachments.map do |a|
-          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
-        end
+        photo_attachments, photo_attachments_embeded = JSONGenerator.generate(:post, :attachments, 3)
         expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
         end
@@ -195,10 +196,7 @@ module TentValidator
         end
 
         photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
-        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
-        photo_attachments_embeded = photo_attachments.map do |a|
-          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
-        end
+        photo_attachments, photo_attachments_embeded = JSONGenerator.generate(:post, :attachments, 3)
         expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
         end
@@ -234,10 +232,7 @@ module TentValidator
         end
 
         photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
-        photo_attachments = JSONGenerator.generate(:post, :attachments, 3)
-        photo_attachments_embeded = photo_attachments.map do |a|
-          { :name => a[:filename], :size => a[:data].bytesize, :type => a[:type], :category => a[:category] }
-        end
+        photo_attachments, photo_attachments_embeded = JSONGenerator.generate(:post, :attachments, 3)
         expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
           clients(:no_auth, :server => :remote).post.create(photo_data, :attachments => photo_attachments)
         end
@@ -319,19 +314,62 @@ module TentValidator
       # - licenses
       # - mentions
       # - views
-      describe "PUT /posts/:id (when authorized via app)"
+      describe "PUT /posts/:id (when authorized via app)", :depends_on => create_post do
+        auth_details = get(:full_authorization_details)
+
+        status_post = get(:status_post)
+        status_data = status_post.merge(JSONGenerator.generate(:post, :status))
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(:published_at => status_post[:published_at])) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.update(status_post[:id], status_data)
+        end
+
+        custom_post = get(:custom_post)
+        custom_data = custom_post.merge(JSONGenerator.generate(:post, :custom))
+        attachments_data, attachments_embeded = JSONGenerator.generate(:post, :attachments, 4)
+        expect_response(:tent, :schema => :post, :status => 200, :properties => custom_data.merge(:attachments => attachments_embeded, :published_at => custom_post[:published_at])) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.update(custom_post[:id], custom_data, :attachments => attachments_data)
+        end
+      end
 
       # - licenses
       # - mentions
       # - views
-      # 403 if post type not authorized
-      describe "PUT /posts/:id (when authorized via app for specific post type)"
+      # 404 if post type not authorized
+      describe "PUT /posts/:id (when authorized via app for specific post type)", :depends_on => create_post do
+        auth_details = get(:limited_status_authorization_details)
+
+        status_post = get(:status_post)
+        status_data = status_post.merge(JSONGenerator.generate(:post, :status))
+        expect_response(:tent, :schema => :post_status, :status => 200, :properties => status_data.merge(:published_at => status_post[:published_at])) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.update(status_post[:id], status_data)
+        end
+
+        custom_post = get(:custom_post)
+        custom_data = custom_post.merge(JSONGenerator.generate(:post, :custom))
+        expect_response(:tent, :schema => :error, :status => 404) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.update(custom_post[:id], custom_data)
+        end
+      end
 
       # 403
-      describe "PUT /posts/:id (when authorized via app only for read_posts)"
+      describe "PUT /posts/:id (when authorized via app only for read_posts)", :depends_on => create_post do
+        auth_details = get(:full_read_authorization_details)
+
+        status_post = get(:status_post)
+        status_data = status_post.merge(JSONGenerator.generate(:post, :status))
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.update(status_post[:id], status_data)
+        end
+      end
 
       # 403
-      describe "PUT /posts/:id (when not authorized)"
+      describe "PUT /posts/:id (when not authorized)", :depends_on => create_post do
+        status_post = get(:status_post)
+        status_data = status_post.merge(JSONGenerator.generate(:post, :status))
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:not_auth, :server => :remote).post.update(status_post[:id], status_data)
+        end
+      end
 
       describe "DELETE /posts/:id (when authorized via app)"
 
