@@ -435,7 +435,51 @@ module TentValidator
         end
       end
 
-      describe "GET /posts (when authorized via app)"
+      # - validate params
+      #   - before_id
+      #   - before_id_entity (test with posts from another entity)
+      #   - since_id
+      #   - since_id_entity (test with posts from another entity)
+      #   - before_time
+      #   - since_time
+      #   - until_id
+      #   - limit
+      #   - post_types
+      #   - mentioned_entity
+      #   - mentioned_post
+      # - validate with private, public, original, non orginal posts, and combinations of these
+      describe "GET /posts (when authorized via app)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+
+        posts = 7.times.map { clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => false }, :entity => TentValidator.remote_entity)).body }.reverse.each { |post| post.merge!('permissions' => { 'public' => false }) }
+        validate_params(:before_id, :since_id, :limit, :resources => posts).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first[:type]))
+          end
+
+        validate_params(:before_time, :since_time, :limit, :resources => posts).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first[:type]))
+          end
+
+        # TODO: import 7 public original posts
+        # TODO: validate params
+
+        # TODO: import a mix of private and public original posts
+        # TODO: validate params
+
+        # TODO: import 7 private non-original posts
+        # TODO: validate params
+
+        # TODO: import 7 public non-original posts
+        # TODO: validate params
+
+        # TODO: import a mix of private and public non-original posts
+        # TODO: validate params
+
+        # TODO: import a mix of private and public original and non-original posts
+        # TODO: validate params
+      end
 
       describe "GET /posts (when authorized via app only for write_posts)"
 

@@ -12,6 +12,16 @@ module TentValidator
       }
     end
 
+    def import(type, *args)
+      send(type, *args).merge(
+        :id => random_id,
+        :app => {
+          :name => Faker::Name.name,
+          :url => Faker::Internet.url
+        }
+      )
+    end
+
     def status(options ={})
       base.merge(
         :type => "https://tent.io/types/post/status/v0.1.0",

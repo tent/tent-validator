@@ -28,6 +28,7 @@ module TentValidator
 
     def verify_resource_created
       return unless client.respond_to?(:get)
+      return unless client.method(:get).arity > 1
       _expected_data = data.slice(:mac_key_id, :mac_key, :mac_algorithm)
       _expected_data[:groups] = data[:groups].map { |g| g.slice('id') } if data[:groups]
       example_group.expect_response(:tent, :schema => schema_name, :status => 200, :properties => _expected_data) do
