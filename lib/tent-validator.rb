@@ -21,6 +21,8 @@ module TentValidator
   require 'tent-validator/param_validator/limit'
   require 'tent-validator/param_validator/before_id'
   require 'tent-validator/param_validator/since_id'
+  require 'tent-validator/param_validator/before_time'
+  require 'tent-validator/param_validator/since_time'
 
   class TentRackFaradayAdapter < Faraday::Adapter::Rack
     def call(env)
