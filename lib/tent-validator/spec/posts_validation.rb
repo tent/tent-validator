@@ -134,12 +134,20 @@ module TentValidator
         essay_data = JSONGenerator.generate(:post, :essay, :permissions => { :public => false }).merge(base_data)
         expect_response(:tent, :schema => :post_essay, :status => 200, :properties => essay_data) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(essay_data.merge(:entity => Faker::Internet.url))
+        end.after do |result|
+          if result.response.success?
+            set(:essay_post, essay_data.merge(:id => result.response.body['id']))
+          end
         end
 
         photo_data = JSONGenerator.generate(:post, :photo, :permissions => { :public => false}).merge(base_data)
         photo_attachments, photo_attachments_embeded = JSONGenerator.generate(:post, :attachments, 3)
         expect_response(:tent, :schema => :post_photo, :status => 200, :properties => photo_data.merge(:attachments => photo_attachments_embeded)) do
           clients(:custom, auth_details.merge(:server => :remote)).post.create(photo_data, :attachments => photo_attachments)
+        end.after do |result|
+          if result.response.success?
+            set(:photo_post, photo_data.merge(:id => result.response.body['id']))
+          end
         end
       end
 
@@ -371,13 +379,61 @@ module TentValidator
         end
       end
 
-      describe "DELETE /posts/:id (when authorized via app)"
+      describe "DELETE /posts/:id (when authorized via app)", :depends_on => create_post do
+        auth_details = get(:full_authorization_details)
+
+        status_post = get(:status_post)
+        expect_response(:status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(status_post[:id])
+        end
+      end
+
+      describe "DELETE /posts/:id (when authorized via app for specific post type)", :depends_on => create_post do
+        auth_details = get(:limited_photo_authorization_details)
+
+        status_post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(status_post[:id])
+        end
+
+        essay_post = get(:essay_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(essay_post[:id])
+        end
+
+        photo_post = get(:photo_post)
+        expect_response(:status => 200) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(photo_post[:id])
+        end
+      end
 
       # 403
-      describe "DELETE /posts/:id (when authorized via app only for read_posts)"
+      describe "DELETE /posts/:id (when authorized via app only for read_posts)", :depends_on => create_post do
+        auth_details = get(:full_read_authorization_details)
+
+        custom_post = get(:custom_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(custom_post[:id])
+        end
+
+        status_post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:custom, auth_details.merge(:server => :remote)).post.delete(status_post[:id])
+        end
+      end
 
       # 403
-      describe "DELETE /posts/:id (when not authorized)"
+      describe "DELETE /posts/:id (when not authorized)", :depends_on => create_post do
+        custom_post = get(:custom_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:no_auth, :server => :remote).post.delete(custom_post[:id])
+        end
+
+        status_post = get(:status_post)
+        expect_response(:tent, :schema => :error, :status => 403) do
+          clients(:no_auth, :server => :remote).post.delete(status_post[:id])
+        end
+      end
 
       describe "GET /posts (when authorized via app)"
 
