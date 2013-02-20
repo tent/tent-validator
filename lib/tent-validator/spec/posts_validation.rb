@@ -392,12 +392,12 @@ module TentValidator
         auth_details = get(:limited_photo_authorization_details)
 
         status_post = get(:status_post)
-        expect_response(:tent, :schema => :error, :status => 403) do
+        expect_response(:tent, :schema => :error, :status => 404) do
           clients(:custom, auth_details.merge(:server => :remote)).post.delete(status_post[:id])
         end
 
         essay_post = get(:essay_post)
-        expect_response(:tent, :schema => :error, :status => 403) do
+        expect_response(:tent, :schema => :error, :status => 404) do
           clients(:custom, auth_details.merge(:server => :remote)).post.delete(essay_post[:id])
         end
 
