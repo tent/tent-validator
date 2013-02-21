@@ -72,6 +72,7 @@ module TentValidator
         @context = context
         @param_names = param_names
         @param_options = param_options
+        @exclude_combinations = @param_options.delete(:not).to_a.map(&:to_a)
       end
 
       def expect_response(name, options = {}, &block)
@@ -90,6 +91,8 @@ module TentValidator
         # all combinations of param names
         @param_names.size.times.inject([]) do |memo, i|
           memo + @param_names.combination(i + 1).to_a
+        end.reject do |c|
+          @exclude_combinations.any? { |_c| (_c - c).empty? }
         end
       end
 
