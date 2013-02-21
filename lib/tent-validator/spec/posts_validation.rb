@@ -448,33 +448,71 @@ module TentValidator
       #   - mentioned_entity
       #   - mentioned_post
       # - validate with private, public, original, non orginal posts, and combinations of these
-      describe "GET /posts (when authorized via app)", :depends_on => create_authorizations do
+      describe "GET /posts (when authorized via app with original private posts)", :depends_on => create_authorizations do
         auth_details = get(:full_authorization_details)
 
-        posts = 7.times.map { sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => false }, :entity => TentValidator.remote_entity)).body }.each { |post| post.merge!('permissions' => { 'public' => false }) }
+        posts = 7.times.map { sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => false }, :entity => TentValidator.remote_entity)).body }.each { |post| post['permissions'].slice!('public') }
         validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
           expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
             clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type']))
           end
+      end
 
-        # TODO: import 7 public original posts
-        # TODO: validate params
+      describe "GET /posts (when authorized via app with original public posts)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
 
-        # TODO: import a mix of private and public original posts
-        # TODO: validate params
+        posts = 7.times.map { sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => true }, :entity => TentValidator.remote_entity)).body }.each { |post| post['permissions'].slice!('public') }
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type']))
+          end
+      end
 
-        # TODO: import 7 private non-original posts
-        # TODO: validate params
+      describe "GET /posts (when authorized via app with original public and private posts)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
 
-        # TODO: import 7 public non-original posts
-        # TODO: validate params
+        posts = 7.times.map { |n| sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => (n % 2 == 0) }, :entity => TentValidator.remote_entity)).body }.each { |post| post['permissions'].slice!('public') }
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type']))
+          end
+      end
 
-        # TODO: import a mix of private and public non-original posts
-        # TODO: validate params
+      describe "GET /posts (when authorized via app with non-original private posts)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        entity = Faker::Internet.url
+
+        posts = 7.times.map { |n| sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => false }, :entity => entity)).body }.each { |post| post['permissions'].slice!('public') }
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type'], :before_id_entity => entity, :since_id_entity => entity))
+          end
+      end
+
+      describe "GET /posts (when authorized via app with non-original public posts)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        entity = Faker::Internet.url
+
+        posts = 7.times.map { |n| sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => true }, :entity => entity)).body }.each { |post| post['permissions'].slice!('public') }
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type'], :before_id_entity => entity, :since_id_entity => entity))
+          end
+      end
+
+      describe "GET /posts (when authorized via app with non-original public and private posts)", :depends_on => create_authorizations do
+        auth_details = get(:full_authorization_details)
+        entity = Faker::Internet.url
+
+        posts = 7.times.map { |n| sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => (n % 2 == 0) }, :entity => entity)).body }.each { |post| post['permissions'].slice!('public') }
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
+          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
+            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type'], :before_id_entity => entity, :since_id_entity => entity))
+          end
+      end
 
         # TODO: import a mix of private and public original and non-original posts
         # TODO: validate params
-      end
 
       describe "GET /posts (when authorized via app only for write_posts)"
 
