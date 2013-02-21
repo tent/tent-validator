@@ -452,12 +452,7 @@ module TentValidator
         auth_details = get(:full_authorization_details)
 
         posts = 7.times.map { sleep(1); clients(:app, :server => :remote).post.create(JSONGenerator.generate(:post, :import, :status, :permissions => { :public => false }, :entity => TentValidator.remote_entity)).body }.each { |post| post.merge!('permissions' => { 'public' => false }) }
-        validate_params(:before_id, :since_id, :limit, :resources => posts.reverse).
-          expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
-            clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type']))
-          end
-
-        validate_params(:before_time, :since_time, :limit, :resources => posts.reverse).
+        validate_params(:before_id, :since_id, :before_time, :since_time, :limit, :resources => posts.reverse, :not => [[:before_id, :before_time], [:since_id, :since_time]]).
           expect_response(:tent, :schema => :post_status, :list => true, :status => 200) do |params|
             clients(:custom, auth_details.merge(:server => :remote)).post.list(params.merge(:post_types => posts.first['type']))
           end
