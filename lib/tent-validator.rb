@@ -1,6 +1,4 @@
 require "tent-validator/version"
 
-module Tent
-  module Validator
-  end
+module TentValidator
 end

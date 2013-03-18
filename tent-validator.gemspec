@@ -5,7 +5,7 @@ require 'tent-validator/version'
 
 Gem::Specification.new do |gem|
   gem.name          = "tent-validator"
-  gem.version       = Tent::Validator::VERSION
+  gem.version       = TentValidator::VERSION
   gem.authors       = ["Jesse Stuart"]
   gem.email         = ["jesse@jessestuart.ca"]
   gem.description   = %q{Tent protocol validator}

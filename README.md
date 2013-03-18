@@ -1,4 +1,4 @@
-# Tent::Validator
+# TentValidator
 
 Tent v0.3 protocol validator.
 
