@@ -18,6 +18,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_development_dependency 'rspec', '~> 2.11'
+  gem.add_development_dependency 'mocha', '0.12.6'
   gem.add_development_dependency 'bundler'
   gem.add_development_dependency 'rake'
 end
