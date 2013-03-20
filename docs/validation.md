@@ -30,6 +30,9 @@ class SomeValidator < TentValidator::Validator
         expect_response(:headers => :tent, :schema => :post_status, :status => 200) do
           expect_properties(:entity => get(:resource, :entity), :id => get(:resource, :id))
 
+          expect_property_absent('content.foobar')
+          expect_property_present('content.text')
+
           authorized_client.post.get( get(:resource, :entity), get(:resource, :id) )
         end
       end
@@ -99,6 +102,44 @@ Must be nested under `#expect_response`.
 Sets expectation for given key/value pairs to be present in response body JSON. If `list` is set to true in parent `#expect_response` options, the expectation is set for all members of the list.
 
 Setting the value of a key to a hash performs a least common match (e.g. `{ :foo => { :bar => 321 } }` will match `{ :foo => { :bar => 321, :baz => 'BIZ' }, :biz => 'BAZ' }`).
+
+### `#expect_property_absent`
+
+`#expect_property_absent(json_pointer)`
+
+Must be nested under `#expect_response`.
+
+Sets expectation for given [json pointer](http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07) to not exist.
+
+### `#expect_property_present`
+
+`#expect_property_present(json_pointer)`
+
+Must be nested under `#expect_response`.
+
+Sets expectation for given [json pointer](http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07) to exist.
+
+### `#expect_list_excludes`
+
+`#expect_list_excludes(properties, [properties, ...])`
+
+Must be nested under `#expect_response`.
+
+Only valid for list responses.
+
+Sets expectation for given set(s) of properties to not be present in response list.
+
+### `#expect_list_includes`
+
+`#expect_list_includes(properties, [properties, ...], position)`
+
+Must be nested under `#expect_response`.
+
+Only valid for list responses.
+
+Sets expectation for given set(s) of properties to be present in response list.
+
+`position` argument can be used to specify where given set(s) of properties should be matched. `:start` sets expectation that properties appear in order from the beginning of the list. `:end` sets expectation that properties appear in order at the end of list. `:anywhere` sets expectation that properties are included in list (in any order and not necessarily together). Set `position` to a hash to specify specify a specific start or end index (`:start => 3` or `:end => 5`).
 
 ### `#authorized_client`
 
