@@ -1,4 +1,4 @@
-# TentValidator::Validation
+# TentValidator::Validator
 
 ## Usage
 
