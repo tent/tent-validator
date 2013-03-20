@@ -3,7 +3,7 @@
 ## Usage
 
 ```ruby
-class SomeValidation < TentValidator::Validation
+class SomeValidator < TentValidator::Validator
 
   def create_resource
     # ...
