@@ -1,4 +1,5 @@
 require 'tent-validator/version'
+require 'faraday'
 
 module TentValidator
 
