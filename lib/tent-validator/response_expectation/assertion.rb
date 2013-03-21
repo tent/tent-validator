@@ -13,7 +13,7 @@ module TentValidator
             gsub("\\Z", "$")
           "/#{regex}/"
         else
-          value.to_s
+          value
         end
       end
 
