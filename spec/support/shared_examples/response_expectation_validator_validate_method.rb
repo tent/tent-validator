@@ -12,6 +12,6 @@ shared_examples "a response expectation validator #validate method" do
   end
 
   it "sets valid flag" do
-    expect(res[:valid]).to eql(expected_failed_assertions.empty?)
+    expect(res[:valid]).to eql(expected_diff.empty?)
   end
 end
