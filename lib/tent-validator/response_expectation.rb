@@ -4,6 +4,7 @@ module TentValidator
     require 'tent-validator/response_expectation/base_validator'
     require 'tent-validator/response_expectation/header_validator'
     require 'tent-validator/response_expectation/status_validator'
+    require 'tent-validator/response_expectation/json_validator'
 
     attr_accessor :header_validator, :status_validator
     def initialize(validator, options = {}, &block)
@@ -19,6 +20,14 @@ module TentValidator
     def initialize_status(expected_status)
       return unless expected_status
       self.status_validator = StatusValidator.new(expected_status)
+    end
+
+    def json_validators
+      @json_validators ||= []
+    end
+
+    def expect_properties(properties)
+      json_validators << JsonValidator.new(properties)
     end
   end
 end
