@@ -58,6 +58,19 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
         let(:expected_diff) { [{ :op => "replace", :path => "/Say Hello", :value => "Hello Tent!" }] }
         let(:expected_failed_assertions) { [expected_assertions.last] }
       end
+
+      context "when header missing" do
+        it_behaves_like "a response expectation validator #validate method"
+
+        before do
+          env.response_headers = {
+            "Count" => "185",
+          }
+        end
+
+        let(:expected_diff) { [{ :op => "add", :path => "/Say Hello", :value => "Hello Tent!" }] }
+        let(:expected_failed_assertions) { [expected_assertions.last] }
+      end
     end
 
     context "when expectation passes" do
