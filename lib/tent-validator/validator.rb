@@ -1,5 +1,7 @@
 module TentValidator
   class Validator
+    require 'tent-validator/validator/results'
+
     module SharedClassAndInstanceMethods
       def shared_examples
         @shared_examples ||= {}
