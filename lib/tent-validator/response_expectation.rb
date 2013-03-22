@@ -1,5 +1,6 @@
 module TentValidator
   class ResponseExpectation
+    require 'tent-validator/response_expectation/results'
     require 'tent-validator/response_expectation/assertion'
     require 'tent-validator/response_expectation/base_validator'
     require 'tent-validator/response_expectation/header_validator'
