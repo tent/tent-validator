@@ -161,26 +161,35 @@ describe TentValidator::Validator do
         child = stub
         instance.validations << child
 
-        child.expects(:run).returns([])
+        child.expects(:run).returns(stub(:results => {}))
         instance.run
       end
 
-      it "concatenates results of expectations and child validations" do
-        response_expectation = stub
-        instance.expectations << response_expectation
-
-        response_expectation_result = stub(:everything)
-        response_expectation.expects(:run).returns([response_expectation_result])
-
-        child = stub
+      it "returns validator results object" do
+        child = described_class.new("biz baz")
         instance.validations << child
 
-        child_result = stub(:everything)
-        child.expects(:run).returns([child_result])
+        child.stubs(:run).returns(stub(
+          :results => {
+            "biz baz" => {
+              :results => [
+                { :response_headers => { :valid => true } }
+              ]
+            }
+          }
+        ))
 
-        first, second = instance.run
-        expect(first).to eql(response_expectation_result)
-        expect(second).to eql(child_result)
+        res = instance.run
+        expect(res.as_json).to eql(
+          instance.name => {
+            :results => [],
+            child.name => {
+              :results => [
+                { :response_headers => { :valid => true } }
+              ]
+            }
+          }
+        )
       end
     end
   end

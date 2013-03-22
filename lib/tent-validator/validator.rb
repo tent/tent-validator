@@ -99,8 +99,13 @@ module TentValidator
         end
       end
 
-      results = self.expectations.inject([]) { |memo, expectation| memo + expectation.run }
-      results + self.validations.inject([]) { |memo, validation| memo + validation.run }
+      results = self.expectations.inject([]) do |memo, expectation|
+        memo << expectation.run
+      end
+
+      self.validations.inject(Results.new(self, results)) do |memo, validation|
+        memo.merge!(validation.run)
+      end
     end
   end
 end
