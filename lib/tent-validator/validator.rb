@@ -89,6 +89,16 @@ module TentValidator
       instance_eval(&block)
     end
 
+    def clients(type, options = {})
+      server = options.delete(:server) || :remote
+      if server == :remote
+        TentClient.new(TentValidator.remote_server_urls, auth_details_for_app_type(type, options).merge(
+          :faraday_adapter => TentValidator.remote_adapter
+        ))
+      else
+      end
+    end
+
     def expectations
       @expectations ||= []
     end
@@ -116,6 +126,19 @@ module TentValidator
 
       self.validations.inject(Results.new(self, results)) do |memo, validation|
         memo.merge!(validation.run)
+      end
+    end
+
+    private
+
+    def auth_details_for_app_type(type, options={})
+      case type
+      when :app
+        TentValidator.remote_auth_details
+      when :custom
+        options.slice(:mac_key_id, :mac_algorithm, :mac_key)
+      else
+        Hash.new
       end
     end
   end

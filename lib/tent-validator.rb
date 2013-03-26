@@ -1,6 +1,7 @@
 require 'tent-validator/version'
 require 'tent-validator/core_ext/hash/slice'
 require 'faraday'
+require 'tent-client'
 
 module TentValidator
 

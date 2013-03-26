@@ -17,8 +17,10 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
+  gem.add_runtime_dependency 'yajl-ruby'
   gem.add_runtime_dependency 'faraday', '0.8.4'
   gem.add_runtime_dependency 'json-patch'
+  gem.add_runtime_dependency 'tent-client'
 
   gem.add_development_dependency 'rspec', '~> 2.11'
   gem.add_development_dependency 'mocha', '0.12.6'
