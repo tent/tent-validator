@@ -10,6 +10,7 @@ module TentValidator
 
     attr_accessor :header_validator, :status_validator, :schema_validator
     def initialize(validator, options = {}, &block)
+      @block = block
       initialize_headers(options.delete(:headers))
       initialize_status(options.delete(:status))
       initialize_schema(options.delete(:schema))
@@ -34,8 +35,22 @@ module TentValidator
       @json_validators ||= []
     end
 
+    def expectations
+      [header_validator, status_validator, schema_validator].compact + json_validators
+    end
+
     def expect_properties(properties)
       json_validators << JsonValidator.new(properties)
+    end
+
+    def run
+      return unless @block
+      response = @block.call
+      Results.new(response, validate(response))
+    end
+
+    def validate(response)
+      expectations.map { |expectation| expectation.validate(response) }
     end
   end
 end

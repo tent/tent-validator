@@ -28,6 +28,17 @@ module TentValidator
     end
     include SharedClassAndInstanceMethods
 
+    def self.run
+      validations.inject(nil) do |memo, validation|
+        results = validation.run
+        if memo
+          memo.merge!(results)
+        else
+          results
+        end
+      end
+    end
+
     attr_reader :parent, :name, :pending
     def initialize(name, options = {}, &block)
       @parent = options.delete(:parent)
