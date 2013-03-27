@@ -92,8 +92,9 @@ module TentValidator
     def clients(type, options = {})
       server = options.delete(:server) || :remote
       if server == :remote
-        TentClient.new(TentValidator.remote_server_urls, auth_details_for_app_type(type, options).merge(
-          :faraday_adapter => TentValidator.remote_adapter
+        TentClient.new(TentValidator.remote_entity_uri, auth_details_for_app_type(type, options).merge(
+          :faraday_adapter => TentValidator.remote_adapter,
+          :server_meta => TentValidator.remote_server_meta
         ))
       else
       end

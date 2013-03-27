@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'json-patch', :git => 'git://github.com/tent/json-patch.git', :branch => 'master'
+gem 'tent-client', :git => 'git://github.com/tent/tent-client.git', :branch => '0.3'

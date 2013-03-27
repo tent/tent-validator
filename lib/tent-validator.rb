@@ -15,15 +15,15 @@ module TentValidator
   require 'tent-validator/faraday/tent_net_http_adapter'
 
   class << self
-    attr_writer :remote_auth_details, :remote_server
-    attr_reader :remote_server
+    attr_writer :remote_auth_details
+    attr_accessor :remote_server_meta, :remote_entity_uri
   end
 
   def self.setup!(options = {})
     require 'tentd'
     TentD.setup!(:database_url => options[:tent_database_url] || ENV['TENT_DATABASE_URL'])
 
-    [:remote_auth_details, :remote_server].each do |key|
+    [:remote_entity_uri, :remote_auth_details, :remote_server_meta].each do |key|
       if options.has_key?(key)
         self.send("#{key}=", options.delete(key))
       end
@@ -32,10 +32,6 @@ module TentValidator
 
   def self.remote_auth_details
     @remote_auth_details || Hash.new
-  end
-
-  def self.remote_server_urls
-    [remote_server]
   end
 
   def self.remote_adapter
