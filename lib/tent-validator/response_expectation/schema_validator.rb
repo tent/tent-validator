@@ -34,7 +34,7 @@ module TentValidator
       end
 
       def initialize_assertions(schema, parent_path = "")
-        schema["properties"].each_pair do |key, val|
+        (schema["properties"] || {}).each_pair do |key, val|
           next unless val["required"] == true
           path = [parent_path, key].join("/")
           assertions << Assertion.new(path, nil, :type => val["type"])

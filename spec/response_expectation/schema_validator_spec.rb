@@ -47,6 +47,11 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
                 }
               }
             },
+            "attributes" => {
+              "description" => "key/value pairs describing the water",
+              "type" => "object",
+              "required" => true
+            },
             "lake" => {
               "description" => "is it a lake?",
               "type" => "boolean"
@@ -77,7 +82,8 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
     let(:expected_assertions) do
       [
         { :op => "test", :path => "/water", :type => "object" },
-        { :op => "test", :path => "/water/depth", :type => "number" }
+        { :op => "test", :path => "/water/depth", :type => "number" },
+        { :op => "test", :path => "/water/attributes", :type => "object"}
       ]
     end
 
@@ -90,6 +96,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           env.body = {
             "water" => {
               "depth" => 2_000_000_000,
+              "attributes" => {
+                "foo" => "bar"
+              }
             }
           }
         end
@@ -102,6 +111,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           env.body = {
             "water" => {
               "depth" => 2_000_000_000,
+              "attributes" => {
+                "foo" => "bar"
+              },
               "coords" => {
                 "lat" => "-19.65",
                 "lng" => "86.86",
@@ -122,6 +134,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
         before do
           env.body = {
             "water" => {
+              "attributes" => {
+                "foo" => "bar"
+              },
               "coords" => {
                 "lat" => "-19.65",
                 "lng" => "86.86",
@@ -150,6 +165,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           env.body = {
             "water" => {
               "depth" => 400_000_000,
+              "attributes" => {
+                "foo" => "bar"
+              },
               "coords" => {
                 "lat" => "-19.65",
                 "lng" => "86.86",
@@ -183,6 +201,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           env.body = {
             "water" => {
               "depth" => "400_000_000",
+              "attributes" => {
+                "foo" => "bar"
+              },
               "coords" => {
                 "lat" => -19.65,
                 "lng" => "86.86",
