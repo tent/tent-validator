@@ -1,7 +1,7 @@
 module TentValidator
   class Schemas
     def self.register(schema_name, schema)
-      schemas[schema_name] = schema
+      schemas[schema_name.to_s] = schema
     end
     class << self
       alias []= register
@@ -12,7 +12,7 @@ module TentValidator
     end
 
     def self.[](schema_name)
-      schemas[schema_name]
+      schemas[schema_name.to_s]
     end
   end
 end
