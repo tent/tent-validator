@@ -19,7 +19,7 @@ module TentValidator
     require 'tent-validator/runner/cli'
 
     def self.run(&block)
-      paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '*_validator.rb'))]
+      paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
       paths.each { |path| require path }
 
       results = Results.new
