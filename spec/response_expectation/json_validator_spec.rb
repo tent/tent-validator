@@ -10,6 +10,7 @@ describe TentValidator::ResponseExpectation::JsonValidator do
   let(:block) { proc { response } }
   let(:validator) { stub(:everything) }
   let(:instance) { TentValidator::ResponseExpectation.new(validator, options, &block) }
+  let(:expectation_key) { 'response_body' }
 
   let(:res) { instance.json_validators.first.validate(response) }
 

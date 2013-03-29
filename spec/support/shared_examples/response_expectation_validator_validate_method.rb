@@ -1,4 +1,8 @@
 shared_examples "a response expectation validator #validate method" do
+  it "sets expectation key" do
+    expect(res[:key]).to eql(expectation_key)
+  end
+
   it "sets assertions" do
     expect(res[:assertions].to_a.sort_by { |h| h[:path] }).to eql(expected_assertions.sort_by { |h| h[:path] })
   end

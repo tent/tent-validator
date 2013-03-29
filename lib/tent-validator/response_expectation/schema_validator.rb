@@ -27,6 +27,7 @@ module TentValidator
         _failed_assertions = failed_assertions(response_body)
         _diff = diff(response_body, _failed_assertions)
         super.merge(
+          :key => 'response_body',
           :failed_assertions => _failed_assertions.map(&:to_hash),
           :diff => _diff,
           :valid => _diff.empty?
