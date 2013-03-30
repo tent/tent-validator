@@ -10,7 +10,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
   let(:block) { proc { response } }
   let(:validator) { stub(:everything) }
   let(:instance) { TentValidator::ResponseExpectation.new(validator, options, &block) }
-  let(:expectation_key) { 'response_headers' }
+  let(:expectation_key) { :response_headers }
 
   let(:res) { instance.header_validator.validate(response) }
 

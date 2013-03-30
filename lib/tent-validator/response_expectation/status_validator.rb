@@ -6,7 +6,7 @@ module TentValidator
         response_status = response.status
         _failed_assertions = failed_assertions(response_status)
         super.merge(
-          :key => 'response_status',
+          :key => :response_status,
           :failed_assertions => _failed_assertions.map(&:to_hash),
           :diff => diff(_failed_assertions),
           :valid => _failed_assertions.empty?

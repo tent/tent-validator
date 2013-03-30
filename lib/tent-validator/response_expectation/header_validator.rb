@@ -14,7 +14,7 @@ module TentValidator
         response_headers = response.env.response_headers
         _failed_assertions = failed_assertions(response_headers)
         super.merge(
-          :key => 'response_headers',
+          :key => :response_headers,
           :failed_assertions => _failed_assertions.map(&:to_hash),
           :diff => diff(response_headers, _failed_assertions).map(&:to_hash),
           :valid => _failed_assertions.empty?

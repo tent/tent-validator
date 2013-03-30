@@ -10,7 +10,7 @@ describe TentValidator::ResponseExpectation::StatusValidator do
   let(:block) { proc { response } }
   let(:validator) { stub(:everything) }
   let(:instance) { TentValidator::ResponseExpectation.new(validator, options, &block) }
-  let(:expectation_key) { 'response_status' }
+  let(:expectation_key) { :response_status }
 
   let(:res) { instance.status_validator.validate(response) }
 
