@@ -71,6 +71,9 @@ module TentValidator
 
       def schema_diff(schema, actual, parent_path = "")
         properties = schema["properties"]
+
+        return [] unless Hash === actual
+
         actual.inject([]) do |memo, (key, val)|
           path = [parent_path, key].join("/")
           if property = properties[key.to_s]
