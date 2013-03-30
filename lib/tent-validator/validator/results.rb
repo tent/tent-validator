@@ -1,7 +1,11 @@
+require 'tent-validator/mixins/deep_merge'
+
 module TentValidator
   class Validator
 
     class Results
+      include Mixins::DeepMerge
+
       attr_reader :name, :results
       def initialize(validator, expectations_results)
         @name = validator.name
@@ -13,7 +17,7 @@ module TentValidator
       end
 
       def merge!(other)
-        results[name].merge!(other.results)
+        deep_merge!(results[name], other.results)
         self
       end
 

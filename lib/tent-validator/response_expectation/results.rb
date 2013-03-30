@@ -1,7 +1,11 @@
+require 'tent-validator/mixins/deep_merge'
+
 module TentValidator
   class ResponseExpectation
 
     class Results
+      include Mixins::DeepMerge
+
       attr_reader :response, :results
       def initialize(response, results)
         @response, @results = response, results
@@ -9,6 +13,7 @@ module TentValidator
 
       def as_json(options = {})
         res = results.inject(Hash.new) do |memo, result|
+          result = result.dup
           deep_merge!((memo[result.delete(:key)] ||= Hash.new), result)
           memo
         end
@@ -31,27 +36,6 @@ module TentValidator
       end
 
       private
-
-      def deep_merge!(hash, *others)
-        others.each do |other|
-          other.each_pair do |key, val|
-            if hash.has_key?(key)
-              next if hash[key] == val
-              case val
-              when Hash
-                deep_merge!(hash[key], val)
-              when Array
-                hash[key].concat(val)
-              when FalseClass
-                # false always wins
-                hash[key] = val
-              end
-            else
-              hash[key] = val
-            end
-          end
-        end
-      end
 
       def parse_params(uri)
         return unless uri.query

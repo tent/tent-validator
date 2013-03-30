@@ -29,13 +29,9 @@ module TentValidator
     include SharedClassAndInstanceMethods
 
     def self.run
-      validations.inject(nil) do |memo, validation|
+      validations.inject(Results.new(Validator.new(''), [])) do |memo, validation|
         results = validation.run
-        if memo
-          memo.merge!(results)
-        else
-          results
-        end
+        memo.merge!(results)
       end
     end
 
