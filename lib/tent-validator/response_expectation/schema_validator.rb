@@ -23,7 +23,7 @@ module TentValidator
       end
 
       def validate(response)
-        response_body = response.body.to_hash
+        response_body = response.body.respond_to?(:to_hash) ? response.body.to_hash : response.body
         _failed_assertions = failed_assertions(response_body)
         _diff = diff(response_body, _failed_assertions)
         super.merge(

@@ -11,7 +11,7 @@ module TentValidator
       end
 
       def validate(response)
-        response_headers = response.env.response_headers
+        response_headers = response.env[:response_headers]
         _failed_assertions = failed_assertions(response_headers)
         super.merge(
           :key => :response_headers,
