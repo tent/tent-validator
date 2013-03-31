@@ -106,6 +106,30 @@ module TentValidator
       expectation
     end
 
+    def cache
+      @cache ||= Hash.new
+    end
+
+    def get(path)
+      if Symbol === path
+        path = "/#{path}"
+      end
+
+      pointer = JsonPatch::HashPointer.new(cache, path)
+      return unless pointer.exists?
+      pointer.value
+    end
+
+    def set(path, val)
+      if Symbol === path
+        path = "/#{path}"
+      end
+
+      pointer = JsonPatch::HashPointer.new(cache, path)
+      pointer.value = val
+      val
+    end
+
     def run
       before_hooks.each do |hook|
         if hook.respond_to?(:receiver) && hook.receiver == self
