@@ -8,7 +8,7 @@ module TentValidator
     require 'tent-validator/response_expectation/json_validator'
     require 'tent-validator/response_expectation/schema_validator'
 
-    attr_accessor :header_validator, :status_validator, :schema_validator
+    attr_accessor :header_validator, :status_validator
     def initialize(validator, options = {}, &block)
       @block = block
       initialize_headers(options.delete(:headers))
@@ -28,15 +28,19 @@ module TentValidator
 
     def initialize_schema(expected_schema)
       return unless expected_schema
-      self.schema_validator = SchemaValidator.new(expected_schema)
+      schema_validators << SchemaValidator.new(expected_schema)
     end
 
     def json_validators
       @json_validators ||= []
     end
 
+    def schema_validators
+      @schema_validators ||= []
+    end
+
     def expectations
-      [header_validator, status_validator, schema_validator].compact + json_validators
+      [header_validator, status_validator].compact + schema_validators + json_validators
     end
 
     def expect_properties(properties)

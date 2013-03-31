@@ -7,7 +7,7 @@ shared_examples "a response expectation validator #validate method" do
     expect(res[:assertions].to_a.sort_by { |h| h[:path] }).to eql(expected_assertions.sort_by { |h| h[:path] })
   end
 
-  it "sets empty diff" do
+  it "sets diff" do
     expect(res[:diff]).to eql(expected_diff)
   end
 

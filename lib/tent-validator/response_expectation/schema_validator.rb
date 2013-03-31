@@ -6,8 +6,9 @@ module TentValidator
     class SchemaValidator < BaseValidator
       SchemaNotFoundError = Class.new(StandardError)
 
-      def initialize(expected)
-        @expected = expected
+      attr_reader :root_path
+      def initialize(expected, root_path = nil)
+        @expected, @root_path = expected, root_path
 
         if Hash === expected
           schema = expected
@@ -35,6 +36,7 @@ module TentValidator
       end
 
       def initialize_assertions(schema, parent_path = "")
+        parent_path = root_path if root_path && parent_path == ""
         (schema["properties"] || {}).each_pair do |key, val|
           next unless val["required"] == true
           path = [parent_path, key].join("/")
@@ -73,6 +75,14 @@ module TentValidator
         properties = schema["properties"]
 
         return [] unless Hash === actual
+
+        if root_path && parent_path == ""
+          pointer = JsonPatch::HashPointer.new(actual, root_path)
+          return [] unless pointer.exists?
+          actual = pointer.value
+
+          parent_path = root_path
+        end
 
         actual.inject([]) do |memo, (key, val)|
           path = [parent_path, key].join("/")
