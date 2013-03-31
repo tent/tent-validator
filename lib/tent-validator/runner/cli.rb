@@ -80,6 +80,14 @@ module TentValidator
             puts actual[:response_body]
             print "\n"
 
+            puts "FAILED:"
+            r.as_json[:expected].each_pair do |key, val|
+              next if val[:valid]
+
+              puts key
+              ap val[:failed_assertions]
+            end
+
             puts "DIFF:"
             r.as_json[:expected].each_pair do |key, val|
               next if val[:valid]
