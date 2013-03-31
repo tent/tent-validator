@@ -5,3 +5,4 @@ gemspec
 
 gem 'json-patch', :git => 'git://github.com/tent/json-patch.git', :branch => 'master'
 gem 'tent-client', :git => 'git://github.com/tent/tent-client-ruby.git', :branch => '0.3'
+gem 'tent-schemas', :git => 'git://github.com/tent/tent-schemas.git', :branch => '0.3'
