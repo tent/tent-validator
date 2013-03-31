@@ -18,6 +18,8 @@ module TentValidator
           memo
         end
 
+        merge_diffs!(res)
+
         {
           :expected => res,
           :actual => {
@@ -43,6 +45,17 @@ module TentValidator
           key, value = part.split('=')
           params[key] = value
           params
+        end
+      end
+
+      def merge_diffs!(expectation_results)
+        expectation_results.each_pair do |key, results|
+          results[:diff] = results[:diff].inject({}) do |memo, diff|
+            (memo[diff[:path]] ||= []) << diff
+            memo
+          end.inject([]) do |memo, (path, diffs)|
+            memo << diffs.sort_by { |d| d[:value].to_s.size * -1 }.first
+          end.sort_by { |d| d[:path].split("/").size }
         end
       end
     end
