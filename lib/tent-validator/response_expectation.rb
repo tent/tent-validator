@@ -10,7 +10,7 @@ module TentValidator
 
     attr_accessor :header_validator, :status_validator
     def initialize(validator, options = {}, &block)
-      @block = block
+      @validator, @block = validator, block
       initialize_headers(options.delete(:headers))
       initialize_status(options.delete(:status))
       initialize_schema(options.delete(:schema))
@@ -53,12 +53,24 @@ module TentValidator
 
     def run
       return unless @block
-      response = @block.call
+      response = instance_eval(&@block)
       Results.new(response, validate(response))
     end
 
     def validate(response)
       expectations.map { |expectation| expectation.validate(response) }
+    end
+
+    def respond_to_method_missing?(method)
+      @validator.respond_to?(method)
+    end
+
+    def method_missing(method, *args, &block)
+      if respond_to_method_missing?(method)
+        @validator.send(method, *args, &block)
+      else
+        super
+      end
     end
   end
 end
