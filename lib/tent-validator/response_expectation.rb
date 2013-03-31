@@ -47,6 +47,10 @@ module TentValidator
       json_validators << JsonValidator.new(properties)
     end
 
+    def expect_schema(expected_schema, path=nil)
+      schema_validators << SchemaValidator.new(expected_schema, path)
+    end
+
     def run
       return unless @block
       response = @block.call
