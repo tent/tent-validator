@@ -115,7 +115,7 @@ module TentValidator
         path = "/#{path}"
       end
 
-      pointer = JsonPatch::HashPointer.new(cache, path)
+      pointer = JsonPointer.new(cache, path)
       return unless pointer.exists?
       pointer.value
     end
@@ -125,7 +125,7 @@ module TentValidator
         path = "/#{path}"
       end
 
-      pointer = JsonPatch::HashPointer.new(cache, path)
+      pointer = JsonPointer.new(cache, path)
       pointer.value = val
       val
     end

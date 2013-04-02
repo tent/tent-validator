@@ -1,4 +1,4 @@
-require 'json-patch/hash_pointer'
+require 'json-pointer'
 
 module TentValidator
   class ResponseExpectation
@@ -49,14 +49,14 @@ module TentValidator
 
       def failed_assertions(actual)
         assertions.select do |assertion|
-          pointer = JsonPatch::HashPointer.new(actual, assertion.path)
+          pointer = JsonPointer.new(actual, assertion.path)
           !pointer.exists? || !assertion_valid?(assertion, pointer.value)
         end
       end
 
       def diff(actual, _failed_assertions)
         _diff = _failed_assertions.inject([]) do |memo, assertion|
-          pointer = JsonPatch::HashPointer.new(actual, assertion.path)
+          pointer = JsonPointer.new(actual, assertion.path)
           if !pointer.exists?
             assertion = assertion.to_hash
             actual_value = nil
@@ -77,7 +77,7 @@ module TentValidator
         return [] unless Hash === actual
 
         if root_path && parent_path == ""
-          pointer = JsonPatch::HashPointer.new(actual, root_path)
+          pointer = JsonPointer.new(actual, root_path)
           return [] unless pointer.exists?
           actual = pointer.value
 

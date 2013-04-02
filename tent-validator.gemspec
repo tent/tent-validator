@@ -19,7 +19,7 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency 'yajl-ruby'
   gem.add_runtime_dependency 'faraday', '0.8.4'
-  gem.add_runtime_dependency 'json-patch'
+  gem.add_runtime_dependency 'json-pointer'
   gem.add_runtime_dependency 'tent-client'
   gem.add_runtime_dependency 'tent-schemas'
   gem.add_runtime_dependency 'awesome_print'
