@@ -1,3 +1,5 @@
+require 'tent-canonical-json'
+
 module TentValidator
   class Validator
     require 'tent-validator/validator/results'
@@ -128,6 +130,11 @@ module TentValidator
       pointer = JsonPointer.new(cache, path)
       pointer.value = val
       val
+    end
+
+    def generate_version_signature(post)
+      canonical_post_json = TentCanonicalJson.encode(post)
+      OpenSSL::Digest::SHA512.new.hexdigest(canonical_post_json).byteslice(0, 32).unpack("H*").first
     end
 
     def run

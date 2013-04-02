@@ -4,5 +4,6 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'json-pointer', :git => 'git://github.com/tent/json-pointer-ruby.git', :branch => 'master'
+gem 'tent-canonical-json', :git => 'git://github.com/tent/tent-canonical-json-ruby.git', :branch => 'master'
 gem 'tent-client', :git => 'git://github.com/tent/tent-client-ruby.git', :branch => '0.3'
 gem 'tent-schemas', :git => 'git://github.com/tent/tent-schemas.git', :branch => '0.3'

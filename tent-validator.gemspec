@@ -22,6 +22,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'json-pointer'
   gem.add_runtime_dependency 'tent-client'
   gem.add_runtime_dependency 'tent-schemas'
+  gem.add_runtime_dependency 'tent-canonical-json'
   gem.add_runtime_dependency 'awesome_print'
 
   gem.add_development_dependency 'rspec', '~> 2.11'

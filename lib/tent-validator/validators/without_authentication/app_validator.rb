@@ -35,7 +35,13 @@ module TentValidator
               expect_properties(data)
               expect_schema(:post_app, "/content")
 
-              clients(:no_auth, :server => :remote).post.create(data)
+              res = clients(:no_auth, :server => :remote).post.create(data)
+
+              if Hash === res.body
+                expect_properties(:version => { :id => generate_version_signature(res.body) })
+              end
+
+              res
             end
           end
         end
