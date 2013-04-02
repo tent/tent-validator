@@ -6,21 +6,18 @@ require 'support/shared_examples/response_expectation_validator_validate_method'
 describe TentValidator::ResponseExpectation::HeaderValidator do
   let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
   let(:response) { Faraday::Response.new(env) }
-  let(:options) { Hash.new }
   let(:block) { proc { response } }
   let(:validator) { stub(:everything) }
-  let(:instance) { TentValidator::ResponseExpectation.new(validator, options, &block) }
+  let(:instance) { described_class.new(expected) }
   let(:expectation_key) { :response_headers }
 
-  let(:res) { instance.header_validator.validate(response) }
+  let(:res) { instance.validate(response) }
 
   describe "#validate" do
-    let(:options) do
+    let(:expected) do
       {
-        :headers => {
-          "Count" => /\A\d+\Z/,
-          "Say Hello" => "Hello Tent!"
-        }
+        "Count" => /\A\d+\Z/,
+        "Say Hello" => "Hello Tent!"
       }
     end
 
