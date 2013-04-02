@@ -25,8 +25,14 @@ module TentValidator
         set(:app_post, data)
       end
 
+      def invalidate_app_post
+        data = get(:app_post)
+        data[:content][:extra_member] = "I shouldn't be here!"
+      end
+
       describe "POST /posts" do
         context "without authentication" do
+
           context "when app registration post", :before => :generate_app_post do
             expect_response(:headers => :tent, :status => 200, :schema => :post) do
               data = get(:app_post)
@@ -43,7 +49,15 @@ module TentValidator
 
               res
             end
+
+            context "with invalid attributes", :before => :invalidate_app_post do
+              expect_response(:headers => :tent, :status => 422, :schema => :error) do
+                data = get(:app_post)
+                clients(:no_auth, :server => :remote).post.create(data)
+              end
+            end
           end
+
         end
       end
     end
