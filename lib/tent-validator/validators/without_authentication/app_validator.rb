@@ -62,6 +62,15 @@ module TentValidator
                 clients(:no_auth, :server => :remote).post.create(nil)
               end
             end
+
+            context "without content-type header" do
+              data = generate_app_post
+              expect_response(:headers => :tent, :status => 400, :schema => :error) do
+                clients(:no_auth, :server => :remote).post.create(data) do |request|
+                  request.headers['Content-Type'] = 'application/json'
+                end
+              end
+            end
           end
 
         end
