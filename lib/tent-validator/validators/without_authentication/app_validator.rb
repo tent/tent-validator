@@ -56,6 +56,12 @@ module TentValidator
                 clients(:no_auth, :server => :remote).post.create(data)
               end
             end
+
+            context "without request body" do
+              expect_response(:headers => :tent, :status => 400, :schema => :error) do
+                clients(:no_auth, :server => :remote).post.create(nil)
+              end
+            end
           end
 
         end
