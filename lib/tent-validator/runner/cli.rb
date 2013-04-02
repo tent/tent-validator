@@ -93,7 +93,7 @@ module TentValidator
       end
 
       def result_valid?(result)
-        valid = result.as_json.inject(true) { |memo, (k,v)|
+        valid = result.as_json[:expected].inject(true) { |memo, (k,v)|
           memo = false if v.has_key?(:valid) && !v[:valid]
           memo
         }
