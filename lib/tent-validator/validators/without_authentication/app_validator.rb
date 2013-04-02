@@ -1,4 +1,5 @@
 require 'tent-validator/validators/support/tent_header_expectation'
+require 'tent-validator/validators/support/app_post_header_expectation'
 require 'tent-validator/validators/support/tent_schemas'
 
 module TentValidator
@@ -30,6 +31,7 @@ module TentValidator
             expect_response(:headers => :tent, :status => 200, :schema => :post) do
               data = get(:app_post)
 
+              expect_headers(:app_post)
               expect_properties(data)
               expect_schema(:post_app, "/content")
 
