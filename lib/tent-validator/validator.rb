@@ -43,10 +43,6 @@ module TentValidator
       @parent = nil if @parent == self.class
       @name = name
 
-      if @parent
-        @cache = @parent.cache.dup
-      end
-
       initialize_before_hooks(options.delete(:before))
 
       if block_given?
@@ -122,7 +118,9 @@ module TentValidator
       end
 
       pointer = JsonPointer.new(cache, path, :symbolize_keys => true)
-      return unless pointer.exists?
+      unless pointer.exists?
+        return parent ? parent.get(path) : nil
+      end
       pointer.value
     end
 
