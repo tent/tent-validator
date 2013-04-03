@@ -39,7 +39,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
           }
         end
 
-        let(:expected_diff) { [{ :op => "replace", :path => "/Count", :value => "/^\\d+$/", :type => "regexp" }] }
+        let(:expected_diff) { [{ :op => "replace", :path => "/Count", :value => "/^\\d+$/", :current_value => "NaN", :type => "regexp" }] }
         let(:expected_failed_assertions) { [expected_assertions.first] }
       end
 
@@ -53,7 +53,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
           }
         end
 
-        let(:expected_diff) { [{ :op => "replace", :path => "/Say Hello", :value => "Hello Tent!" }] }
+        let(:expected_diff) { [{ :op => "replace", :path => "/Say Hello", :value => "Hello Tent!", :current_value => "No, I won't do it!" }] }
         let(:expected_failed_assertions) { [expected_assertions.last] }
       end
 

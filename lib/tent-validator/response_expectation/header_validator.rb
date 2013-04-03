@@ -50,6 +50,7 @@ module TentValidator
           assertion = assertion.to_hash
           if actual.has_key?(header)
             assertion[:op] = "replace"
+            assertion[:current_value] = actual[header]
           else
             assertion[:op] = "add"
           end

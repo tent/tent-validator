@@ -94,6 +94,7 @@ module TentValidator
                 :op => "replace",
                 :path => path,
                 :value => value_for_schema_type(assertion.type, val),
+                :current_value => val,
                 :type => property["type"],
                 :message => wrong_type_message(assertion.type, schema_type(val))
               }

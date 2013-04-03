@@ -34,7 +34,7 @@ describe TentValidator::ResponseExpectation::StatusValidator do
         env.status = 400
       end
 
-      let(:expected_diff) { [{ :op => "replace", :path => "", :value => 304 }] }
+      let(:expected_diff) { [{ :op => "replace", :path => "", :value => 304, :current_value => 400 }] }
       let(:expected_failed_assertions) { [expected_assertions.first] }
     end
 

@@ -236,7 +236,7 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
 
           let(:expected_diff) do
             [
-              { :op => "replace", :path => "/content/lake/facts/fresh water", :value => true, :type => "boolean", :message => "expected type boolean, got string" },
+              { :op => "replace", :path => "/content/lake/facts/fresh water", :value => true, :current_value => "yes!", :type => "boolean", :message => "expected type boolean, got string" },
             ]
           end
 
@@ -389,8 +389,8 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
 
           let(:expected_diff) do
             [
-              { :op => "replace", :path => "/water/depth", :value => 400_000_000.0, :type => "number", :message => "expected type number, got string" },
-              { :op => "replace", :path => "/water/coords/lat", :value => "-19.65", :type => "string", :message => "expected type string, got number" }
+              { :op => "replace", :path => "/water/depth", :value => 400_000_000.0, :current_value => "400_000_000", :type => "number", :message => "expected type number, got string" },
+              { :op => "replace", :path => "/water/coords/lat", :value => "-19.65", :current_value => -19.65, :type => "string", :message => "expected type string, got number" }
             ]
           end
 

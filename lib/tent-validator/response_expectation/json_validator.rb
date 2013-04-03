@@ -42,6 +42,7 @@ module TentValidator
           assertion = assertion.to_hash
           if pointer.exists?
             assertion[:op] = "replace"
+            assertion[:current_value] = pointer.value
           else
             assertion[:op] = "add"
           end

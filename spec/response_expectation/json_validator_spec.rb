@@ -74,7 +74,7 @@ describe TentValidator::ResponseExpectation::JsonValidator do
 
       let(:expected_diff) do
         [
-          { :op => "replace", :path => "/water/fire", :value => "air" },
+          { :op => "replace", :path => "/water/fire", :value => "air", :current_value => "very hot" },
           { :op => "add", :path => "/water/coords/lng", :value => "86.86" },
           { :op => "add", :path => "/air", :value => "water fire" }
         ]
