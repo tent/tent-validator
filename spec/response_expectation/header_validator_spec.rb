@@ -4,7 +4,7 @@ require 'hashie'
 require 'support/shared_examples/response_expectation_validator_validate_method'
 
 describe TentValidator::ResponseExpectation::HeaderValidator do
-  let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :body => '') }
+  let(:env) { Hashie::Mash.new(:status => 200, :response_headers => {}, :token => 'foobar', :body => '') }
   let(:response) { Faraday::Response.new(env) }
   let(:block) { proc { response } }
   let(:validator) { stub(:everything) }
@@ -17,6 +17,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
     let(:expected) do
       {
         "Count" => /\A\d+\Z/,
+        "Token" => lambda { |response| response.env['token'] },
         "Say Hello" => "Hello Tent!"
       }
     end
@@ -24,6 +25,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
     let(:expected_assertions) {
       [
         { :op => "test", :path => "/Count", :value => "/^\\d+$/", :type => "regexp" },
+        { :op => "test", :path => "/Token", :value => env[:token] },
         { :op => "test", :path => "/Say Hello", :value => "Hello Tent!" }
       ]
     }
@@ -35,6 +37,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
         before do
           env.response_headers = {
             "Count" => "NaN",
+            "Token" => env[:token],
             "Say Hello" => "Hello Tent!"
           }
         end
@@ -43,12 +46,28 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
         let(:expected_failed_assertions) { [expected_assertions.first] }
       end
 
+      context "when expectation is a lambda" do
+        it_behaves_like "a response expectation validator #validate method"
+
+        before do
+          env.response_headers = {
+            "Count" => "185",
+            "Token" => "baz",
+            "Say Hello" => "Hello Tent!"
+          }
+        end
+
+        let(:expected_diff) { [{ :op => "replace", :path => "/Token", :value => env[:token], :current_value => "baz" }] }
+        let(:expected_failed_assertions) { [expected_assertions[1]] }
+      end
+
       context "when expectation is a String" do
         it_behaves_like "a response expectation validator #validate method"
 
         before do
           env.response_headers = {
             "Count" => "185",
+            "Token" => env[:token],
             "Say Hello" => "No, I won't do it!"
           }
         end
@@ -63,6 +82,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
         before do
           env.response_headers = {
             "Count" => "185",
+            "Token" => env[:token]
           }
         end
 
@@ -77,6 +97,7 @@ describe TentValidator::ResponseExpectation::HeaderValidator do
       before do
         env.response_headers = {
           "Count" => "198",
+          "Token" => env[:token],
           "Say Hello" => "Hello Tent!"
         }
       end

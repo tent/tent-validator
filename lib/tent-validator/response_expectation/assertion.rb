@@ -5,8 +5,18 @@ module TentValidator
       attr_reader :value, :path, :type
       def initialize(path, value, options = {})
         @path, @value, @type = path, value, options.delete(:type)
+      end
 
-        @stringified_value = if Regexp === value
+      def to_hash(options = {})
+        _h = { :op => "test", :path => path, :value => stringified_value }
+        _h.delete(:value) if type && value.nil?
+        _h[:type] = "regexp" if Regexp === value
+        _h[:type] = type if type
+        _h
+      end
+
+      def stringified_value
+        if Regexp === value
           regex = value.to_s.
             sub(%r|\(\?-mix:(.*)\)|) { $1 }.
             gsub("\\A", "^").
@@ -15,14 +25,6 @@ module TentValidator
         else
           value
         end
-      end
-
-      def to_hash(options = {})
-        _h = { :op => "test", :path => path, :value => @stringified_value }
-        _h.delete(:value) if type && value.nil?
-        _h[:type] = "regexp" if Regexp === @value
-        _h[:type] = type if type
-        _h
       end
     end
 

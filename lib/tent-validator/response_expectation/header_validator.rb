@@ -11,9 +11,11 @@ module TentValidator
       end
 
       def validate(response)
+        compiled_assertions = compile_assertions(response)
         response_headers = response.env[:response_headers]
-        _failed_assertions = failed_assertions(response_headers)
+        _failed_assertions = failed_assertions(compiled_assertions, response_headers)
         super.merge(
+          :assertions => compiled_assertions.map(&:to_hash),
           :key => :response_headers,
           :failed_assertions => _failed_assertions.map(&:to_hash),
           :diff => diff(response_headers, _failed_assertions).map(&:to_hash),
@@ -37,7 +39,17 @@ module TentValidator
         end
       end
 
-      def failed_assertions(actual)
+      def compile_assertions(response)
+        assertions.map do |assertion|
+          if Proc === assertion.value
+            Assertion.new(assertion.path, assertion.value.call(response))
+          else
+            assertion
+          end
+        end
+      end
+
+      def failed_assertions(assertions, actual)
         assertions.select do |assertion|
           header = key_from_path(assertion.path)
           !assertion_valid?(assertion, actual[header])
