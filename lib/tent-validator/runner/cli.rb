@@ -3,6 +3,11 @@ module TentValidator
   module Runner
 
     class CLI
+
+      TRANSLATE_KEYS = {
+        :current_value => :actual
+      }.freeze
+
       def self.run(options = {})
         instance = self.new(options)
         instance.run
@@ -85,7 +90,7 @@ module TentValidator
               next if val[:valid]
 
               puts key
-              ap val[:diff]
+              ap val[:diff].map { |i| translate_keys(i.dup) }
             end
           end
           validator_complete(children, parent_names + [name])
@@ -97,6 +102,15 @@ module TentValidator
           memo = false if v.has_key?(:valid) && !v[:valid]
           memo
         }
+      end
+
+      def translate_keys(hash)
+        TRANSLATE_KEYS.each_pair do |from, to|
+          next unless hash.has_key?(from)
+          hash[to] = hash[from]
+          hash.delete(from)
+        end
+        hash
       end
 
       def green(text); color(text, "\e[32m"); end
