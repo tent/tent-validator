@@ -51,7 +51,7 @@ module TentValidator
             end
 
             context "with invalid attributes", :before => :invalidate_app_post do
-              expect_response(:headers => :tent, :status => 422, :schema => :error) do
+              expect_response(:headers => :tent, :status => 400, :schema => :error) do
                 data = get(:app_post)
                 clients(:no_auth, :server => :remote).post.create(data)
               end
@@ -65,7 +65,7 @@ module TentValidator
 
             context "without content-type header" do
               data = generate_app_post
-              expect_response(:headers => :tent, :status => 400, :schema => :error) do
+              expect_response(:headers => :tent, :status => 415, :schema => :error) do
                 clients(:no_auth, :server => :remote).post.create(data) do |request|
                   request.headers['Content-Type'] = 'application/json'
                 end
