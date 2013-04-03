@@ -1,5 +1,5 @@
 require 'tent-validator/validators/support/tent_header_expectation'
-require 'tent-validator/validators/support/app_post_header_expectation'
+require 'tent-validator/validators/support/post_header_expectation'
 require 'tent-validator/validators/support/tent_schemas'
 
 module TentValidator
@@ -37,7 +37,7 @@ module TentValidator
             expect_response(:headers => :tent, :status => 200, :schema => :post) do
               data = get(:app_post)
 
-              expect_headers(:app_post)
+              expect_headers(:post)
               expect_properties(data)
               expect_schema(:post_app, "/content")
 
@@ -52,8 +52,12 @@ module TentValidator
 
             context "with invalid attributes", :before => :invalidate_app_post do
               expect_response(:headers => :tent, :status => 400, :schema => :error) do
+                expect_headers(:post)
+
                 data = get(:app_post)
-                clients(:no_auth, :server => :remote).post.create(data)
+                res = clients(:no_auth, :server => :remote).post.create(data)
+                res.env['expected_post_type'] = "https://tent.io/types/error/v0#"
+                res
               end
             end
 
@@ -66,9 +70,13 @@ module TentValidator
             context "without content-type header" do
               data = generate_app_post
               expect_response(:headers => :tent, :status => 415, :schema => :error) do
-                clients(:no_auth, :server => :remote).post.create(data) do |request|
+                expect_headers(:post)
+
+                res = clients(:no_auth, :server => :remote).post.create(data) do |request|
                   request.headers['Content-Type'] = 'application/json'
                 end
+                res.env['expected_post_type'] = "https://tent.io/types/error/v0#"
+                res
               end
             end
           end
