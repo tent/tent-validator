@@ -1,14 +1,18 @@
+require 'tent-validator/mixins/deep_merge'
+
 module TentValidator
   module Runner
 
     class Results
+      include Mixins::DeepMerge
+
       attr_reader :results
       def initialize
         @results = {}
       end
 
       def merge!(validator_results)
-        results.merge!(validator_results.results)
+        deep_merge!(results, validator_results.results)
       end
 
       def as_json(options = {})

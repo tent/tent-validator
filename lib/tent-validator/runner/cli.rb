@@ -17,9 +17,8 @@ module TentValidator
       end
 
       def run
-        @valid = true
-        @valid_count = 0
-        @invalid_count = 0
+        @valid = []
+        @invalid = []
 
         puts "Running Protocol Validations..."
         results = Runner.run do |results|
@@ -29,10 +28,10 @@ module TentValidator
         validator_complete(results.as_json)
 
         print "\n"
-        if @valid
-          puts green("#{@valid_count} expectations valid\t0 failed")
+        if @invalid.any?
+          puts green("#{@valid.uniq.size} validations valid\t") + red("#{@invalid.uniq.size} failed")
         else
-          puts green("#{@valid_count} expectations valid\t") + red("#{@invalid_count} failed")
+          puts green("#{@valid.uniq.size} validations valid\t0 failed")
         end
         print "\n"
 
@@ -44,13 +43,15 @@ module TentValidator
           next if name == :results
           child_results = children[:results]
           child_results.each do |r|
+            id = r.object_id.to_s
             valid = result_valid?(r)
             if valid
-              @valid_count += 1
+              next if @valid.index(id)
+              @valid << id
               print green(".")
             else
-              @valid = false
-              @invalid_count += 1
+              next if @invalid.index(id)
+              @invalid << id
               print red("F")
             end
           end
