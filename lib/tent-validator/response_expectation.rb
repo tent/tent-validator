@@ -43,6 +43,10 @@ module TentValidator
       @header_validators ||= []
     end
 
+    def response_filters
+      @response_filters ||= []
+    end
+
     def expectations
       [status_validator].compact + header_validators + schema_validators + json_validators
     end
@@ -59,6 +63,11 @@ module TentValidator
       header_validators << HeaderValidator.new(expected_headers)
     end
 
+    def expect_post_type(type_uri)
+      response_filters << proc { |response| response.env['expected_post_type'] = type_uri }
+      type_uri
+    end
+
     def run
       return unless @block
       response = instance_eval(&@block)
@@ -66,6 +75,7 @@ module TentValidator
     end
 
     def validate(response)
+      response_filters.each { |filter| filter.call(response) }
       expectations.map { |expectation| expectation.validate(response) }
     end
 

@@ -56,7 +56,9 @@ module TentValidator
 
                 data = get(:app_post)
                 res = clients(:no_auth, :server => :remote).post.create(data)
-                res.env['expected_post_type'] = "https://tent.io/types/error/v0#"
+
+                expect_post_type("https://tent.io/types/error/v0#")
+
                 res
               end
             end
@@ -75,7 +77,9 @@ module TentValidator
                 res = clients(:no_auth, :server => :remote).post.create(data) do |request|
                   request.headers['Content-Type'] = 'application/json'
                 end
-                res.env['expected_post_type'] = "https://tent.io/types/error/v0#"
+
+                expect_post_type("https://tent.io/types/error/v0#")
+
                 res
               end
             end
