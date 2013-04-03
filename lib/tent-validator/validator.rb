@@ -136,7 +136,7 @@ module TentValidator
 
     def generate_version_signature(post)
       canonical_post_json = TentCanonicalJson.encode(post)
-      OpenSSL::Digest::SHA512.new.hexdigest(canonical_post_json).byteslice(0, 32).unpack("H*").first
+      Digest::SHA512.new.update(canonical_post_json).to_s[0...64]
     end
 
     def run
