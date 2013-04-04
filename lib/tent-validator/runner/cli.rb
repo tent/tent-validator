@@ -83,7 +83,7 @@ module TentValidator
             puts actual[:response_status]
             puts actual[:response_headers].inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
             print "\n"
-            puts actual[:response_body]
+            puts Yajl::Encoder.encode(actual[:response_body])
             print "\n"
 
             puts "DIFF:"
