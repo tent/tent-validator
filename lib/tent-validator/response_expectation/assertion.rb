@@ -2,9 +2,9 @@ module TentValidator
   class ResponseExpectation
 
     class Assertion
-      attr_reader :value, :path, :type
+      attr_reader :value, :path, :type, :format
       def initialize(path, value, options = {})
-        @path, @value, @type = path, value, options.delete(:type)
+        @path, @value, @type, @format = path, value, options.delete(:type), options.delete(:format)
       end
 
       def to_hash(options = {})
@@ -12,6 +12,7 @@ module TentValidator
         _h.delete(:value) if type && value.nil?
         _h[:type] = "regexp" if Regexp === value
         _h[:type] = type if type
+        _h[:format] = format if format
         _h
       end
 

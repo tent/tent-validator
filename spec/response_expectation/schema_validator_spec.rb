@@ -403,6 +403,36 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
 
           it_behaves_like "a response expectation validator #validate method"
         end
+
+        context "when wrong format for property" do
+          before do
+            env.body = {
+              "water" => {
+                "depth" => 400_000_000,
+                "attributes" => {
+                  "foo" => "bar"
+                },
+                "coords" => {
+                  "lat" => "-19.65",
+                  "lng" => "86.86",
+                }
+              },
+              "rivers" => ["http://baron.example.org", "grape"]
+            }
+          end
+
+          let(:expected_failed_assertions) do
+            []
+          end
+
+          let(:expected_diff) do
+            [
+              { :op => "replace", :path => "/rivers/1", :value => "https://example.com", :current_value => "grape", :type => "string", :format => "uri", :message => "expected uri format" }
+            ]
+          end
+
+          it_behaves_like "a response expectation validator #validate method"
+        end
       end
     end
   end

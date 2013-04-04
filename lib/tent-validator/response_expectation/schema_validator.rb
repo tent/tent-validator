@@ -109,6 +109,16 @@ module TentValidator
             :type => assertion.type,
             :message => wrong_type_message(assertion.type, schema_type(actual))
           })
+        elsif !assertion_format_valid?(assertion, actual)
+          yield({
+            :op => "replace",
+            :path => path,
+            :value => value_for_schema_format(assertion.format, actual),
+            :current_value => actual,
+            :type => assertion.type,
+            :format => assertion.format,
+            :message => wrong_format_message(assertion.format)
+          })
         elsif (property["type"] == "object") && (Hash === property["properties"])
           schema_diff(property, actual, path).each { |d| yield(d) }
         elsif (property['type'] == 'array') && (Hash === property['items'])
@@ -121,6 +131,10 @@ module TentValidator
 
       def wrong_type_message(expected_type, actual_type)
         "expected type #{expected_type}, got #{actual_type}"
+      end
+
+      def wrong_format_message(expected_format)
+        "expected #{expected_format} format"
       end
 
       def assertion_valid?(assertion, actual)
@@ -182,6 +196,13 @@ module TentValidator
           value.respond_to?(:to_s) ? value.to_s : ""
         else
           nil
+        end
+      end
+
+      def value_for_schema_format(format, value)
+        case format
+        when 'uri'
+          "https://example.com"
         end
       end
 

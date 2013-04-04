@@ -1,3 +1,5 @@
+require 'uri'
+
 module TentValidator
   class ResponseExpectation
 
@@ -29,6 +31,17 @@ module TentValidator
         else
           value == actual
         end
+      end
+
+      def assertion_format_valid?(assertion, actual)
+        return true unless format = assertion.format
+        case format
+        when 'uri'
+          uri = URI(actual)
+          uri.scheme && uri.host
+        end
+      rescue URI::InvalidURIError, ArgumentError
+        false
       end
     end
 
