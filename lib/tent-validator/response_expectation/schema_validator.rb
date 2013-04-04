@@ -87,24 +87,35 @@ module TentValidator
         actual.inject([]) do |memo, (key, val)|
           path = [parent_path, key].join("/")
           if property = properties[key.to_s]
-            assertion = Assertion.new(path, nil, :type => property["type"])
-
-            if !assertion_valid?(assertion, val)
-              memo << {
-                :op => "replace",
-                :path => path,
-                :value => value_for_schema_type(assertion.type, val),
-                :current_value => val,
-                :type => property["type"],
-                :message => wrong_type_message(assertion.type, schema_type(val))
-              }
-            elsif (property["type"] == "object") && (Hash === property["properties"])
-              memo.concat(schema_diff(property, val, path))
+            schema_property_diff(property, val, path) do |diff_item|
+              memo << diff_item
             end
           else
             memo << { :op => "remove", :path => path }
           end
           memo
+        end
+      end
+
+      def schema_property_diff(property, actual, path, &block)
+        assertion = Assertion.new(path, nil, :type => property["type"], :format => property["format"])
+
+        if !assertion_valid?(assertion, actual)
+          yield({
+            :op => "replace",
+            :path => path,
+            :value => value_for_schema_type(assertion.type, actual),
+            :current_value => actual,
+            :type => assertion.type,
+            :message => wrong_type_message(assertion.type, schema_type(actual))
+          })
+        elsif (property["type"] == "object") && (Hash === property["properties"])
+          schema_diff(property, actual, path).each { |d| yield(d) }
+        elsif (property['type'] == 'array') && (Hash === property['items'])
+          array_property = property['items']
+          actual.each_with_index do |val, index|
+            schema_property_diff(array_property, val, path + "/#{index}", &block)
+          end
         end
       end
 

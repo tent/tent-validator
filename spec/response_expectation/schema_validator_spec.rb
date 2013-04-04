@@ -60,8 +60,12 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           }
         },
         "rivers" => {
-          "description" => "rivers of water",
-          "type" => "array"
+          "description" => "list of river uris",
+          "type" => "array",
+          "items" => {
+            "type" => "string",
+            "format" => "uri"
+          }
         },
       }
     }
@@ -290,7 +294,7 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
                 "lake" => true,
                 "volume" => 900_000_000_000_000_000
               },
-              "rivers" => ["baron", "grape"]
+              "rivers" => ["http://baron.example.org", "custom://user:pass@grape.super-baron.example.com:3042/some@path:foo&bar+=$,/?foo=bar"]
             }
           end
 
@@ -377,7 +381,8 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
                   "lat" => -19.65,
                   "lng" => "86.86",
                 }
-              }
+              },
+              "rivers" => ["http://foo.example.com", 123, "https://bar.example.org", { "this" => "should be a string" }]
             }
           end
 
@@ -390,7 +395,9 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
           let(:expected_diff) do
             [
               { :op => "replace", :path => "/water/depth", :value => 400_000_000.0, :current_value => "400_000_000", :type => "number", :message => "expected type number, got string" },
-              { :op => "replace", :path => "/water/coords/lat", :value => "-19.65", :current_value => -19.65, :type => "string", :message => "expected type string, got number" }
+              { :op => "replace", :path => "/water/coords/lat", :value => "-19.65", :current_value => -19.65, :type => "string", :message => "expected type string, got number" },
+              { :op => "replace", :path => "/rivers/1", :value => "123", :current_value => 123, :type => "string", :message => "expected type string, got integer" },
+              { :op => "replace", :path => "/rivers/3", :value => %({"this"=>"should be a string"}), :current_value => { "this" => "should be a string" }, :type => "string", :message => "expected type string, got object" },
             ]
           end
 
