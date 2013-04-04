@@ -26,11 +26,6 @@ module TentValidator
         set(:app_post, data)
       end
 
-      def invalidate_app_post
-        data = get(:app_post)
-        data[:content][:extra_member] = "I shouldn't be here!"
-      end
-
       describe "POST /posts" do
         context "without authentication" do
 
@@ -51,16 +46,35 @@ module TentValidator
               res
             end
 
-            context "with invalid attributes", :before => :invalidate_app_post do
-              expect_response(:headers => :error, :status => 400, :schema => :error) do
-                data = get(:app_post)
-                clients(:no_auth, :server => :remote).post.create(data)
+            context "with invalid attributes" do
+              context "when extra field" do
+                expect_response(:headers => :error, :status => 400, :schema => :error) do
+                  data = get(:app_post).dup
+                  data[:content][:extra_member] = "I shouldn't be here!"
+                  clients(:no_auth, :server => :remote).post.create(data)
+                end
+              end
+
+              context "when content is wrong type" do
+                expect_response(:headers => :error, :status => 400, :schema => :error) do
+                  data = get(:app_post).dup
+                  data[:content] = "I should be an object"
+                  clients(:no_auth, :server => :remote).post.create(data)
+                end
               end
             end
 
             context "without request body" do
               expect_response(:headers => :error, :status => 400, :schema => :error) do
                 clients(:no_auth, :server => :remote).post.create(nil) do |request|
+                  request.headers['Content-Type'] = TentD::API::CONTENT_TYPE % 'https://tent.io/types/app/v0#'
+                end
+              end
+            end
+
+            context "when request body is wrong type" do
+              expect_response(:headers => :error, :status => 400, :schema => :error) do
+                clients(:no_auth, :server => :remote).post.create("I should be an object") do |request|
                   request.headers['Content-Type'] = TentD::API::CONTENT_TYPE % 'https://tent.io/types/app/v0#'
                 end
               end
