@@ -14,7 +14,6 @@ module TentValidator
             :name => "Example App Name",
             :description => "Example App Description",
             :url => "http://someapp.example.com",
-            :icon => "http://someapp.example.com/icon.png",
             :redirect_uri => "http://someapp.example.com/oauth/callback",
             :post_types => {
               :read => %w( https://tent.io/types/status/v0# ),
