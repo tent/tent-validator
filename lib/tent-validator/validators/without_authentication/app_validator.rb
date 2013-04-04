@@ -113,6 +113,14 @@ module TentValidator
                 end
               end
 
+              context "when extra post member" do
+                expect_response(:headers => :error, :status => 400, :schema => :error) do
+                  data = generate_app_post.dup
+                  data[:extra_member] = "I shouldn't be here!"
+                  clients(:no_auth, :server => :remote).post.create(data)
+                end
+              end
+
               context "when content is wrong type" do
                 expect_response(:headers => :error, :status => 400, :schema => :error) do
                   data = get(:app_post).dup
