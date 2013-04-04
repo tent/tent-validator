@@ -1,5 +1,6 @@
 require 'tent-validator/validators/support/tent_header_expectation'
 require 'tent-validator/validators/support/post_header_expectation'
+require 'tent-validator/validators/support/error_header_expectation'
 require 'tent-validator/validators/support/tent_schemas'
 
 module TentValidator
@@ -51,36 +52,24 @@ module TentValidator
             end
 
             context "with invalid attributes", :before => :invalidate_app_post do
-              expect_response(:headers => :tent, :status => 400, :schema => :error) do
-                expect_headers(:post)
-
+              expect_response(:headers => :error, :status => 400, :schema => :error) do
                 data = get(:app_post)
-                res = clients(:no_auth, :server => :remote).post.create(data)
-
-                expect_post_type("https://tent.io/types/error/v0#")
-
-                res
+                clients(:no_auth, :server => :remote).post.create(data)
               end
             end
 
             context "without request body" do
-              expect_response(:headers => :tent, :status => 400, :schema => :error) do
+              expect_response(:headers => :error, :status => 400, :schema => :error) do
                 clients(:no_auth, :server => :remote).post.create(nil)
               end
             end
 
             context "without content-type header" do
               data = generate_app_post
-              expect_response(:headers => :tent, :status => 415, :schema => :error) do
-                expect_headers(:post)
-
-                res = clients(:no_auth, :server => :remote).post.create(data) do |request|
+              expect_response(:headers => :error, :status => 415, :schema => :error) do
+                clients(:no_auth, :server => :remote).post.create(data) do |request|
                   request.headers['Content-Type'] = 'application/json'
                 end
-
-                expect_post_type("https://tent.io/types/error/v0#")
-
-                res
               end
             end
           end
