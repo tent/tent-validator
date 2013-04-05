@@ -80,7 +80,7 @@ module TentValidator
       context "without request body" do
         expect_response(:headers => :error, :status => 400, :schema => :error) do
           clients(:no_auth, :server => :remote).post.create(nil) do |request|
-            request.headers['Content-Type'] = TentD::API::CONTENT_TYPE % 'https://tent.io/types/app/v0#'
+            request.headers['Content-Type'] = TentD::API::POST_CONTENT_TYPE % 'https://tent.io/types/app/v0#'
           end
         end
       end
@@ -88,7 +88,7 @@ module TentValidator
       context "when request body is wrong type" do
         expect_response(:headers => :error, :status => 400, :schema => :error) do
           clients(:no_auth, :server => :remote).post.create("I should be an object") do |request|
-            request.headers['Content-Type'] = TentD::API::CONTENT_TYPE % 'https://tent.io/types/app/v0#'
+            request.headers['Content-Type'] = TentD::API::POST_CONTENT_TYPE % 'https://tent.io/types/app/v0#'
           end
         end
       end
