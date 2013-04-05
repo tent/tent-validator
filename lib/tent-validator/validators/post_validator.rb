@@ -7,6 +7,24 @@ module TentValidator
   class PostValidator < Validator
 
     shared_example :new_post do
+      context "with valid attributes" do
+        expect_response(:headers => :tent, :status => 200, :schema => :post) do
+          data = get(:post)
+
+          expect_headers(:post)
+          expect_properties(data)
+          expect_schema(get(:content_schema), "/content")
+
+          res = clients(:no_auth, :server => :remote).post.create(data)
+
+          if Hash === res.body
+            expect_properties(:version => { :id => generate_version_signature(res.body) })
+          end
+
+          res
+        end
+      end
+
       context "with invalid attributes" do
         context "when extra field in content" do
           expect_response(:headers => :error, :status => 400, :schema => :error) do
@@ -104,5 +122,4 @@ module TentValidator
     end
 
   end
-
 end
