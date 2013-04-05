@@ -14,11 +14,13 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
     {
       "title" => "Test Object",
       "type" => "object",
+      "additionalProperties" => false,
       "properties" => {
         "water" => {
           "description" => "a wet substance",
           "type" => "object",
           "required" => true,
+          "additionalProperties" => false,
 
           "properties" => {
             "depth" => {
@@ -30,6 +32,7 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
               "description" => "location the middle of water mass",
               "type" => "object",
               "required" => false,
+              "additionalProperties" => false,
 
               "properties" => {
                 "lat" => {
@@ -75,11 +78,13 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
     {
       "title" => "Lake Schema",
       "type" => "object",
+      "additionalProperties" => true,
       "properties" => {
         "facts" => {
           "description" => "Random facts about the lake",
           "type" => "object",
           "required" => true,
+          "additionalProperties" => false,
           "properties" => {
             "fresh water" => {
               "description" => "Is it a fresh water lake?",
@@ -149,6 +154,25 @@ describe TentValidator::ResponseExpectation::SchemaValidator do
                     "sand" => true,
                     "boats" => false
                   }
+                }
+              }
+            }
+          end
+
+          it_behaves_like "a response expectation validator #validate method"
+        end
+
+        context "with allowed extra properties" do
+          before do
+            env.body = {
+              "content" => {
+                "lake" => {
+                  "facts" => {
+                    "fresh water" => true,
+                    "sand" => true,
+                    "boats" => false,
+                  },
+                  "allowed extra" => "I can be here :D"
                 }
               }
             }

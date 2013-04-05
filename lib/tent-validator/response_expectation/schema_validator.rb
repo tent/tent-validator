@@ -90,7 +90,7 @@ module TentValidator
             schema_property_diff(property, val, path) do |diff_item|
               memo << diff_item
             end
-          else
+          elsif schema['additionalProperties'] == false
             memo << { :op => "remove", :path => path }
           end
           memo
