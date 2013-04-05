@@ -101,7 +101,7 @@ module TentValidator
 
         context "when post member is wrong type" do
           properties = TentValidator::Schemas[:post]["properties"]
-          %w( published_at version mentions licenses content attachments app permissions ).each do |name|
+          %w( published_at version mentions licenses content attachments permissions ).each do |name|
             invalid_member_expectation.call("/#{name}", properties[name])
           end
         end
