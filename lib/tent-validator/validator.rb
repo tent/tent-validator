@@ -144,6 +144,30 @@ module TentValidator
       Digest::SHA512.new.update(canonical_post_json).to_s[0...64]
     end
 
+    def invalid_value(type, format = nil)
+      case type
+      when "array"
+        Hash.new
+      when "boolean"
+        "false"
+      when "number", "integer"
+        "123"
+      when "null"
+        true
+      when "object"
+        ["My parent should be an object!"]
+      when "string"
+        if format
+          case format
+          when 'uri'
+            "I'm not a uri!"
+          end
+        else
+          421
+        end
+      end
+    end
+
     def run
       before_hooks.each do |hook|
         if hook.respond_to?(:receiver) && hook.receiver == self
