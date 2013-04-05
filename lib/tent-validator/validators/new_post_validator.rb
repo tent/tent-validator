@@ -11,7 +11,17 @@ module TentValidator
             expect_properties(expected_post)
             expect_schema(get(:content_schema), "/content")
 
-            res = clients(:no_auth, :server => :remote).post.create(post)
+            if attachments = get(:post_attachments)
+              expect_properties(
+                :attachments => attachments.map { |a|
+                  a.merge(:hash => hex_digest(a[:data]))
+                }
+              )
+
+              res = clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
+            else
+              res = clients(:no_auth, :server => :remote).post.create(post)
+            end
 
             if Hash === res.body
               expect_properties(:version => { :id => generate_version_signature(res.body) })
@@ -55,6 +65,19 @@ module TentValidator
       end
 
       context "with invalid attributes" do
+        if attachments = get(:attachments)
+          context "when attachment hash mismatch" do
+            expect_response(:headers => :error, :status => 400, :schema => :error) do
+              attachments = attachments.map do |attachment|
+                attachment[:headers] = {
+                  'Attachment-Hash' => 'foobar'
+                }
+              end
+              clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
+            end
+          end
+        end
+
         context "when extra field in content" do
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)

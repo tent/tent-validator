@@ -24,6 +24,15 @@ module TentValidator
         }
       end
 
+      def generate_app_icon_attachment
+        {
+          :content_type => "image/png",
+          :category => 'icon',
+          :name => 'appicon.png',
+          :data => "Fake image data"
+        }
+      end
+
       describe "POST /posts" do
         context "without authentication" do
 
@@ -32,6 +41,12 @@ module TentValidator
             set(:content_schema, :post_app)
 
             behaves_as(:new_post)
+
+            context "with icon attachment" do
+              set(:post_attachments) { [generate_app_icon_attachment] }
+
+              behaves_as(:new_post)
+            end
           end
 
         end
