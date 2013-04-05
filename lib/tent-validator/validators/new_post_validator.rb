@@ -5,35 +5,13 @@ module TentValidator
 
     shared_example :new_post do
       context "with valid attributes" do
-        expect_response(:headers => :tent, :status => 200, :schema => :post) do
-          data = get(:post)
-
-          expect_headers(:post)
-          expect_properties(data)
-          expect_schema(get(:content_schema), "/content")
-
-          res = clients(:no_auth, :server => :remote).post.create(data)
-
-          if Hash === res.body
-            expect_properties(:version => { :id => generate_version_signature(res.body) })
-          end
-
-          res
-        end
-
-        context "when permissions.public member is null" do
+        valid_post_expectation = proc do |post, expected_post|
           expect_response(:headers => :tent, :status => 200, :schema => :post) do
-            data = get(:post)
-            expected_data = get(:post)
-
-            pointer = JsonPointer.new(data, '/permissions/public', :symbolize_keys => true)
-            pointer.value = nil
-
             expect_headers(:post)
-            expect_properties(expected_data)
+            expect_properties(expected_post)
             expect_schema(get(:content_schema), "/content")
 
-            res = clients(:no_auth, :server => :remote).post.create(data)
+            res = clients(:no_auth, :server => :remote).post.create(post)
 
             if Hash === res.body
               expect_properties(:version => { :id => generate_version_signature(res.body) })
@@ -41,26 +19,37 @@ module TentValidator
 
             res
           end
+        end
+
+        valid_post_expectation.call(get(:post), get(:post))
+
+        context "when permissions.public member is null" do
+          post = get(:post)
+          pointer = JsonPointer.new(post, '/permissions/public', :symbolize_keys => true)
+          pointer.value = nil
+
+          valid_post_expectation.call(post, get(:post))
         end
 
         context "when permissions member is null" do
-          expect_response(:headers => :tent, :status => 200, :schema => :post) do
-            data = get(:post)
-            expected_data = get(:post)
+          post = get(:post)
+          post[:permissions] = nil
 
-            data[:permissions] = nil
+          valid_post_expectation.call(post, get(:post))
+        end
 
-            expect_headers(:post)
-            expect_properties(expected_data)
-            expect_schema(get(:content_schema), "/content")
+        context "when member set that should be ignored" do
+          properties = TentValidator::Schemas[:post]["properties"]
+          %w( /id /received_at /entity /original_entity /app /version/id /version/published_at /version/received_at ).each do |path|
+            path_fragments = path.split('/')
+            property_path = path_fragments[0] + path_fragments[1..-1].join('/properties/')
+            property = JsonPointer.new(properties, property_path).value
 
-            res = clients(:no_auth, :server => :remote).post.create(data)
+            post = get(:post)
+            pointer = JsonPointer.new(post, path, :symbolize_keys => true)
+            pointer.value = invalid_value(property['type'], property['format'])
 
-            if Hash === res.body
-              expect_properties(:version => { :id => generate_version_signature(res.body) })
-            end
-
-            res
+            valid_post_expectation.call(post, get(:post))
           end
         end
       end
