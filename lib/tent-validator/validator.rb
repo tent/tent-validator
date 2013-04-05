@@ -125,16 +125,17 @@ module TentValidator
       unless pointer.exists?
         return parent ? parent.get(path) : nil
       end
-      pointer.value
+      val = pointer.value
+      Proc === val ? val.call : val
     end
 
-    def set(path, val)
+    def set(path, val=nil, &block)
       if Symbol === path
         path = "/#{path}"
       end
 
       pointer = JsonPointer.new(cache, path, :symbolize_keys => true)
-      pointer.value = val
+      pointer.value = block_given? ? block : val
       val
     end
 
