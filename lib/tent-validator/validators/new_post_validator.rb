@@ -20,6 +20,49 @@ module TentValidator
 
           res
         end
+
+        context "when permissions.public member is null" do
+          expect_response(:headers => :tent, :status => 200, :schema => :post) do
+            data = get(:post)
+            expected_data = get(:post)
+
+            pointer = JsonPointer.new(data, '/permissions/public', :symbolize_keys => true)
+            pointer.value = nil
+
+            expect_headers(:post)
+            expect_properties(expected_data)
+            expect_schema(get(:content_schema), "/content")
+
+            res = clients(:no_auth, :server => :remote).post.create(data)
+
+            if Hash === res.body
+              expect_properties(:version => { :id => generate_version_signature(res.body) })
+            end
+
+            res
+          end
+        end
+
+        context "when permissions member is null" do
+          expect_response(:headers => :tent, :status => 200, :schema => :post) do
+            data = get(:post)
+            expected_data = get(:post)
+
+            data[:permissions] = nil
+
+            expect_headers(:post)
+            expect_properties(expected_data)
+            expect_schema(get(:content_schema), "/content")
+
+            res = clients(:no_auth, :server => :remote).post.create(data)
+
+            if Hash === res.body
+              expect_properties(:version => { :id => generate_version_signature(res.body) })
+            end
+
+            res
+          end
+        end
       end
 
       context "with invalid attributes" do

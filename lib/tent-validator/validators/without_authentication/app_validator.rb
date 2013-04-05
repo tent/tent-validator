@@ -17,6 +17,9 @@ module TentValidator
               :write => %w( https://tent.io/types/status/v0# )
             },
             :scopes => %w( import_posts )
+          },
+          :permissions => {
+            :public => false
           }
         }
       end
