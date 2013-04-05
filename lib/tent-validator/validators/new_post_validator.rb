@@ -47,7 +47,7 @@ module TentValidator
 
             post = get(:post)
             pointer = JsonPointer.new(post, path, :symbolize_keys => true)
-            pointer.value = invalid_value(property['type'], property['format'])
+            pointer.value = valid_value(property['type'], property['format'])
 
             valid_post_expectation.call(post, get(:post))
           end

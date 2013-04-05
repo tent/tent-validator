@@ -168,6 +168,30 @@ module TentValidator
       end
     end
 
+    def valid_value(type, format = nil)
+      case type
+      when "array"
+        []
+      when "boolean"
+        true
+      when "number", "integer"
+        123
+      when "null"
+        nil
+      when "object"
+        Hash.new
+      when "string"
+        if format
+          case format
+          when 'uri'
+            "https://example.com"
+          end
+        else
+          ""
+        end
+      end
+    end
+
     def run
       before_hooks.each do |hook|
         if hook.respond_to?(:receiver) && hook.receiver == self
