@@ -5,8 +5,12 @@ module TentValidator
     require 'tent-validator/validator/results'
 
     module SharedClassAndInstanceMethods
+      def validator?
+        true
+      end
+
       def shared_examples
-        @shared_examples ||= {}
+        @shared_examples ||= self.respond_to?(:superclass) && self.superclass.respond_to?(:validator?) && self.superclass.validator? ? self.superclass.shared_examples : {}
       end
 
       def shared_example(name, &block)
