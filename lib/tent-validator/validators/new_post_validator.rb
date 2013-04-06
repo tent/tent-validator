@@ -70,7 +70,7 @@ module TentValidator
             expect_response(:headers => :error, :status => 400, :schema => :error) do
               attachments = attachments.map do |attachment|
                 attachment[:headers] = {
-                  'Attachment-Hash' => 'foobar'
+                  'Attachment-Digest' => 'foobar'
                 }
               end
               clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
