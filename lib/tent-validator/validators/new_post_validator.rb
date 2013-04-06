@@ -14,7 +14,7 @@ module TentValidator
             if attachments = get(:post_attachments)
               expect_properties(
                 :attachments => attachments.map { |a|
-                  a.merge(:hash => hex_digest(a[:data]))
+                  a.merge(:hash => hex_digest(a[:data]), :size => a[:data].size)
                 }
               )
 
