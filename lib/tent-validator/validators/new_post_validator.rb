@@ -68,13 +68,15 @@ module TentValidator
       end
 
       context "with invalid attributes" do
-        if attachments = get(:attachments)
+        if attachments = get(:post_attachments)
           context "when attachment hash mismatch" do
             expect_response(:headers => :error, :status => 400, :schema => :error) do
+              post = get(:post)
               attachments = attachments.map do |attachment|
                 attachment[:headers] = {
-                  'Attachment-Digest' => 'foobar'
+                  'Attachment-Digest' => 'Invalid Digest!'
                 }
+                attachment
               end
               clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
             end
