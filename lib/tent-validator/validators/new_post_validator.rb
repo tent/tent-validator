@@ -15,7 +15,7 @@ module TentValidator
               expect_properties(
                 :attachments => attachments.map { |a|
                   a = a.dup
-                  a.merge!(:hash => hex_digest(a[:data]), :size => a[:data].size)
+                  a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
                   a.delete(:data)
                   a
                 }
@@ -44,7 +44,7 @@ module TentValidator
                   expect_properties(
                     :attachments => attachments.map { |a|
                       a = a.dup
-                      a.merge!(:hash => hex_digest(a[:data]), :size => a[:data].size)
+                      a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
                       a.delete(:data)
                       a
                     }
