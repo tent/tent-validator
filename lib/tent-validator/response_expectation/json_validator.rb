@@ -17,15 +17,20 @@ module TentValidator
 
       private
 
-      def initialize_assertions(expected, parent_path = "")
-        expected.each_pair do |key, val|
-          path = [parent_path, key].join("/")
-          case val
-          when Hash
-            initialize_assertions(val, path)
-          else
-            assertions << Assertion.new(path, val)
+      def initialize_assertions(expected, path = "")
+        case expected
+        when Hash
+          expected.each_pair do |key, val|
+            item_path = [path, key].join("/")
+            initialize_assertions(val, item_path)
           end
+        when Array
+          expected.each_with_index do |val, index|
+            item_path = [path, index].join("/")
+            initialize_assertions(val, item_path)
+          end
+        else
+          assertions << Assertion.new(path, expected)
         end
       end
 
