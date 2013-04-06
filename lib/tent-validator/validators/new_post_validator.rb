@@ -32,6 +32,39 @@ module TentValidator
 
             res
           end
+
+          if attachments = get(:post_attachments)
+            context "with attachments" do
+              context "without Attachment-Digest header" do
+                expect_response(:headers => :tent, :status => 200, :schema => :post) do
+                  expect_headers(:post)
+                  expect_properties(expected_post)
+                  expect_schema(get(:content_schema), "/content")
+
+                  expect_properties(
+                    :attachments => attachments.map { |a|
+                      a = a.dup
+                      a.merge!(:hash => hex_digest(a[:data]), :size => a[:data].size)
+                      a.delete(:data)
+                      a
+                    }
+                  )
+
+                  res = clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments) do |request|
+                    body = request.body.read
+                    body.gsub!(/\bAttachment-Digest.*\r\n/, '')
+                    request.body = body
+                  end
+
+                  if Hash === res.body
+                    expect_properties(:version => { :id => generate_version_signature(res.body) })
+                  end
+
+                  res
+                end
+              end
+            end
+          end
         end
 
         valid_post_expectation.call(get(:post), get(:post))
