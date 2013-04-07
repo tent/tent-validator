@@ -1,7 +1,22 @@
 require 'tent-canonical-json'
+require 'tent-validator/request_expectation'
 
 module TentValidator
   class Spec < ApiValidator::Spec
+
+    def watch_local_requests(should, user_id)
+      if should
+        TentValidator.watch_local_requests[user_id] = should
+      else
+        TentValidator.watch_local_requests.delete(user_id)
+      end
+    end
+
+    def expect_request(options = {}, &block)
+      expectation = RequestExpectation.new(self, options, &block)
+      self.expectations << expectation
+      expectation
+    end
 
     def clients(type, options = {})
       server = options.delete(:server) || :remote

@@ -23,6 +23,8 @@ module TentValidator
     require 'tent-validator/runner/cli'
 
     def self.run(&block)
+      TentValidator.run_local_server!
+
       paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
       paths.each { |path| require path }
 

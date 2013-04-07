@@ -1,17 +1,15 @@
 module TentValidator
 
-  class TentNetHttpFaradayAdapter < Faraday::Adapter::NetHttp
-    def call(env)
+  module ValidatorFaradayAdapter
+    def capture_request_body(env)
       if Faraday::CompositeReadIO === env[:body]
         env[:request_body] = env[:body].read
         env[:body].rewind
       elsif env[:body]
         env[:request_body] = env[:body]
       end
-
-      super
+      env
     end
   end
-  Faraday.register_middleware :adapter, :tent_net_http => TentNetHttpFaradayAdapter
 
 end
