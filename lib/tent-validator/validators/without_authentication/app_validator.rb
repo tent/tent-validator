@@ -16,6 +16,7 @@ module TentValidator
               :read => %w( https://tent.io/types/status/v0# ),
               :write => %w( https://tent.io/types/status/v0# )
             },
+            :notification_post_types => %w( https://tent.io/types/status/v0# ),
             :scopes => %w( import_posts )
           },
           :permissions => {
