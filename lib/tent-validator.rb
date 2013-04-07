@@ -1,13 +1,12 @@
 require 'tent-validator/version'
-require 'tent-validator/core_ext/hash/slice'
+require 'tentd/utils'
+require 'api-validator'
 require 'faraday'
 require 'tent-client'
 
 module TentValidator
 
-  require 'tent-validator/schemas'
-  require 'tent-validator/validator'
-  require 'tent-validator/response_expectation'
+  require 'tent-validator/spec'
 
   require 'tent-validator/runner'
 

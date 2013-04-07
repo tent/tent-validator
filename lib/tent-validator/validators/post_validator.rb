@@ -4,7 +4,7 @@ require 'tent-validator/validators/support/error_header_expectation'
 require 'tent-validator/validators/support/tent_schemas'
 
 module TentValidator
-  class PostValidator < Validator
+  class PostValidator < TentValidator::Spec
 
     require 'tent-validator/validators/new_post_validator'
 

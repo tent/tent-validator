@@ -1,4 +1,4 @@
-# TentValidator [![Build Status](https://travis-ci.org/tent/tent-validator.png?branch=0.3)](https://travis-ci.org/tent/tent-validator)
+# TentValidator
 
 Tent v0.3 protocol validator.
 

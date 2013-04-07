@@ -1,4 +1,4 @@
-TentValidator::ResponseExpectation::HeaderValidator.register(:post, {
+ApiValidator::Header.register(:post, {
   'Content-Type' => lambda { |response|
     post_type = response.env['expected_post_type'] ? response.env['expected_post_type'] : nil
     post_type ||= (Hash === response.body && response.body['type']) ? response.body['type'] : nil

@@ -1,10 +1,10 @@
-require 'tent-validator/mixins/deep_merge'
+require 'api-validator'
 
 module TentValidator
   module Runner
 
     class Results
-      include Mixins::DeepMerge
+      include ApiValidator::Mixins::DeepMerge
 
       attr_reader :results
       def initialize

@@ -20,6 +20,8 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'yajl-ruby'
   gem.add_runtime_dependency 'faraday', '0.8.4'
   gem.add_runtime_dependency 'json-pointer'
+  gem.add_runtime_dependency 'api-validator'
+  gem.add_runtime_dependency 'tentd', '~> 0.2.0'
   gem.add_runtime_dependency 'tent-client'
   gem.add_runtime_dependency 'tent-schemas'
   gem.add_runtime_dependency 'tent-canonical-json'

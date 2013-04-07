@@ -85,7 +85,7 @@ module TentValidator
         end
 
         context "when member set that should be ignored" do
-          properties = TentValidator::Schemas[:post]["properties"]
+          properties = ApiValidator::JsonSchemas[:post]["properties"]
           %w( /id /received_at /entity /original_entity /app /version/id /version/published_at /version/received_at ).each do |path|
             path_fragments = path.split('/')
             property_path = path_fragments[0] + path_fragments[1..-1].join('/properties/')
@@ -144,13 +144,13 @@ module TentValidator
         end
 
         context "when content member is wrong type" do
-          TentValidator::Schemas[get(:content_schema)]["properties"].each_pair do |name, property|
+          ApiValidator::JsonSchemas[get(:content_schema)]["properties"].each_pair do |name, property|
             invalid_member_expectation.call("/content/#{name}", property)
           end
         end
 
         context "when post member is wrong type" do
-          properties = TentValidator::Schemas[:post]["properties"]
+          properties = ApiValidator::JsonSchemas[:post]["properties"]
           %w( published_at version mentions licenses content attachments permissions ).each do |name|
             invalid_member_expectation.call("/#{name}", properties[name])
           end
