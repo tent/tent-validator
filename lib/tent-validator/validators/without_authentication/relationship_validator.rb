@@ -42,7 +42,7 @@ module TentValidator
                   :entity => user.entity,
                   :post => credentials_post.public_id
                 )
-                link = %(<#{url}>; rel="https://tent.io/rels/credentials")
+                link = %(<#{TentD::Utils.sign_url(user.server_credentials, url)}>; rel="https://tent.io/rels/credentials")
                 request.headers['Link'] ? request.headers['Link'] << ", #{link}" : request.headers['Link'] = link
               end
 
