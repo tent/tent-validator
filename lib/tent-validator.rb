@@ -22,6 +22,7 @@ module TentValidator
   def self.setup!(options = {})
     require 'tentd'
     self.local_database_url = options[:tent_database_url] || ENV['TENT_DATABASE_URL']
+    ENV['DB_LOGFILE'] ||= '/dev/null'
     TentD.setup!(:database_url => self.local_database_url)
 
     require 'tent-validator/tentd/model/user'
@@ -84,10 +85,8 @@ module TentValidator
 
       puts "Booting Validator Tent server on port #{tentd_port}..."
 
-      STDOUT.reopen '/dev/null'
-      STDERR.reopen '/dev/null'
-
-      cli = Puma::CLI.new ['--port', tentd_port.to_s]
+      null_io = IO.new(0)
+      cli = Puma::CLI.new ['--port', tentd_port.to_s], null_io, null_io
       local_server = self.local_server
       cli.instance_eval { @options[:app] = local_server }
       cli.run
