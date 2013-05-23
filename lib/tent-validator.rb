@@ -108,7 +108,7 @@ module TentValidator
   end
 
   def self.remote_auth_details
-    @remote_auth_details || Hash.new
+    @remote_auth_details
   end
 
   def self.remote_adapter

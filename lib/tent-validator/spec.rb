@@ -89,14 +89,18 @@ module TentValidator
     private
 
     def auth_details_for_app_type(type, options={})
-      case type
+      credentials = case type
       when :app
         TentValidator.remote_auth_details
       when :custom
-        TentD::Utils::Hash.slice(options, :id, :algorithm, :key)
-      else
-        Hash.new
+        {
+          :id => options.delete(:id),
+          :hawk_key => options.delete(:hawk_key),
+          :hawk_algorithm => options.delete(:hawk_algorithm)
+        }
       end
+
+      credentials ? { :credentials => credentials } : Hash.new
     end
 
   end
