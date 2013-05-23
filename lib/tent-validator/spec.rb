@@ -93,7 +93,7 @@ module TentValidator
       when :app
         TentValidator.remote_auth_details
       when :custom
-        TentD::Utils::Hash.slice(options, :mac_key_id, :mac_algorithm, :mac_key)
+        TentD::Utils::Hash.slice(options, :id, :algorithm, :key)
       else
         Hash.new
       end

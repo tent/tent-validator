@@ -1,43 +1,18 @@
 require 'tent-validator/validators/post_validator'
+require 'tent-validator/validators/support/app_post_generators'
 
 module TentValidator
   module WithoutAuthentication
 
     class AppValidator < PostValidator
-      def generate_app_post
-        {
-          :type => "https://tent.io/types/app/v0#",
-          :content => {
-            :name => "Example App Name",
-            :description => "Example App Description",
-            :url => "http://someapp.example.com",
-            :redirect_uri => "http://someapp.example.com/oauth/callback",
-            :post_types => {
-              :read => %w( https://tent.io/types/status/v0# ),
-              :write => %w( https://tent.io/types/status/v0# )
-            },
-            :notification_post_types => %w( https://tent.io/types/status/v0# ),
-            :scopes => %w( import_posts )
-          },
-          :permissions => {
-            :public => false
-          }
-        }
-      end
-
-      def generate_app_icon_attachment
-        {
-          :content_type => "image/png",
-          :category => 'icon',
-          :name => 'appicon.png',
-          :data => "Fake image data"
-        }
-      end
+      include Support::AppPostGenerators
 
       describe "POST /posts" do
         context "without authentication" do
 
-          context "when app registration post" do
+          set(:client) { clients(:no_auth, :server => :remote) }
+
+          context "when app registration post", :name => :create_app_registration_post do
             set(:post) { generate_app_post }
             set(:content_schema, :post_app)
 

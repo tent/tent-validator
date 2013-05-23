@@ -21,9 +21,9 @@ module TentValidator
                 }
               )
 
-              res = clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
+              res = get(:client).post.create(post, {}, :attachments => attachments)
             else
-              res = clients(:no_auth, :server => :remote).post.create(post)
+              res = get(:client).post.create(post)
             end
 
             if Hash === res.body
@@ -50,7 +50,7 @@ module TentValidator
                     }
                   )
 
-                  res = clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments) do |request|
+                  res = get(:client).post.create(post, {}, :attachments => attachments) do |request|
                     body = request.body.read
                     body.gsub!(/\bAttachment-Digest.*\r\n/, '')
                     request.body = body
@@ -111,7 +111,7 @@ module TentValidator
                 }
                 attachment
               end
-              clients(:no_auth, :server => :remote).post.create(post, {}, :attachments => attachments)
+              get(:client).post.create(post, {}, :attachments => attachments)
             end
           end
         end
@@ -120,7 +120,7 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content][:extra_member] = "I shouldn't be here!"
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
         end
 
@@ -129,7 +129,7 @@ module TentValidator
             data = get(:post)
             pointer = JsonPointer.new(data, path, :symbolize_keys => true)
             pointer.value = invalid_value(property['type'], property['format'])
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
 
           if property['type'] == 'object' && property['properties']
@@ -160,7 +160,7 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:extra_member] = "I shouldn't be here!"
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
         end
 
@@ -168,26 +168,26 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = "I should be an object"
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
 
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = ["My parent should be an object!"]
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
 
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = true
-            clients(:no_auth, :server => :remote).post.create(data)
+            get(:client).post.create(data)
           end
         end
       end
 
       context "without request body" do
         expect_response(:headers => :error, :status => 400, :schema => :error) do
-          clients(:no_auth, :server => :remote).post.create(nil) do |request|
+          get(:client).post.create(nil) do |request|
             request.headers['Content-Type'] = TentD::API::POST_CONTENT_TYPE % 'https://tent.io/types/app/v0#'
           end
         end
@@ -195,7 +195,7 @@ module TentValidator
 
       context "when request body is wrong type" do
         expect_response(:headers => :error, :status => 400, :schema => :error) do
-          clients(:no_auth, :server => :remote).post.create("I should be an object") do |request|
+          get(:client).post.create("I should be an object") do |request|
             request.headers['Content-Type'] = TentD::API::POST_CONTENT_TYPE % 'https://tent.io/types/app/v0#'
           end
         end
@@ -204,7 +204,7 @@ module TentValidator
       context "with invalid content-type header" do
         data = get(:post)
         expect_response(:headers => :error, :status => 415, :schema => :error) do
-          clients(:no_auth, :server => :remote).post.create(data) do |request|
+          get(:client).post.create(data) do |request|
             request.headers['Content-Type'] = 'application/json'
           end
         end
