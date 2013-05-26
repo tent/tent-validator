@@ -19,18 +19,29 @@ module TentValidator
       set(:post_types, post_types)
     end
 
-    # TODO: validate raw feed (no params)
     describe "GET /posts", :before => :create_posts do
-      expect_response(:status => 200, :schema => :data) do
-        expect_properties(:posts => get(:post_types).map { |type| { :type => type } })
+      context "without params" do
+        expect_response(:status => 200, :schema => :data) do
+          expect_properties(:posts => get(:post_types).map { |type| { :type => type } })
 
-        clients(:app).post.list
+          clients(:app).post.list
+        end
       end
+
+      # TODO: validate feed with type param
+      context "with type param" do
+        expect_response(:status => 200, :schema => :data) do
+          types = get(:post_types)
+          types = [types.first, types.last]
+
+          expect_properties(:posts => types.map { |type| { :type => type } })
+
+          clients(:app).post.list(:types => types)
+        end
+      end
+
+      # TODO: validate feed with entity param (no proxy)
     end
-
-    # TODO: validate feed with type param
-
-    # TODO: validate feed with entity param (no proxy)
   end
 
   TentValidator.validators << PostsFeedValidator
