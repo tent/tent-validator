@@ -14,6 +14,12 @@ module TentValidator
         }
       end
 
+      def generate_status_reply_post(is_public=true)
+        post = generate_status_post(is_public)
+        post[:type] << "reply"
+        post
+      end
+
       def generate_random_post(is_public=true)
         {
           :type => "https://tent.io/types/fictitious/v0#",
