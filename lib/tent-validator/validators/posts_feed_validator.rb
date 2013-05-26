@@ -76,6 +76,14 @@ module TentValidator
         # TODO: validate feed with entities param (with proxy)
       end
 
+      context "with limit param" do
+        expect_response(:status => 200, :schema => :data) do
+          expect_property_length("/posts", 2)
+
+          clients(:app).post.list(:limit => 2)
+        end
+      end
+
       # default limit is 25, make sure there are more than 25 posts (create_posts already called once and it creates 4 posts)
       context "when using default limit", :before => 6.times.map { :create_posts } do
         expect_response(:status => 200, :schema => :data) do
