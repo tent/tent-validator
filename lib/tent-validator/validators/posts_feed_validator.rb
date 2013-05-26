@@ -11,10 +11,13 @@ module TentValidator
       posts_attribtues = [generate_status_post, generate_random_post, generate_status_reply_post, generate_status_post]
       post_types = posts_attribtues.map { |a| a[:type] }.reverse
 
+      posts = []
       posts_attribtues.each do |post|
         res = client.post.create(post)
         raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
+        posts << res.body
       end
+      set(:posts, posts)
 
       set(:post_types, post_types)
     end
@@ -52,7 +55,26 @@ module TentValidator
         end
       end
 
-      # TODO: validate feed with entity param (no proxy)
+      context "with entities param" do
+        context "when no matching entities" do
+          expect_response(:status => 200, :schema => :data) do
+            expect_properties(:posts => [])
+
+            clients(:app).post.list(:entities => "https://fictitious.entity.example.org")
+          end
+        end
+
+        context "when matching entities" do
+          expect_response(:status => 200, :schema => :data) do
+            entities = get(:posts).map { |p| p['entity'] }
+            expect_properties(:posts => entities.map { |e| { :entity => e } })
+
+            clients(:app).post.list(:entities => entities.uniq.join(','))
+          end
+        end
+
+        # TODO: validate feed with entities param (with proxy)
+      end
     end
   end
 
