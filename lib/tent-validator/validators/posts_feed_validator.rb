@@ -8,7 +8,7 @@ module TentValidator
 
     def create_posts
       client = clients(:app)
-      posts_attribtues = [generate_status_post, generate_random_post, generate_status_post]
+      posts_attribtues = [generate_status_post, generate_random_post, generate_status_reply_post, generate_status_post]
       post_types = posts_attribtues.map { |a| a[:type] }.reverse
 
       posts_attribtues.each do |post|
@@ -28,7 +28,6 @@ module TentValidator
         end
       end
 
-      # TODO: validate feed with type param
       context "with type param" do
         expect_response(:status => 200, :schema => :data) do
           types = get(:post_types)
@@ -37,6 +36,19 @@ module TentValidator
           expect_properties(:posts => types.map { |type| { :type => type } })
 
           clients(:app).post.list(:types => types)
+        end
+
+        context "when using fragment wildcard" do
+          expect_response(:status => 200, :schema => :data) do
+            type = TentClient::TentType.new('https://tent.io/types/status/v0')
+            expected_types = get(:post_types).select { |t|
+              TentClient::TentType.new(t).base == type.base
+            }.map { |t| { :type => t } }
+
+            expect_properties(:posts => expected_types)
+
+            clients(:app).post.list(:types => [type.to_s(:fragment => false)])
+          end
         end
       end
 
