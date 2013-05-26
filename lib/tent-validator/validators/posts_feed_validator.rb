@@ -126,7 +126,135 @@ module TentValidator
               clients(:app).post.list(:mentions => entity)
             end
           end
+
+          context "entity with post" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              post = get(:posts).first['id'] # first status post
+              posts = [get(:posts)[1]] # first status post reply
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
+
+              clients(:app).post.list(:mentions => [entity, post].join(' '))
+            end
+          end
+
+          context "entity OR entity" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              posts = get(:posts).select { |post|
+                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
+              }
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
+
+              clients(:app).post.list(:mentions => [entity, fictitious_entity].join(','))
+            end
+          end
+
+          context "entity OR entity with post" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              post = get(:posts).first['id'] # first status post
+              posts = [get(:posts)[1]] # first status post reply
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
+
+              clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')].join(','))
+            end
+          end
         end
+
+        context "when multiple params" do
+          context "entity AND entity" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              posts = []
+
+              clients(:app).post.list(:mentions => [fictitious_entity, entity])
+            end
+          end
+
+          context "entity AND entity with post" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              post = get(:posts).first['id'] # first status post
+              posts = [get(:posts)[1]] # first status post reply
+
+              clients(:app).post.list(:mentions => [entity, [entity, post].join(' ')])
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              post = get(:posts).first['id'] # first status post
+              posts = []
+
+              clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')])
+            end
+          end
+
+          context "(entity OR entity) AND entity" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              posts = [get(:posts)[1]] # first status post reply
+
+              clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), entity])
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              posts = []
+
+              clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), entity])
+            end
+          end
+
+          context "(entity OR entity) AND (entity OR entity)" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              posts = [get(:posts)[1]] # first status post reply
+
+              clients(:app).post.list(:mentions => 2.times.map { [fictitious_entity, entity].join(',') })
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              posts = []
+
+              clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [fictitious_entity, entity].join(',')])
+            end
+          end
+
+          context "(entity OR entity) AND entity with post" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              post = get(:posts).first['id'] # first status post
+              posts = []
+
+              clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [entity, post].join(' ')])
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              post = get(:posts).first['id'] # first status post
+              posts = [get(:posts)[1]] # first status post reply
+
+              clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
+            end
+          end
+        end
+      end
     end
   end
 
