@@ -22,6 +22,26 @@ module TentValidator
       set(:post_types, post_types)
     end
 
+    def create_posts_with_mentions
+      client = clients(:app)
+      posts = []
+
+      _create_post = proc do |post|
+        res = client.post.create(post)
+        raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
+        posts << res.body
+        res.body
+      end
+
+      _ref = _create_post.call(generate_status_post)
+      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['post']}]))
+
+      _ref = _create_post.call(generate_status_post)
+      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['post']}]))
+
+      set(:posts, posts)
+    end
+
     describe "GET posts_feed", :before => :create_posts do
       context "without params" do
         expect_response(:status => 200, :schema => :data) do
@@ -92,6 +112,21 @@ module TentValidator
           clients(:app).post.list
         end
       end
+
+      context "with mentions param", :before => :create_posts_with_mentions do
+        context "when single param" do
+          context "entity" do
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:posts).first['entity'] # remote entity
+              posts = get(:posts).select { |post|
+                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
+              }
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
+
+              clients(:app).post.list(:mentions => entity)
+            end
+          end
+        end
     end
   end
 
