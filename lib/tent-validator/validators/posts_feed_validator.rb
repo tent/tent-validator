@@ -34,10 +34,10 @@ module TentValidator
       end
 
       _ref = _create_post.call(generate_status_post)
-      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['post']}]))
+      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['id']}]))
 
       _ref = _create_post.call(generate_status_post)
-      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['post']}]))
+      _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['id']}]))
 
       set(:posts, posts)
     end
