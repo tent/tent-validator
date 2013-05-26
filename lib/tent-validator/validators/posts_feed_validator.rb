@@ -19,7 +19,7 @@ module TentValidator
       set(:post_types, post_types)
     end
 
-    describe "GET /posts", :before => :create_posts do
+    describe "GET posts_feed", :before => :create_posts do
       context "without params" do
         expect_response(:status => 200, :schema => :data) do
           expect_properties(:posts => get(:post_types).map { |type| { :type => type } })
