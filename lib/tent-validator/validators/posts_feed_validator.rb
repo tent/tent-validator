@@ -8,7 +8,11 @@ module TentValidator
 
     def create_posts
       client = clients(:app)
-      posts_attribtues = [generate_status_post, generate_random_post, generate_status_reply_post, generate_status_post]
+      posts_attribtues = [generate_status_post, generate_random_post, generate_status_reply_post, generate_status_post].each_with_index.map do |post, index|
+        post.merge(
+          :published_at => TentD::Utils.timestamp - index + 1000
+        )
+      end
       post_types = posts_attribtues.map { |a| a[:type] }.reverse
 
       posts = []
@@ -94,6 +98,53 @@ module TentValidator
         end
 
         # TODO: validate feed with entities param (with proxy)
+      end
+
+      context "when using default sort order" do
+        expect_response(:status => 200, :schema => :data) do
+          posts = get(:posts).sort_by { |post| post['received_at'] * -1 }
+          expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'received_at') })
+
+          clients(:app).post.list(:sort_by => 'received_at')
+        end
+      end
+
+      context "with sort_by param" do
+        context "when received_at" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort_by { |post| post['received_at'] * -1 }
+            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'received_at') })
+
+            clients(:app).post.list(:sort_by => 'received_at')
+          end
+        end
+
+        context "when published_at" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort_by { |post| post['published_at'] * -1 }
+            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+
+            clients(:app).post.list(:sort_by => 'published_at')
+          end
+        end
+
+        context "when version.received_at" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort_by { |post| post['version']['received_at'] * -1 }
+            expect_properties(:posts => posts.map { |post| { :version => TentD::Utils::Hash.slice(post['version'], 'received_at') } })
+
+            clients(:app).post.list(:sort_by => 'version.received_at')
+          end
+        end
+
+        context "when version.published_at" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort_by { |post| post['version']['published_at'] * -1 }
+            expect_properties(:posts => posts.map { |post| { :version => TentD::Utils::Hash.slice(post['version'], 'published_at') } })
+
+            clients(:app).post.list(:sort_by => 'version.published_at')
+          end
+        end
       end
 
       context "with limit param" do
