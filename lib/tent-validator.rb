@@ -85,10 +85,9 @@ module TentValidator
 
       puts "Booting Validator Tent server on port #{tentd_port}..."
 
-      null_io = IO.new(0)
-      cli = Puma::CLI.new ['--port', tentd_port.to_s], null_io, null_io
+      cli = Puma::CLI.new ['--port', tentd_port.to_s]
       local_server = self.local_server
-      cli.instance_eval { @options[:app] = local_server }
+      cli.instance_eval { @options[:app] = local_server; @options[:quiet] = true }
       cli.run
     end
 
