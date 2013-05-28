@@ -46,6 +46,28 @@ module TentValidator
       set(:posts, posts)
     end
 
+    def create_pagination_posts
+      client = clients(:app)
+      posts = []
+
+      _create_post = proc do |post|
+        res = client.post.create(post)
+        raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
+        posts << res.body
+        res.body
+      end
+
+      published_at = TentD::Utils.timestamp
+      _create_post.call(generate_status_post.merge(:published_at => published_at, :content => {:text => "first post"}))
+      _create_post.call(generate_status_post.merge(:published_at => published_at, :content => {:text => "second post"}))
+
+      2.times {
+        _create_post.call(generate_status_post.merge(:published_at => TentD::Utils.timestamp))
+      }
+
+      set(:posts, posts)
+    end
+
     describe "GET posts_feed", :before => :create_posts do
       context "without params" do
         expect_response(:status => 200, :schema => :data) do
@@ -303,6 +325,46 @@ module TentValidator
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
             end
+          end
+        end
+      end
+
+      context "with since param", :before => :create_pagination_posts do
+        context "using timestamp" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort do |a,b|
+              i = a['published_at'] <=> b['published_at']
+              i == 0 ? a['version']['id'] <=> b['version']['id'] : i
+            end
+
+            since_post = posts.shift
+            since = since_post['published_at']
+
+            limit = 2
+            posts = posts.slice(1, limit).reverse # second post has the same timestamp as the first
+
+            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+
+            clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
+          end
+        end
+
+        context "using timestamp + version" do
+          expect_response(:status => 200, :schema => :data) do
+            posts = get(:posts).sort do |a,b|
+              i = a['published_at'] <=> b['published_at']
+              i == 0 ? a['version']['id'] <=> b['version']['id'] : i
+            end
+
+            since_post = posts.shift
+            since = "#{since_post['published_at']} #{since_post['version']['id']}"
+
+            limit = 2
+            posts = posts.slice(0, limit).reverse
+
+            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+
+            clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
           end
         end
       end
