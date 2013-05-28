@@ -1,3 +1,5 @@
+require 'faker'
+
 module TentValidator
   module Support
     module PostGenerators
@@ -6,7 +8,7 @@ module TentValidator
         {
           :type => "https://tent.io/types/status/v0#",
           :content => {
-            :text => "The quick brown fox jumps over the lazy dog."
+            :text => Faker::Lorem.sentences(4).join(' ').slice(0, 256)
           },
           :permissions => {
             :public => is_public
@@ -24,7 +26,7 @@ module TentValidator
         {
           :type => "https://tent.io/types/fictitious/v0#",
           :content => {
-            :description => "chunky tempeh bacon!"
+            :description => Faker::Lorem.sentence
           },
           :permissions => {
             :public => is_public

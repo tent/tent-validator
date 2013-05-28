@@ -27,6 +27,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'tent-canonical-json'
   gem.add_runtime_dependency 'awesome_print'
   gem.add_runtime_dependency 'puma'
+  gem.add_runtime_dependency 'faker'
 
   gem.add_development_dependency 'rspec', '~> 2.11'
   gem.add_development_dependency 'mocha', '0.12.6'
