@@ -192,6 +192,41 @@ module TentValidator
             end
           end
         end
+
+        context "with until param" do
+          context "using timestamp" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              until_post = posts.shift
+              posts.shift # has the same published_at
+              until_param = until_post['published_at']
+
+              posts = posts.reverse
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:until => until_param, :sort_by => :published_at)
+            end
+          end
+
+          context "using timestamp + version" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              until_post = posts.shift
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              posts = posts.reverse
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:until => until_param, :sort_by => :published_at)
+            end
+          end
+        end
       end
 
       context "with limit param" do
