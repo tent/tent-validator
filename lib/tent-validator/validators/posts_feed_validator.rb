@@ -23,6 +23,9 @@ module TentValidator
       posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "second post"}))
       posts << create_post(client, generate_status_reply_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "third post"}))
       posts << create_post(client, generate_status_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "fourth post"}))
+      timestamp = TentD::Utils.timestamp + timestamp_offset
+      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "fifth post"}))
+      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "sixth post"}))
 
       set(:posts, posts)
 
@@ -204,7 +207,7 @@ module TentValidator
 
               posts = posts.reverse
 
-              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:until => until_param, :sort_by => :published_at)
@@ -224,6 +227,37 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:until => until_param, :sort_by => :published_at)
+            end
+          end
+        end
+
+        context "with before param" do
+          context "using timestamp" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # has the same timestamp, don't expect it
+              before = before_post['published_at']
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :sort_by => :published_at, :limit => posts.size)
+            end
+          end
+
+          context "using timestamp + version" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :sort_by => :published_at, :limit => posts.size)
             end
           end
         end
