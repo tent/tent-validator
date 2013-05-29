@@ -22,7 +22,7 @@ module TentValidator
         post
       end
 
-      def generate_random_post(is_public=true)
+      def generate_fictitious_post(is_public=true)
         {
           :type => "https://tent.io/types/fictitious/v0#",
           :content => {

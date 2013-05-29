@@ -6,23 +6,27 @@ module TentValidator
     require 'tent-validator/validators/support/post_generators'
     include Support::PostGenerators
 
+    def create_post(client, attrs)
+      res = client.post.create(attrs)
+      raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
+      res.body
+    end
+
     def create_posts
       client = clients(:app)
-      posts_attribtues = [generate_status_post, generate_random_post, generate_status_reply_post, generate_status_post].each_with_index.map do |post, index|
-        post.merge(
-          :published_at => TentD::Utils.timestamp - index + 1000
-        )
-      end
-      post_types = posts_attribtues.map { |a| a[:type] }.reverse
 
       posts = []
-      posts_attribtues.each do |post|
-        res = client.post.create(post)
-        raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
-        posts << res.body
-      end
+
+      timestamp_offset = 1000
+      timestamp = TentD::Utils.timestamp + timestamp_offset
+      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "first post"}))
+      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "second post"}))
+      posts << create_post(client, generate_status_reply_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "third post"}))
+      posts << create_post(client, generate_status_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "fourth post"}))
+
       set(:posts, posts)
 
+      post_types = posts.map { |post| post['type'] }.reverse
       set(:post_types, post_types)
     end
 
@@ -43,29 +47,7 @@ module TentValidator
       _ref = _create_post.call(generate_status_post)
       _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['id']}]))
 
-      set(:posts, posts)
-    end
-
-    def create_pagination_posts
-      client = clients(:app)
-      posts = []
-
-      _create_post = proc do |post|
-        res = client.post.create(post)
-        raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
-        posts << res.body
-        res.body
-      end
-
-      published_at = TentD::Utils.timestamp
-      _create_post.call(generate_status_post.merge(:published_at => published_at, :content => {:text => "first post"}))
-      _create_post.call(generate_status_post.merge(:published_at => published_at, :content => {:text => "second post"}))
-
-      2.times {
-        _create_post.call(generate_status_post.merge(:published_at => TentD::Utils.timestamp))
-      }
-
-      set(:posts, posts)
+      set(:mentions_posts, posts)
     end
 
     describe "GET posts_feed", :before => :create_posts do
@@ -169,6 +151,49 @@ module TentValidator
         end
       end
 
+      context "pagination" do
+        set :sorted_posts do
+          get(:posts).sort do |a,b|
+            i = a['published_at'] <=> b['published_at']
+            i == 0 ? a['version']['id'] <=> b['version']['id'] : i
+          end
+        end
+
+        context "with since param" do
+          context "using timestamp" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              since_post = posts.shift
+              since = since_post['published_at']
+
+              limit = 2
+              posts = posts.slice(1, limit).reverse # second post has the same timestamp as the first
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+
+              clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
+            end
+          end
+
+          context "using timestamp + version" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              since_post = posts.shift
+              since = "#{since_post['published_at']} #{since_post['version']['id']}"
+
+              limit = 2
+              posts = posts.slice(0, limit).reverse
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
+
+              clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
+            end
+          end
+        end
+      end
+
       context "with limit param" do
         expect_response(:status => 200, :schema => :data) do
           expect_property_length("/posts", 2)
@@ -190,8 +215,8 @@ module TentValidator
         context "when single param" do
           context "entity" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
-              posts = get(:posts).select { |post|
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              posts = get(:mentions_posts).select { |post|
                 post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
               }
               expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
@@ -202,9 +227,9 @@ module TentValidator
 
           context "entity with post" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
-              post = get(:posts).first['id'] # first status post
-              posts = [get(:posts)[1]] # first status post reply
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              post = get(:mentions_posts).first['id'] # first status post
+              posts = [get(:mentions_posts)[1]] # first status post reply
               expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [entity, post].join(' '))
@@ -213,9 +238,9 @@ module TentValidator
 
           context "entity OR entity" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = get(:posts).select { |post|
+              posts = get(:mentions_posts).select { |post|
                 post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
               }
               expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
@@ -226,10 +251,10 @@ module TentValidator
 
           context "entity OR entity with post" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              post = get(:posts).first['id'] # first status post
-              posts = [get(:posts)[1]] # first status post reply
+              post = get(:mentions_posts).first['id'] # first status post
+              posts = [get(:mentions_posts)[1]] # first status post reply
               expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')].join(','))
@@ -240,7 +265,7 @@ module TentValidator
         context "when multiple params" do
           context "entity AND entity" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               posts = []
 
@@ -250,17 +275,17 @@ module TentValidator
 
           context "entity AND entity with post" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
-              post = get(:posts).first['id'] # first status post
-              posts = [get(:posts)[1]] # first status post reply
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              post = get(:mentions_posts).first['id'] # first status post
+              posts = [get(:mentions_posts)[1]] # first status post reply
 
               clients(:app).post.list(:mentions => [entity, [entity, post].join(' ')])
             end
 
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              post = get(:posts).first['id'] # first status post
+              post = get(:mentions_posts).first['id'] # first status post
               posts = []
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')])
@@ -269,15 +294,15 @@ module TentValidator
 
           context "(entity OR entity) AND entity" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = [get(:posts)[1]] # first status post reply
+              posts = [get(:mentions_posts)[1]] # first status post reply
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), entity])
             end
 
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
               posts = []
@@ -288,15 +313,15 @@ module TentValidator
 
           context "(entity OR entity) AND (entity OR entity)" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = [get(:posts)[1]] # first status post reply
+              posts = [get(:mentions_posts)[1]] # first status post reply
 
               clients(:app).post.list(:mentions => 2.times.map { [fictitious_entity, entity].join(',') })
             end
 
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
               posts = []
@@ -307,64 +332,24 @@ module TentValidator
 
           context "(entity OR entity) AND entity with post" do
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
-              post = get(:posts).first['id'] # first status post
+              post = get(:mentions_posts).first['id'] # first status post
               posts = []
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [entity, post].join(' ')])
             end
 
             expect_response(:status => 200, :schema => :data) do
-              entity = get(:posts).first['entity'] # remote entity
+              entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
-              post = get(:posts).first['id'] # first status post
-              posts = [get(:posts)[1]] # first status post reply
+              post = get(:mentions_posts).first['id'] # first status post
+              posts = [get(:mentions_posts)[1]] # first status post reply
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
             end
-          end
-        end
-      end
-
-      context "with since param", :before => :create_pagination_posts do
-        context "using timestamp" do
-          expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort do |a,b|
-              i = a['published_at'] <=> b['published_at']
-              i == 0 ? a['version']['id'] <=> b['version']['id'] : i
-            end
-
-            since_post = posts.shift
-            since = since_post['published_at']
-
-            limit = 2
-            posts = posts.slice(1, limit).reverse # second post has the same timestamp as the first
-
-            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
-
-            clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
-          end
-        end
-
-        context "using timestamp + version" do
-          expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort do |a,b|
-              i = a['published_at'] <=> b['published_at']
-              i == 0 ? a['version']['id'] <=> b['version']['id'] : i
-            end
-
-            since_post = posts.shift
-            since = "#{since_post['published_at']} #{since_post['version']['id']}"
-
-            limit = 2
-            posts = posts.slice(0, limit).reverse
-
-            expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
-
-            clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
           end
         end
       end
