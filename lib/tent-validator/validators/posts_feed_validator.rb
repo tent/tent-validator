@@ -337,6 +337,82 @@ module TentValidator
             end
           end
         end
+
+        context "with before and until params" do
+          context "using timestamp" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # same timestamp
+              before = before_post['published_at']
+
+              until_post = posts.pop
+              posts.pop # same timestamp
+              until_param = until_post['published_at']
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at)
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # same timestamp
+              before = before_post['published_at']
+
+              until_post = posts.pop
+              posts.pop # same timestamp
+              until_param = until_post['published_at']
+
+              limit = 1
+              posts = posts.slice(0, limit)
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
+            end
+          end
+
+          context "using timestamp + version" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              until_post = posts.pop
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at)
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              until_post = posts.pop
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              limit = 2
+              posts = posts.slice(0, limit)
+
+              expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+              expect_property_length('/posts', posts.size)
+
+              clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
+            end
+          end
+        end
       end
 
       context "with limit param" do
