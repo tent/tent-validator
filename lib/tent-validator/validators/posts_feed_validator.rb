@@ -19,13 +19,13 @@ module TentValidator
 
       timestamp_offset = 1000
       timestamp = TentD::Utils.timestamp + timestamp_offset
-      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "first post"}))
-      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "second post"}))
+      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "first or second post A"}))
+      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "first or second post B"}))
       posts << create_post(client, generate_status_reply_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "third post"}))
       posts << create_post(client, generate_status_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "fourth post"}))
       timestamp = TentD::Utils.timestamp + timestamp_offset
-      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "fifth post"}))
-      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "sixth post"}))
+      posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "fifth or sixth post A"}))
+      posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "fifth or sixth post B"}))
 
       set(:posts, posts)
 
@@ -410,6 +410,148 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
+            end
+          end
+        end
+
+        describe "pages links" do
+          context "when middle page" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              # posts
+              # | newest |
+              # - 6
+              # - 5
+              # - 4 < before post
+              # - 3 <
+              # - 2 <
+              # - 1
+              # | oldest |
+
+              # prev page
+              # | newest |
+              # - 6 <
+              # - 5 <
+              # - 4
+              # - 3
+              # - 2
+              # - 1
+              # | oldest |
+
+              # next page
+              # | newest |
+              # - 6
+              # - 5
+              # - 4
+              # - 3
+              # - 2
+              # - 1 <
+              # | oldest |
+
+              i = 3 # fourth post
+              set(:before_post_index, i)
+              before_post = posts[i]
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              limit = 2
+              set(:limit, limit)
+
+              res = clients(:app).post.list(:limit => limit, :before => before, :sort_by => :published_at)
+
+              set(:pages, res.body['pages']) if res.success?
+
+              res
+            end
+
+            describe "`pages.next`" do
+              expect_response(:status => 200, :schema => :data) do
+                pages = get(:pages) || {}
+                next_params = parse_params(pages['next'].to_s)
+
+                posts = get(:sorted_posts).reverse.slice(get(:before_post_index) + get(:limit), get(:limit)) # first post
+
+                expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+                expect_property_length('/posts', 2) # first post + some other post (at least the meta post will be there)
+
+                clients(:app).post.list(next_params)
+              end
+            end
+
+            describe "`pages.prev`" do
+              expect_response(:status => 200, :schema => :data) do
+                pages = get(:pages) || {}
+                prev_params = parse_params(pages['prev'].to_s)
+
+                posts = get(:sorted_posts).reverse.slice(0, get(:before_post_index)).reverse.slice(0, get(:limit)).reverse
+
+                expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+                expect_property_length('/posts', posts.size)
+
+                clients(:app).post.list(prev_params)
+              end
+            end
+
+            describe "`pages.first`" do
+              expect_response(:status => 200, :schema => :data) do
+                pages = get(:pages) || {}
+                first_params = parse_params(pages['first'].to_s)
+
+                posts = get(:sorted_posts).reverse.slice(0, get(:limit))
+
+                expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+                expect_property_length('/posts', posts.size)
+
+                clients(:app).post.list(first_params)
+              end
+            end
+
+            describe "`pages.last`" do
+              expect_response(:status => 200, :schema => :data) do
+                res = clients(:app).post.list(:sort_by => :published_at, :limit => 2, :since => 0)
+                set(:last_posts, res.body['posts']) if res.success?
+                res
+              end
+
+              expect_response(:status => 200, :schema => :data) do
+                pages = get(:pages) || {}
+                last_params = parse_params(pages['last'].to_s)
+
+                posts = get(:last_posts).to_a
+
+                expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
+                expect_property_length('/posts', posts.size)
+
+                clients(:app).post.list(last_params)
+              end
+            end
+          end
+
+          context "when first page" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              expect_properties_absent('/pages/first', '/pages/prev')
+              expect_properties_present('/pages/last', '/pages/next')
+
+              limit = 2
+              set(:limit, limit)
+
+              clients(:app).post.list(:limit => limit, :sort_by => :published_at)
+            end
+          end
+
+          context "when last page" do
+            expect_response(:status => 200, :schema => :data) do
+              posts = get(:sorted_posts)
+
+              expect_properties_absent('/pages/last', '/pages/next')
+              expect_properties_present('/pages/first', '/pages/prev')
+
+              limit = 2
+              set(:limit, limit)
+
+              clients(:app).post.list(:limit => limit, :sort_by => :published_at, :since => 0)
             end
           end
         end
