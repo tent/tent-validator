@@ -51,37 +51,11 @@ TentValidator.setup!(
       }
     ]
   },
-  :remote_auth_details => {
-    # ...
-  },
   :tent_database_url => ENV['VALIDATOR_TENTD_DATABASE_URL'] # tent-validator uses tentd
 )
 
 TentValidator::Runner::CLI.run
 ```
-
-#### Browser Runner
-
-You will also need JavaScript runtime (e.g. nodejs).
-
-```bash
-echo "VALIDATOR_NOTIFICATION_URL=http://localhost:9292/webhooks 
-COOKIE_SECRET=$(openssl rand -hex 16 | tr -d '\r\n') 
-VALIDATOR_HOST=http://localhost:9292" >> .env
-
-gem install foreman
-foreman run bundle exec puma -p 3000
-```
-
-```bash
-open http://localhost:3000
-```
-
-Enter your entity URI when propted and authorize with your Tent server.
-
-**WARNING: This app will create lots of posts (many of them public) and not delete all of them. For best results wipe the database for your entity's server between validation runs and don't use an entity with any followers.**
-
-The app will then run validations against your server and display the results.
 
 ## Contributing
 
