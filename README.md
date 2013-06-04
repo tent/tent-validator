@@ -12,7 +12,7 @@ It's assumed you have redis and postgres running.
 cd tent-validator
 bundle
 createdb tent-validator
-createdb tent-validator-tentd && DATABASE_URL=postgres://localhost/tent-validator-tentd bundle exec rake tentd:db:migrate
+createdb tent-validator-tentd && DATABASE_URL=postgres://localhost/tent-validator-tentd bundle exec rake db:migrate
 
 echo "VALIDATOR_DATABASE_URL=postgres://localhost/tent-validator 
 TENT_DATABASE_URL=postgres://localhost/tent-validator-tentd 
