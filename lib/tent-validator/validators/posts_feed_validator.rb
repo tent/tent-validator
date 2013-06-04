@@ -6,6 +6,9 @@ module TentValidator
     require 'tent-validator/validators/support/post_generators'
     include Support::PostGenerators
 
+    require 'tent-validator/validators/support/app_post_generators'
+    include Support::AppPostGenerators
+
     def create_post(client, attrs)
       res = client.post.create(attrs)
       raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
@@ -51,6 +54,17 @@ module TentValidator
       _create_post.call(generate_status_reply_post.merge(:mentions => [{ :entity => _ref['entity'], :post => _ref['id']}]))
 
       set(:mentions_posts, posts)
+    end
+
+    def create_private_posts
+      client = clients(:app)
+      posts = []
+
+      posts << create_post(client, generate_status_post(is_public=false))
+      posts << create_post(client, generate_status_reply_post(is_public=false))
+      posts << create_post(client, generate_status_post(is_public=false))
+
+      set(:private_posts, posts)
     end
 
     describe "GET posts_feed", :before => :create_posts do
@@ -712,6 +726,194 @@ module TentValidator
               posts = [get(:mentions_posts)[1]] # first status post reply
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
+            end
+          end
+        end
+      end
+
+      context "without authentication", :before => :create_private_posts do
+        expect_response(:status => 200, :schema => :data) do
+          expect_properties(:posts => 2.times.map { {:permissions => {:public => true}} })
+          expect_property_length('/posts', 2)
+
+          clients(:no_auth).post.list(:limit => 2)
+        end
+      end
+
+      context "with authentication" do
+        context "with full authorization" do
+          expect_response(:status => 200, :schema => :data) do
+            expect_properties(:posts => 2.times.map { {:permissions => {:public => false}} })
+            expect_property_length('/posts', 2)
+
+            clients(:app).post.list(:limit => 2)
+          end
+        end
+
+        context "with limited authorization" do
+          context "when limited fragment" do
+            # create app
+            expect_response(:status => 200, :schema => :post) do
+              data = generate_app_post
+              data[:content][:post_types][:read] = %w(https://tent.io/types/status/v0#)
+              res = clients(:no_auth).post.create(data)
+
+              links = TentClient::LinkHeader.parse(res.headers['Link']).links
+              credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
+
+              set(:limited_app, res.body)
+              set(:limited_app_credentials_url, credentials_url)
+
+              res
+            end
+
+            # fetch app credentials
+            expect_response(:status => 200) do
+              expect_properties(
+                :id => /\A.+\Z/,
+                :content => {
+                  :hawk_key => /\A.+\Z/,
+                  :hawk_algorithm => /\A.+\Z/
+                }
+              )
+
+              res = clients(:no_auth).http.get(get(:limited_app_credentials_url))
+
+              if res.success?
+                set(:limited_app_credentials,
+                  :id => res.body['id'],
+                  :hawk_key => res.body['content']['hawk_key'],
+                  :hawk_algorithm => res.body['content']['hawk_algorithm']
+                )
+              end
+
+              res
+            end
+
+            # authorize app
+            expect_response(:status => 302) do
+              expect_headers(:Location => %r{\bcode=.+\b})
+
+              client = clients(:no_auth)
+              res = client.http.get(client.oauth_redirect_uri(:client_id => get(:limited_app)['id']))
+
+              set(:oauth_redirect_uri, res.headers[:Location].to_s)
+
+              res
+            end
+
+            # token exchange
+            expect_response(:status => 200) do
+              token_code = parse_params(URI(get(:oauth_redirect_uri)).query)['code']
+
+              expect_properties(
+                :access_token => /\A.+\Z/,
+                :hawk_key => /\A.+\Z/,
+                :hawk_algorithm => 'sha256',
+                :token_type => 'https://tent.io/oauth/hawk-token'
+              )
+
+              client = clients(:custom, get(:limited_app_credentials))
+              res = client.oauth_token_exchange(:code => token_code)
+
+              set(:limited_credentials,
+                :id => res.body['access_token'],
+                :hawk_key => res.body['hawk_key'],
+                :hawk_algorithm => res.body['hawk_algorithm']
+              )
+
+              res
+            end
+
+            # feed request
+            expect_response(:status => 200, :schema => :data) do
+              expect_properties(:posts => 2.times.map { {:type => "https://tent.io/types/status/v0#"} })
+              expect_property_length('/posts', 2)
+
+              clients(:custom, get(:limited_credentials)).post.list(:limit => 2)
+            end
+          end
+
+          context "when limited base" do
+            # create app
+            expect_response(:status => 200, :schema => :post) do
+              data = generate_app_post
+              data[:content][:post_types][:read] = %w(https://tent.io/types/status/v0)
+              res = clients(:no_auth).post.create(data)
+
+              links = TentClient::LinkHeader.parse(res.headers['Link']).links
+              credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
+
+              set(:limited_app, res.body)
+              set(:limited_app_credentials_url, credentials_url)
+
+              res
+            end
+
+            # fetch app credentials
+            expect_response(:status => 200) do
+              expect_properties(
+                :id => /\A.+\Z/,
+                :content => {
+                  :hawk_key => /\A.+\Z/,
+                  :hawk_algorithm => /\A.+\Z/
+                }
+              )
+
+              res = clients(:no_auth).http.get(get(:limited_app_credentials_url))
+
+              if res.success?
+                set(:limited_app_credentials,
+                  :id => res.body['id'],
+                  :hawk_key => res.body['content']['hawk_key'],
+                  :hawk_algorithm => res.body['content']['hawk_algorithm']
+                )
+              end
+
+              res
+            end
+
+            # authorize app
+            expect_response(:status => 302) do
+              expect_headers(:Location => %r{\bcode=.+\b})
+
+              client = clients(:no_auth)
+              res = client.http.get(client.oauth_redirect_uri(:client_id => get(:limited_app)['id']))
+
+              set(:oauth_redirect_uri, res.headers[:Location].to_s)
+
+              res
+            end
+
+            # token exchange
+            expect_response(:status => 200) do
+              token_code = parse_params(URI(get(:oauth_redirect_uri)).query)['code']
+
+              expect_properties(
+                :access_token => /\A.+\Z/,
+                :hawk_key => /\A.+\Z/,
+                :hawk_algorithm => 'sha256',
+                :token_type => 'https://tent.io/oauth/hawk-token'
+              )
+
+              client = clients(:custom, get(:limited_app_credentials))
+              res = client.oauth_token_exchange(:code => token_code)
+
+              set(:limited_credentials,
+                :id => res.body['access_token'],
+                :hawk_key => res.body['hawk_key'],
+                :hawk_algorithm => res.body['hawk_algorithm']
+              )
+
+              res
+            end
+
+            # feed request
+            expect_response(:status => 200, :schema => :data) do
+              expect_properties(:posts => [{:type => "https://tent.io/types/status/v0#reply"},{:type => "https://tent.io/types/status/v0#"}])
+              expect_property_length('/posts', 2)
+
+              clients(:custom, get(:limited_credentials)).post.list(:limit => 2)
             end
           end
         end
