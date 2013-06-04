@@ -14,6 +14,8 @@ module TentValidator
   require 'tent-validator/faraday/validator_rack_adapter'
   require 'tent-validator/faraday/validator_net_http_adapter'
 
+  SetupFailure = Class.new(StandardError)
+
   class << self
     attr_writer :remote_auth_details
     attr_accessor :remote_server_meta, :remote_entity_uri, :local_database_url, :local_server, :local_server_port, :mutex
@@ -35,6 +37,53 @@ module TentValidator
         self.send("#{key}=", options.delete(key))
       end
     end
+
+    remote_registration
+  end
+
+  def self.remote_registration
+    client = TentClient.new(remote_entity_uri,
+      :faraday_adapter => remote_adapter,
+      :server_meta => remote_server_meta
+    )
+
+    res = client.post.create(
+      :type => "https://tent.io/types/app/v0#",
+      :content => {
+        :name => "Validator",
+        :description => "Tent 0.3 Protocol Validator",
+        :url => "null://validator",
+        :redirect_uri => "null://validator/callback",
+        :post_types => {
+          :read => %w( all ),
+          :write => %w( all )
+        },
+        :scopes => %w( all )
+      },
+      :permissions => {
+        :public => false
+      }
+    )
+
+    unless res.success?
+      raise SetupFailure.new("Failed to register app on remote server! #{res.status}: #{res.body.inspect}")
+    end
+
+    app = res.body
+
+    oauth_uri = client.oauth_redirect_uri(:client_id => app['id'])
+
+    res = client.http.get(oauth_uri.to_s)
+    return (self.remote_auth_details = {}) unless res.status == 302
+    oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
+
+    res = client.oauth_token_exchange(:code => oauth_code)
+    oauth_credentials = res.body
+    self.remote_auth_details = {
+      :id => oauth_credentials['access_token'],
+      :hawk_key => oauth_credentials['hawk_key'],
+      :hawk_algorithm => oauth_credentials['hawk_algorithm']
+    }
   end
 
   def self.watch_local_requests

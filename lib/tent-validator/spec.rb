@@ -4,6 +4,26 @@ require 'tent-validator/request_expectation'
 module TentValidator
   class Spec < ApiValidator::Spec
 
+    def self.parse_params(query_string)
+      query_string.sub(/\A\?/, '').split('&').inject({}) do |params, param|
+        key,val = param.split('=')
+        val = URI.decode_www_form_component(val)
+
+        # Faraday allows specifying multiple params of the same name by assigning the key with an array of values
+        if params.has_key?(key)
+          if !params[key].kind_of?(Array)
+            params[key] = [params[key]]
+          end
+
+          params[key] << val
+        else
+          params[key] = val
+        end
+
+        params
+      end
+    end
+
     def watch_local_requests(should, user_id)
       if should
         TentValidator.watch_local_requests[user_id] = should
@@ -38,24 +58,8 @@ module TentValidator
       TentD::Utils.hex_digest(input)
     end
 
-    def parse_params(params_string)
-      params_string.sub(/\A\?/, '').split('&').inject({}) do |params, param|
-        key,val = param.split('=')
-        val = URI.decode_www_form_component(val)
-
-        # Faraday allows specifying multiple params of the same name by assigning the key with an array of values
-        if params.has_key?(key)
-          if !params[key].kind_of?(Array)
-            params[key] = [params[key]]
-          end
-
-          params[key] << val
-        else
-          params[key] = val
-        end
-
-        params
-      end
+    def parse_params(query_string)
+      self.class.parse_params(query_string)
     end
 
     def invalid_value(type, format = nil)
