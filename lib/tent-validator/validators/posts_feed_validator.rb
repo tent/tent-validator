@@ -910,7 +910,9 @@ module TentValidator
 
             # feed request
             expect_response(:status => 200, :schema => :data) do
-              expect_properties(:posts => [{:type => "https://tent.io/types/status/v0#reply"},{:type => "https://tent.io/types/status/v0#"}])
+              expect_properties(:posts => 2.times.map {
+                { :type => %r{\Ahttps://tent\.io/types/status/v0#} }
+              })
               expect_property_length('/posts', 2)
 
               clients(:custom, get(:limited_credentials)).post.list(:limit => 2)
