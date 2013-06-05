@@ -74,14 +74,14 @@ module TentValidator
             actual = r.as_json[:actual]
             puts "REQUEST:"
             puts "#{actual[:request_method]} #{actual[:request_url]}"
-            puts actual[:request_headers].inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
+            puts (actual[:request_headers] || {}).inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
             print "\n"
             puts actual[:request_body]
             print "\n"
 
             puts "RESPONSE:"
             puts actual[:response_status]
-            puts actual[:response_headers].inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
+            puts (actual[:response_headers] || {}).inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
             print "\n"
             puts Yajl::Encoder.encode(actual[:response_body])
             print "\n"
