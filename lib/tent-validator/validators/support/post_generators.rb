@@ -34,6 +34,15 @@ module TentValidator
         }
       end
 
+      def generate_attachment
+        {
+          :content_type => "image/png",
+          :category => Faker::Lorem.word,
+          :name => "#{Faker::Lorem.words(2).join('-')}.png",
+          :data => Faker::Lorem.words(50).join(' ')
+        }
+      end
+
     end
   end
 end
