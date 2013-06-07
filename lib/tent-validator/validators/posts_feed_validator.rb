@@ -736,7 +736,7 @@ module TentValidator
 
       context "without authentication", :before => :create_private_posts do
         expect_response(:status => 200, :schema => :data) do
-          expect_properties(:posts => 2.times.map { {:permissions => {:public => true}} })
+          expect_properties(:posts => 2.times.map { {:permissions => property_absent} })
           expect_property_length('/posts', 2)
 
           clients(:no_auth).post.list(:limit => 2)
