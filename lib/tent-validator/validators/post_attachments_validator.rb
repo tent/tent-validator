@@ -16,7 +16,7 @@ module TentValidator
 
     create_post_with_attachments = lambda do |opts|
       attachments = 3.times.map { generate_attachment }
-      data = generate_status_post(opts[:public])
+      data = generate_status_post(opts[:public].nil? ? true : opts[:public])
       res = clients(:app).post.create(data, params = {}, :attachments => attachments.map(&:dup))
 
       res_validation = ApiValidator::Json.new(
