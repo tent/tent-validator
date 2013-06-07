@@ -597,9 +597,11 @@ module TentValidator
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               posts = get(:mentions_posts).select { |post|
-                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
-              }
-              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
+                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity || m['entity'].nil? }
+              }.reverse
+
+              expect_properties(:posts => posts.map { |post| {:published_at => post['published_at']} })
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => entity)
             end
@@ -610,7 +612,9 @@ module TentValidator
               entity = get(:mentions_posts).first['entity'] # remote entity
               post = get(:mentions_posts).first['id'] # first status post
               posts = [get(:mentions_posts)[1]] # first status post reply
-              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
+
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity => property_absent, :post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [entity, post].join(' '))
             end
@@ -622,8 +626,10 @@ module TentValidator
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               posts = get(:mentions_posts).select { |post|
                 post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
-              }
-              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity']} } } })
+              }.reverse
+
+              expect_properties(:posts => posts.map { |post| {:published_at => post['published_at']} })
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [entity, fictitious_entity].join(','))
             end
@@ -635,7 +641,9 @@ module TentValidator
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               post = get(:mentions_posts).first['id'] # first status post
               posts = [get(:mentions_posts)[1]] # first status post reply
-              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>m['entity'],:post=>m['post']} } } })
+
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
+              expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity=>property_absent,:post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')].join(','))
             end
@@ -647,7 +655,8 @@ module TentValidator
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = []
+
+              expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [fictitious_entity, entity])
             end
@@ -659,6 +668,8 @@ module TentValidator
               post = get(:mentions_posts).first['id'] # first status post
               posts = [get(:mentions_posts)[1]] # first status post reply
 
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
+
               clients(:app).post.list(:mentions => [entity, [entity, post].join(' ')])
             end
 
@@ -666,7 +677,8 @@ module TentValidator
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               post = get(:mentions_posts).first['id'] # first status post
-              posts = []
+
+              expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')])
             end
@@ -678,6 +690,8 @@ module TentValidator
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               posts = [get(:mentions_posts)[1]] # first status post reply
 
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
+
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), entity])
             end
 
@@ -685,7 +699,8 @@ module TentValidator
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
-              posts = []
+
+              expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), entity])
             end
@@ -697,6 +712,8 @@ module TentValidator
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               posts = [get(:mentions_posts)[1]] # first status post reply
 
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
+
               clients(:app).post.list(:mentions => 2.times.map { [fictitious_entity, entity].join(',') })
             end
 
@@ -704,7 +721,8 @@ module TentValidator
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
-              posts = []
+
+              expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [fictitious_entity, entity].join(',')])
             end
@@ -716,7 +734,8 @@ module TentValidator
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
               post = get(:mentions_posts).first['id'] # first status post
-              posts = []
+
+              expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [entity, post].join(' ')])
             end
@@ -727,6 +746,8 @@ module TentValidator
               other_fictitious_entity = "https://other.fictitious.entity.example.com"
               post = get(:mentions_posts).first['id'] # first status post
               posts = [get(:mentions_posts)[1]] # first status post reply
+
+              expect_properties(:posts => posts.map { |post| {:id => post['id']} })
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
             end
