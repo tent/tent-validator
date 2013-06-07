@@ -72,7 +72,12 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content][:extra_member] = "I shouldn't be here!"
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
         end
 
@@ -81,7 +86,12 @@ module TentValidator
             data = get(:post)
             pointer = JsonPointer.new(data, path, :symbolize_keys => true)
             pointer.value = invalid_value(property['type'], property['format'])
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
 
           if property['type'] == 'object' && property['properties']
@@ -112,7 +122,12 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:extra_member] = "I shouldn't be here!"
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
         end
 
@@ -120,19 +135,34 @@ module TentValidator
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = "I should be an object"
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
 
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = ["My parent should be an object!"]
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
 
           expect_response(:headers => :error, :status => 400, :schema => :error) do
             data = get(:post)
             data[:content] = true
-            get(:client).post.create(data)
+
+            if attachments = get(:post_attachments)
+              res = get(:client).post.create(data, {}, :attachments => attachments)
+            else
+              res = get(:client).post.create(data)
+            end
           end
         end
       end
@@ -156,8 +186,14 @@ module TentValidator
       context "with invalid content-type header" do
         data = get(:post)
         expect_response(:headers => :error, :status => 415, :schema => :error) do
-          get(:client).post.create(data) do |request|
-            request.headers['Content-Type'] = 'application/json'
+          if attachments = get(:post_attachments)
+            get(:client).post.create(data, :attachments => attachments) do |request|
+              request.headers['Content-Type'] = 'application/json'
+            end
+          else
+            get(:client).post.create(data) do |request|
+              request.headers['Content-Type'] = 'application/json'
+            end
           end
         end
       end
