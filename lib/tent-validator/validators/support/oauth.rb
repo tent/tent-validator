@@ -32,17 +32,21 @@ module TentValidator
             }
           )
 
-          res = clients(:no_auth).http.get(get(:limited_app_credentials_url))
+          if get(:limited_app_credentials_url)
+            res = clients(:no_auth).http.get(get(:limited_app_credentials_url))
 
-          if res.success?
-            set(:limited_app_credentials,
-              :id => res.body['id'],
-              :hawk_key => res.body['content']['hawk_key'],
-              :hawk_algorithm => res.body['content']['hawk_algorithm']
-            )
+            if res.success?
+              set(:limited_app_credentials,
+                :id => res.body['id'],
+                :hawk_key => res.body['content']['hawk_key'],
+                :hawk_algorithm => res.body['content']['hawk_algorithm']
+              )
+            end
+
+            res
+          else
+            Faraday::Response.new(:env => {})
           end
-
-          res
         end
 
         # authorize app
