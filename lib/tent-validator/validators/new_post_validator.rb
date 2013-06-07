@@ -36,21 +36,6 @@ module TentValidator
 
         valid_post_expectation.call(get(:post), get(:post))
 
-        context "when permissions.public member is null" do
-          post = get(:post)
-          pointer = JsonPointer.new(post, '/permissions/public', :symbolize_keys => true)
-          pointer.value = nil
-
-          valid_post_expectation.call(post, get(:post))
-        end
-
-        context "when permissions member is null" do
-          post = get(:post)
-          post[:permissions] = nil
-
-          valid_post_expectation.call(post, get(:post))
-        end
-
         context "when member set that should be ignored" do
           properties = ApiValidator::JsonSchemas[:post]["properties"]
           %w( /id /received_at /entity /original_entity /app /version/id /version/published_at /version/received_at ).each do |path|
