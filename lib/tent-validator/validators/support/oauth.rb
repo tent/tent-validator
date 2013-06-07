@@ -63,31 +63,35 @@ module TentValidator
 
         # token exchange
         expect_response(:status => 200) do
-          token_code = parse_params(URI(get(:oauth_redirect_uri)).query)['code']
-
-          expect_properties(
-            :access_token => /\A.+\Z/,
-            :hawk_key => /\A.+\Z/,
-            :hawk_algorithm => 'sha256',
-            :token_type => 'https://tent.io/oauth/hawk-token'
-          )
-
-          client = clients(:custom, get(:limited_app_credentials))
-          res = client.oauth_token_exchange(:code => token_code)
-
-          if res.success?
-            set(:limited_credentials,
-              :id => res.body['access_token'],
-              :hawk_key => res.body['hawk_key'],
-              :hawk_algorithm => res.body['hawk_algorithm']
+          if token_code = parse_params(URI(get(:oauth_redirect_uri)).query.to_s)['code']
+            expect_properties(
+              :access_token => /\A.+\Z/,
+              :hawk_key => /\A.+\Z/,
+              :hawk_algorithm => 'sha256',
+              :token_type => 'https://tent.io/oauth/hawk-token'
             )
 
-            set(:client, clients(:custom, get(:limited_credentials)))
+            client = clients(:custom, get(:limited_app_credentials))
+            res = client.oauth_token_exchange(:code => token_code)
+
+            if res.success?
+              set(:limited_credentials,
+                :id => res.body['access_token'],
+                :hawk_key => res.body['hawk_key'],
+                :hawk_algorithm => res.body['hawk_algorithm']
+              )
+
+              set(:client, clients(:custom, get(:limited_credentials)))
+            else
+              set(:client, clients(:no_auth))
+            end
+
+            res
           else
             set(:client, clients(:no_auth))
-          end
 
-          res
+            Faraday::Response.new(:env => {})
+          end
         end
       end
 
