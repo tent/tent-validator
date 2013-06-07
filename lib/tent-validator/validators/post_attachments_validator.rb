@@ -50,7 +50,7 @@ module TentValidator
           )
 
           expect_headers(
-            'Location' => /\Ahttp/
+            'Location' => %r{\A(\/|http)}
           )
 
           res = clients(:no_auth).http.get(:post_attachment,
@@ -60,7 +60,20 @@ module TentValidator
             :version => 'latest'
           )
 
-          set(:attachment_url, res.headers['Location'])
+          if res.status == 302
+            attachment_url = res.headers['Location']
+
+            if attachment_url =~ /\A\// # relative
+              uri = URI(attachment_url)
+              base_uri = res.env[:url]
+              uri.host = base_uri.host
+              uri.scheme = base_uri.scheme
+              uri.port = [443, 80].include?(base_uri.port) ? nil : base_uri.port
+              attachment_url = uri.to_s
+            end
+
+            set(:attachment_url, attachment_url)
+          end
 
           res
         end
@@ -178,6 +191,10 @@ module TentValidator
                 'Location' => Regexp.new(Regexp.escape(hex_digest(attachment[:data])))
               )
 
+              expect_headers(
+                'Location' => %r{\A(\/|http)}
+              )
+
               res = get(:client).http.get(:post_attachment,
                 :entity => post[:entity],
                 :post => post[:id],
@@ -185,7 +202,20 @@ module TentValidator
                 :version => 'latest'
               )
 
-              set(:attachment_url, res.headers['Location'])
+              if res.status == 302
+                attachment_url = res.headers['Location']
+
+                if attachment_url =~ /\A\// # relative
+                  uri = URI(attachment_url)
+                  base_uri = res.env[:url]
+                  uri.host = base_uri.host
+                  uri.scheme = base_uri.scheme
+                  uri.port = [443, 80].include?(base_uri.port) ? nil : base_uri.port
+                  attachment_url = uri.to_s
+                end
+
+                set(:attachment_url, attachment_url)
+              end
 
               res
             end
@@ -240,6 +270,10 @@ module TentValidator
                 'Location' => Regexp.new(Regexp.escape(hex_digest(attachment[:data])))
               )
 
+              expect_headers(
+                'Location' => %r{\A(\/|http)}
+              )
+
               res = get(:client).http.get(:post_attachment,
                 :entity => post[:entity],
                 :post => post[:id],
@@ -247,7 +281,20 @@ module TentValidator
                 :version => 'latest'
               )
 
-              set(:attachment_url, res.headers['Location'])
+              if res.status == 302
+                attachment_url = res.headers['Location']
+
+                if attachment_url =~ /\A\// # relative
+                  uri = URI(attachment_url)
+                  base_uri = res.env[:url]
+                  uri.host = base_uri.host
+                  uri.scheme = base_uri.scheme
+                  uri.port = [443, 80].include?(base_uri.port) ? nil : base_uri.port
+                  attachment_url = uri.to_s
+                end
+
+                set(:attachment_url, attachment_url)
+              end
 
               res
             end
