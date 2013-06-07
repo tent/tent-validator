@@ -70,13 +70,17 @@ module TentValidator
           client = clients(:custom, get(:limited_app_credentials))
           res = client.oauth_token_exchange(:code => token_code)
 
-          set(:limited_credentials,
-            :id => res.body['access_token'],
-            :hawk_key => res.body['hawk_key'],
-            :hawk_algorithm => res.body['hawk_algorithm']
-          )
+          if res.success?
+            set(:limited_credentials,
+              :id => res.body['access_token'],
+              :hawk_key => res.body['hawk_key'],
+              :hawk_algorithm => res.body['hawk_algorithm']
+            )
 
-          set(:client, clients(:custom, get(:limited_credentials)))
+            set(:client, clients(:custom, get(:limited_credentials)))
+          else
+            set(:client, clients(:no_auth))
+          end
 
           res
         end

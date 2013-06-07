@@ -71,19 +71,48 @@ module TentValidator
 
     app = res.body
 
+    links = TentClient::LinkHeader.parse(res.headers['Link']).links
+    credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
+
+    unless credentials_url
+      raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers}")
+    end
+
+    res = client.http.get(credentials_url)
+
+    unless res.success?
+      raise SetupFailure.new("Failed to fetch app credentials! #{res.status}: #{res.body.inspect}")
+    end
+
+    app_credentials = {
+      :id => res.body['id'],
+      :hawk_key => res.body['content']['hawk_key'],
+      :hawk_algorithm => res.body['content']['hawk_algorithm']
+    }
+
+    app_client = TentClient.new(remote_entity_uri,
+      :faraday_adapter => remote_adapter,
+      :server_meta => remote_server_meta,
+      :credentials => app_credentials
+    )
+
     oauth_uri = client.oauth_redirect_uri(:client_id => app['id'])
 
     res = client.http.get(oauth_uri.to_s)
-    return (self.remote_auth_details = {}) unless res.status == 302
+    return (self.remote_auth_details = nil) unless res.status == 302
     oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
 
-    res = client.oauth_token_exchange(:code => oauth_code)
-    oauth_credentials = res.body
-    self.remote_auth_details = {
-      :id => oauth_credentials['access_token'],
-      :hawk_key => oauth_credentials['hawk_key'],
-      :hawk_algorithm => oauth_credentials['hawk_algorithm']
-    }
+    if res.status == 302
+      res = app_client.oauth_token_exchange(:code => oauth_code)
+      oauth_credentials = res.body
+      self.remote_auth_details = {
+        :id => oauth_credentials['access_token'],
+        :hawk_key => oauth_credentials['hawk_key'],
+        :hawk_algorithm => oauth_credentials['hawk_algorithm']
+      }
+    else
+      self.remote_auth_details = nil
+    end
   end
 
   def self.watch_local_requests
