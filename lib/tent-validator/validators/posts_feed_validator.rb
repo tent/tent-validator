@@ -86,7 +86,7 @@ module TentValidator
 
           expect_properties(:posts => types.map { |type| { :type => type } })
 
-          clients(:app).post.list(:types => types)
+          clients(:app).post.list(:types => types.join(","))
         end
 
         context "when using fragment wildcard" do
@@ -98,7 +98,7 @@ module TentValidator
 
             expect_properties(:posts => expected_types)
 
-            clients(:app).post.list(:types => [type.to_s(:fragment => false)])
+            clients(:app).post.list(:types => type.to_s(:fragment => false))
           end
         end
       end
