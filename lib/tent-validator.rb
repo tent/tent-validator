@@ -52,7 +52,7 @@ module TentValidator
       :content => {
         :name => "Validator",
         :description => "Tent 0.3 Protocol Validator",
-        :url => "null://validator",
+        :url => "http://localhost/validator",
         :redirect_uri => "null://validator/callback",
         :post_types => {
           :read => %w( all ),
