@@ -49,6 +49,10 @@ module TentValidator
             'Location' => Regexp.new(Regexp.escape(hex_digest(attachment[:data])))
           )
 
+          expect_headers(
+            'Location' => /\Ahttp/
+          )
+
           res = clients(:no_auth).http.get(:post_attachment,
             :entity => post[:entity],
             :post => post[:id],
