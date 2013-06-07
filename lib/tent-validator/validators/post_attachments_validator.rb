@@ -154,7 +154,7 @@ module TentValidator
           end
 
           describe "post_attachment" do
-            expect_response(:status => 403) do
+            expect_response(:status => 404) do
               post = get(:post)
               attachment = get(:attachments)[1]
 
@@ -168,7 +168,7 @@ module TentValidator
           end
 
           describe "attachment" do
-            expect_response(:status => 403) do
+            expect_response(:status => 404) do
               post = get(:post)
               attachment = get(:attachments).last
 
