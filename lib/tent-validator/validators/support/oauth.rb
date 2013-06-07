@@ -12,8 +12,9 @@ module TentValidator
 
           res = clients(:no_auth).post.create(data)
 
-          links = TentClient::LinkHeader.parse(res.headers['Link']).links
-          credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
+          links = TentClient::LinkHeader.parse(res.headers['Link'].to_s).links
+          credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }
+          credentials_url = credentials_url.uri if credentials_url
 
           set(:limited_app, res.body)
           set(:limited_app_credentials_url, credentials_url)

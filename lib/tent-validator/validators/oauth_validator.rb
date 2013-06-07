@@ -12,13 +12,18 @@ module TentValidator
       raise SetupFailure.new("Could not create app! #{res.status}: #{res.body.inspect}") unless res.success?
       set(:app, res.body)
 
-      links = TentClient::LinkHeader.parse(res.headers['Link']).links
-      credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
-      res = client.http.get(credentials_url)
-      raise SetupFailure.new("Could not fetch app credentials! #{res.status}: #{res.body.inspect}") unless res.success?
-      set(:app_credentials, :id => res.body['id'],
-                            :hawk_key => res.body['content']['hawk_key'],
-                            :hawk_algorithm => res.body['content']['hawk_algorithm'])
+      links = TentClient::LinkHeader.parse(res.headers['Link'].to_s).links
+      credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }
+      if credentials_url
+        credentials_url = credentials_url.uri
+        res = client.http.get(credentials_url)
+        raise SetupFailure.new("Could not fetch app credentials! #{res.status}: #{res.body.inspect}") unless res.success?
+        set(:app_credentials, :id => res.body['id'],
+                              :hawk_key => res.body['content']['hawk_key'],
+                              :hawk_algorithm => res.body['content']['hawk_algorithm'])
+      else
+        raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers.inspect}")
+      end
     end
 
     describe "oauth_auth", :before => :create_app do

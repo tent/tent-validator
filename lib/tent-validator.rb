@@ -72,7 +72,8 @@ module TentValidator
     app = res.body
 
     links = TentClient::LinkHeader.parse(res.headers['Link']).links
-    credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }.uri
+    credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }
+    credentials_url = credentials_url.uri if credentials_url
 
     unless credentials_url
       raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers}")
