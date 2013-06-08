@@ -688,7 +688,7 @@ module TentValidator
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = [get(:mentions_posts)[1]] # first status post reply
+              posts = [get(:mentions_posts).last] # first status post reply
 
               expect_properties(:posts => posts.map { |post| {:id => post['id']} })
 
@@ -710,7 +710,7 @@ module TentValidator
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
-              posts = [get(:mentions_posts)[1]] # first status post reply
+              posts = [get(:mentions_posts).last] # first status post reply
 
               expect_properties(:posts => posts.map { |post| {:id => post['id']} })
 
