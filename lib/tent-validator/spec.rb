@@ -6,7 +6,7 @@ module TentValidator
 
     module SharedClassAndInstanceMethods
       def parse_params(query_string)
-        query_string.sub(/\A\?/, '').split('&').inject({}) do |params, param|
+        query_string.to_s.sub(/\A\?/, '').split('&').inject({}) do |params, param|
           key,val = param.split('=')
           val = URI.decode_www_form_component(val)
 
