@@ -764,10 +764,11 @@ module TentValidator
         end
       end
 
-      context "with authentication" do
+      context "with authentication", :before => :create_private_posts do
         context "with full authorization" do
           expect_response(:status => 200, :schema => :data) do
-            expect_properties(:posts => 2.times.map { {:permissions => {:public => false}} })
+            posts = get(:private_posts)
+            expect_properties(:posts => posts.reverse.slice(0, 2).map { |post| TentD::Utils::Hash.slice(post, 'id', 'permissions') })
             expect_property_length('/posts', 2)
 
             clients(:app).post.list(:limit => 2)
