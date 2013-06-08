@@ -625,7 +625,7 @@ module TentValidator
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
               posts = get(:mentions_posts).select { |post|
-                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity }
+                post['mentions'] && post['mentions'].any? { |m| m['entity'] == entity || m['entity'].nil? }
               }.reverse
 
               expect_properties(:posts => posts.map { |post| {:published_at => post['published_at']} })
