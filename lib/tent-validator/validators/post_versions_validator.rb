@@ -65,7 +65,7 @@ module TentValidator
 
     shared_example :create_post_version do
       context "without auth" do
-        expect_response(:status => 403) do
+        expect_response(:status => 401) do
           set(:client, clients(:no_auth))
           get(:create_post_version_response)
         end
