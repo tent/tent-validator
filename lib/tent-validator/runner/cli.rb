@@ -35,7 +35,7 @@ module TentValidator
         end
         print "\n"
 
-        exit(1) unless @valid
+        exit(1) if @invalid.any?
       end
 
       def print_results(results, parent_names = [])
