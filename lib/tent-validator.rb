@@ -103,8 +103,7 @@ module TentValidator
     return (self.remote_auth_details = nil) unless res.status == 302
     oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
 
-    if res.status == 302
-      res = app_client.oauth_token_exchange(:code => oauth_code)
+    if res.status == 302 && (res = app_client.oauth_token_exchange(:code => oauth_code)) && res.success?
       oauth_credentials = res.body
       self.remote_auth_details = {
         :id => oauth_credentials['access_token'],
