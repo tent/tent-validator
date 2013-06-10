@@ -27,20 +27,22 @@ module TentValidator
         res = clients(:app).post.create(data)
       end
 
-      data.delete(:permissions) if opts[:public] == true
-      res_validation = ApiValidator::Json.new(data).validate(res)
-      raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+      if TentValidator.remote_auth_details
+        data.delete(:permissions) if opts[:public] == true
+        res_validation = ApiValidator::Json.new(data).validate(res)
+        raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
 
-      if attachments
-        res_validation = ApiValidator::Json.new(
-          :attachments => attachments.map { |a|
-            a = a.dup
-            a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-            a.delete(:data)
-            a
-          }
-        ).validate(res)
-        raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+        if attachments
+          res_validation = ApiValidator::Json.new(
+            :attachments => attachments.map { |a|
+              a = a.dup
+              a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+              a.delete(:data)
+              a
+            }
+          ).validate(res)
+          raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+        end
       end
 
       TentD::Utils::Hash.symbolize_keys(res.body)
