@@ -86,9 +86,9 @@ module TentValidator
     end
 
     app_credentials = {
-      :id => res.body['id'],
-      :hawk_key => res.body['content']['hawk_key'],
-      :hawk_algorithm => res.body['content']['hawk_algorithm']
+      :id => res.body['post']['id'],
+      :hawk_key => res.body['post']['content']['hawk_key'],
+      :hawk_algorithm => res.body['post']['content']['hawk_algorithm']
     }
 
     app_client = TentClient.new(remote_entity_uri,

@@ -18,9 +18,9 @@ module TentValidator
         credentials_url = credentials_url.uri
         res = client.http.get(credentials_url)
         raise SetupFailure.new("Could not fetch app credentials! #{res.status}: #{res.body.inspect}") unless res.success?
-        set(:app_credentials, :id => res.body['id'],
-                              :hawk_key => res.body['content']['hawk_key'],
-                              :hawk_algorithm => res.body['content']['hawk_algorithm'])
+        set(:app_credentials, :id => res.body['post']['id'],
+                              :hawk_key => res.body['post']['content']['hawk_key'],
+                              :hawk_algorithm => res.body['post']['content']['hawk_algorithm'])
       else
         raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers.inspect}")
       end

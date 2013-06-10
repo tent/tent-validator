@@ -25,10 +25,12 @@ module TentValidator
         # fetch app credentials
         expect_response(:status => 200) do
           expect_properties(
-            :id => /\A.+\Z/,
-            :content => {
-              :hawk_key => /\A.+\Z/,
-              :hawk_algorithm => /\A.+\Z/
+            :post => {
+              :id => /\A.+\Z/,
+              :content => {
+                :hawk_key => /\A.+\Z/,
+                :hawk_algorithm => /\A.+\Z/
+              }
             }
           )
 
@@ -37,9 +39,9 @@ module TentValidator
 
             if res.success?
               set(:limited_app_credentials,
-                :id => res.body['id'],
-                :hawk_key => res.body['content']['hawk_key'],
-                :hawk_algorithm => res.body['content']['hawk_algorithm']
+                :id => res.body['post']['id'],
+                :hawk_key => res.body['post']['content']['hawk_key'],
+                :hawk_algorithm => res.body['post']['content']['hawk_algorithm']
               )
             end
 
