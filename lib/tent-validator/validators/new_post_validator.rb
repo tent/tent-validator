@@ -6,18 +6,21 @@ module TentValidator
     shared_example :new_post do
       context "with valid attributes" do
         valid_post_expectation = proc do |post, expected_post|
-          expect_response(:headers => :tent, :status => 200, :schema => :post) do
+          expect_response(:headers => :tent, :status => 200, :schema => :data) do
             expect_headers(:post)
-            expect_properties(expected_post)
-            expect_schema(get(:content_schema), "/content")
+            expect_properties(:post => expected_post)
+            expect_schema(:post, '/post')
+            expect_schema(get(:content_schema), "/post/content")
 
             if attachments = get(:post_attachments)
               expect_properties(
-                :attachments => attachments.map { |a|
-                  a = a.dup
-                  a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-                  a.delete(:data)
-                  a
+                :post =>  {
+                  :attachments => attachments.map { |a|
+                    a = a.dup
+                    a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+                    a.delete(:data)
+                    a
+                  }
                 }
               )
 
@@ -27,7 +30,7 @@ module TentValidator
             end
 
             if Hash === res.body
-              expect_properties(:version => { :id => generate_version_signature(res.body) })
+              expect_properties(:post => { :version => { :id => generate_version_signature(res.body['post']) } })
             end
 
             res

@@ -10,7 +10,7 @@ module TentValidator
       client = clients(:no_auth)
       res = client.post.create(generate_app_post)
       raise SetupFailure.new("Could not create app! #{res.status}: #{res.body.inspect}") unless res.success?
-      set(:app, res.body)
+      set(:app, res.body['post'])
 
       links = TentClient::LinkHeader.parse(res.headers['Link'].to_s).links
       credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }

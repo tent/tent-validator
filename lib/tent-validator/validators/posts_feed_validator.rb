@@ -15,7 +15,7 @@ module TentValidator
     def create_post(client, attrs)
       res = client.post.create(attrs)
       raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
-      res.body
+      res.body['post']
     end
 
     def create_posts
@@ -43,11 +43,10 @@ module TentValidator
       client = clients(:app)
       posts = []
 
-      _create_post = proc do |post|
-        res = client.post.create(post)
-        raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
-        posts << res.body
-        res.body
+      _create_post = proc do |attrs|
+        post = create_post(client, attrs)
+        posts << post
+        post
       end
 
       _ref = _create_post.call(generate_status_post)

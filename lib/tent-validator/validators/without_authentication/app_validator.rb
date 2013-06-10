@@ -26,7 +26,9 @@ module TentValidator
 
             ##
             # Expect app credentials post linked
-            expect_response(:status => 200, :schema => :post) do
+            expect_response(:status => 200, :schema => :data) do
+              expect_schema(:post, '/post')
+
               expect_headers(
                 :Link => %r{\brel=(['"])https://tent.io/rels/credentials\1}
               )

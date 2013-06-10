@@ -69,7 +69,7 @@ module TentValidator
       raise SetupFailure.new("Failed to register app on remote server! #{res.status}: #{res.body.inspect}")
     end
 
-    app = res.body
+    app = res.body['post']
 
     links = TentClient::LinkHeader.parse(res.headers['Link']).links
     credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }

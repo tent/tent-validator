@@ -4,7 +4,9 @@ module TentValidator
 
       def authenticate_with_permissions(options = {})
         # create app
-        expect_response(:status => 200, :schema => :post) do
+        expect_response(:status => 200, :schema => :data) do
+          expect_schema(:post, '/post')
+
           data = generate_app_post
           data[:content][:post_types][:read] = options[:read_post_types].to_a
           data[:content][:post_types][:write] = options[:write_post_types].to_a
@@ -16,7 +18,7 @@ module TentValidator
           credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }
           credentials_url = credentials_url.uri if credentials_url
 
-          set(:limited_app, res.body)
+          set(:limited_app, res.body['post'] || res.body)
           set(:limited_app_credentials_url, credentials_url)
 
           res

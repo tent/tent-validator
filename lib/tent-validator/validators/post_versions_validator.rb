@@ -29,23 +29,25 @@ module TentValidator
 
       if TentValidator.remote_auth_details
         data.delete(:permissions) if opts[:public] == true
-        res_validation = ApiValidator::Json.new(data).validate(res)
+        res_validation = ApiValidator::Json.new(:post => data).validate(res)
         raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
 
         if attachments
           res_validation = ApiValidator::Json.new(
-            :attachments => attachments.map { |a|
-              a = a.dup
-              a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-              a.delete(:data)
-              a
+            :post => {
+              :attachments => attachments.map { |a|
+                a = a.dup
+                a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+                a.delete(:data)
+                a
+              }
             }
           ).validate(res)
           raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
         end
       end
 
-      TentD::Utils::Hash.symbolize_keys(res.body)
+      TentD::Utils::Hash.symbolize_keys(res.body['post'])
     end
 
     create_post_version = lambda do |post, client, opts={}|
@@ -88,7 +90,7 @@ module TentValidator
           end
 
           context '' do # workaround to ensure `expect_response`s in `setup` are called first
-            expect_response(:status => 200, :schema => :post) do
+            expect_response(:status => 200, :schema => :data) do
               res = get(:create_post_version_response)
 
               if get(:expect_properties_absent)
@@ -101,7 +103,8 @@ module TentValidator
 
               expected_data = get(:post_version).merge(:id => get(:post)[:id])
               expected_data[:permissions] = property_absent if expected_data[:permissions] && expected_data[:permissions][:public]
-              expect_properties(expected_data)
+              expect_properties(:post => expected_data)
+              expect_schema(:post, '/post')
 
               res
             end
@@ -113,7 +116,7 @@ module TentValidator
             set(:client, clients(:app))
           end
 
-          expect_response(:status => 200, :schema => :post) do
+          expect_response(:status => 200, :schema => :data) do
             res = get(:create_post_version_response)
 
             if get(:expect_properties_absent)
@@ -126,7 +129,8 @@ module TentValidator
 
             expected_data = get(:post_version).merge(:id => get(:post)[:id])
             expected_data[:permissions] = property_absent if expected_data[:permissions] && expected_data[:permissions][:public]
-            expect_properties(expected_data)
+            expect_properties(:post => expected_data)
+            expect_schema(:post, '/post')
 
             res
           end
@@ -175,12 +179,14 @@ module TentValidator
             attachments = get(:attachments)
 
             set(:expect_properties,
-              :attachments => attachments.map { |a|
-                a = a.dup
-                a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-                a.delete(:data)
-                a
-            })
+              :post => {
+                :attachments => attachments.map { |a|
+                  a = a.dup
+                  a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+                  a.delete(:data)
+                  a
+                }
+              })
 
             post = get(:post)
             set(:create_post_version_response) do
@@ -199,12 +205,14 @@ module TentValidator
             attachments = get(:attachments)
 
             set(:expect_properties,
-              :attachments => attachments.concat(new_attachments).map { |a|
-                a = a.dup
-                a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-                a.delete(:data)
-                a
-            })
+              :post => {
+                :attachments => attachments.concat(new_attachments).map { |a|
+                  a = a.dup
+                  a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+                  a.delete(:data)
+                  a
+                }
+              })
 
             post = get(:post)
             set(:create_post_version_response) do
@@ -220,12 +228,14 @@ module TentValidator
             attachments = 3.times.map { generate_attachment }
 
             set(:expect_properties,
-              :attachments => attachments.map { |a|
-                a = a.dup
-                a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-                a.delete(:data)
-                a
-            })
+              :post => {
+                :attachments => attachments.map { |a|
+                  a = a.dup
+                  a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+                  a.delete(:data)
+                  a
+                }
+              })
 
             post = get(:post)
             set(:create_post_version_response) do
@@ -238,7 +248,7 @@ module TentValidator
 
         context "discard attachments" do
           setup do
-            set(:expect_properties_absent, '/attachments')
+            set(:expect_properties_absent, '/post/attachments')
 
             post = get(:post).dup
             post.delete(:attachments)

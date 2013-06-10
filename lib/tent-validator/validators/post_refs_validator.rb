@@ -25,11 +25,11 @@ module TentValidator
       end
 
       if TentValidator.remote_auth_details
-        res_validation = ApiValidator::Json.new(data).validate(res)
+        res_validation = ApiValidator::Json.new(:post => data).validate(res)
         raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
       end
 
-      TentD::Utils::Hash.symbolize_keys(res.body)
+      TentD::Utils::Hash.symbolize_keys(res.body['post'])
     end
 
     describe "POST new_post with refs" do
@@ -39,7 +39,7 @@ module TentValidator
       end
 
       context "" do
-        expect_response(:status => 200, :schema => :post) do
+        expect_response(:status => 200, :schema => :data) do
           reffed_post = get(:reffed_post)
           data = generate_status_post.merge(
             :refs => [
@@ -51,7 +51,8 @@ module TentValidator
           expected_data[:refs][0].delete(:entity)
           expected_data.delete(:permissions)
 
-          expect_properties(expected_data)
+          expect_properties(:post => expected_data)
+          expect_schema(:post, '/post')
 
           clients(:app).post.create(data)
         end
@@ -65,7 +66,7 @@ module TentValidator
       end
 
       context "" do
-        expect_response(:status => 200, :schema => :post) do
+        expect_response(:status => 200, :schema => :data) do
           post = get(:post)
 
           data = generate_status_post
@@ -76,7 +77,8 @@ module TentValidator
           expected_data = TentD::Utils::Hash.deep_dup(data)
           expected_data.delete(:permissions)
 
-          expect_properties(expected_data)
+          expect_properties(:post => expected_data)
+          expect_schema(:post, '/post')
 
           clients(:app).post.update(post[:entity], post[:id], data)
         end
