@@ -70,6 +70,9 @@ module TentValidator
           post = get(:post)
 
           data = generate_status_post
+          data[:version] = {
+            :parents => [{ :version => post[:version][:id] }]
+          }
           data[:refs] = [
             { :entity => "http://fictitious.example.org", :type => "https://tent.io/types/status/v0#reply", :post => "fictitious-post-identifier" }
           ]
