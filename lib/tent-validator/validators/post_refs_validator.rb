@@ -24,8 +24,10 @@ module TentValidator
         }
       end
 
-      res_validation = ApiValidator::Json.new(data).validate(res)
-      raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+      if TentValidator.remote_auth_details
+        res_validation = ApiValidator::Json.new(data).validate(res)
+        raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+      end
 
       TentD::Utils::Hash.symbolize_keys(res.body)
     end
