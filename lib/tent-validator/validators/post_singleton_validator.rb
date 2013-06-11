@@ -205,7 +205,7 @@ module TentValidator
           context "when limited authorization" do
             authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
 
-            behaves_as(:get_public_mentions)
+            behaves_as(:get_all_mentions)
           end
 
           context "when full authorization" do
@@ -248,14 +248,7 @@ module TentValidator
           context "when limited authorization" do
             authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
 
-            # public mentions have the base status type, the private one has the #reply fragment
-            behaves_as(:get_public_mentions)
-
-            context "when authorized for all relevant types" do
-              authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0))
-
-              behaves_as(:get_all_mentions)
-            end
+            behaves_as(:get_all_mentions)
           end
 
           context "when full authorization" do
