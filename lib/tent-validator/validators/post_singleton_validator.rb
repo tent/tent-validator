@@ -65,7 +65,19 @@ module TentValidator
             set(:client, clients(:no_auth))
           end
 
-          behaves_as(:get_post)
+          expect_response(:status => 200, :schema => :data) do
+            expect_schema(:post, '/post')
+
+            post = get(:post).dup
+            (post[:app] ||= {})[:id] = property_absent
+            post[:received_at] = property_absent
+            post[:version][:received_at]
+
+            expect_properties(:post => post)
+            expect_properties(:post => { :permissions => property_absent }) unless post.has_key?(:permissions)
+
+            get(:client).post.get(post[:entity], post[:id])
+          end
         end
 
         context "with auth" do
