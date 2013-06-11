@@ -148,7 +148,7 @@ module TentValidator
           expect_properties(:mentions => get(:posts).reverse.map { |post|
             m = { :post => post[:id], :type => post[:type] }
             m[:entity] = post[:entity] unless post[:entity] == get(:post)[:entity]
-            m[:public] = false if post[:permissions]
+            m[:public] = false if TentD::TentType.new(post[:type]).fragment == 'reply' # see setup block
             m
           })
 
@@ -182,8 +182,11 @@ module TentValidator
             :mentions => [{ :entity => post[:entity], :type => post[:type], :post => post[:id] }]
           }
 
+          private_opts = TentD::Utils::Hash.deep_dup(opts)
+          private_opts[:mentions].first[:public] = false
+
           post_1 = create_post.call(opts.merge(:public => true))
-          post_2 = create_post.call(opts.merge(:public => false, :type => %(https://tent.io/types/status/v0#reply)))
+          post_2 = create_post.call(private_opts.merge(:public => true, :type => %(https://tent.io/types/status/v0#reply)))
           post_3 = create_post.call(opts.merge(:public => true))
 
           set(:posts, [post_1, post_2, post_3])
@@ -226,8 +229,11 @@ module TentValidator
             :mentions => [{ :entity => post[:entity], :type => post[:type], :post => post[:id] }]
           }
 
+          private_opts = TentD::Utils::Hash.deep_dup(opts)
+          private_opts[:mentions].first[:public] = false
+
           post_1 = create_post.call(opts.merge(:public => true))
-          post_2 = create_post.call(opts.merge(:public => false, :type => %(https://tent.io/types/status/v0#reply)))
+          post_2 = create_post.call(private_opts.merge(:public => true, :type => %(https://tent.io/types/status/v0#reply)))
           post_3 = create_post.call(opts.merge(:public => true))
 
           set(:posts, [post_1, post_2, post_3])
