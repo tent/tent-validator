@@ -25,7 +25,23 @@ module TentValidator
         data[:type] = opts[:type]
       end
 
-      res = clients(:app).post.create(data)
+      if opts[:version]
+        data[:version] = opts[:version]
+      end
+
+      if opts[:type]
+        data[:type] = opts[:type]
+      end
+
+      if opts[:put] && ref_post = opts[:post]
+        res = clients(:app).post.update(ref_post[:entity], ref_post[:id], data)
+
+        data[:version][:parents].each { |parent| parent.delete(:post) if parent[:post] == ref_post[:id] }
+
+        data[:id] = ref_post[:id]
+      else
+        res = clients(:app).post.create(data)
+      end
 
       data.delete(:permissions) if opts[:public] == true
 
@@ -39,6 +55,10 @@ module TentValidator
       raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
 
       TentD::Utils::Hash.symbolize_keys(res.body['post'])
+    end
+
+    create_post_version = lambda do |post, opts|
+      create_post.call(opts.merge(:put => true, :post => post))
     end
 
     describe "GET post" do
@@ -264,6 +284,353 @@ module TentValidator
 
             behaves_as(:get_all_mentions)
           end
+        end
+      end
+    end
+
+    describe "GET post with children accept header" do
+      set(:post_type, %(https://tent.io/types/status/v0#))
+
+      create_public_versions = lambda do |post|
+        post_type = post[:type]
+
+        versions = 3.times.map do
+          create_post_version.call(post, :type => post_type, :public => true, :version => {
+            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+          })
+        end
+
+        versions
+      end
+
+      create_public_and_private_versions = lambda do |post|
+        post_type = post[:type]
+
+        public_versions = 2.times.map do
+          create_post_version.call(post, :type => post_type, :public => true, :version => {
+            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+          })
+        end
+
+        private_versions = 2.times.map do
+          create_post_version.call(post, :type => post_type, :public => false, :version => {
+            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+          })
+        end
+
+        public_versions_2 = 2.times.map do
+          create_post_version.call(post, :type => post_type, :public => true, :version => {
+            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+          })
+        end
+
+        public_versions + private_versions + public_versions_2
+      end
+
+      create_private_versions = lambda do |post|
+        post_type = post[:type]
+
+        versions = 3.times.map do
+          create_post_version.call(post, :type => post_type, :public => false, :version => {
+            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+          })
+        end
+
+        versions
+      end
+
+      shared_example :all_versions do
+        expect_response(:status => 200, :schema => :data) do
+          params = {}
+
+          if version_id = get(:version_id)
+            params[:version] = version_id
+          end
+
+          post = get(:post)
+          versions = get(:versions)
+
+          versions = get(:versions).map do |post|
+            unless get(:is_app)
+              post = TentD::Utils::Hash.deep_dup(post)
+              post[:version].delete(:received_at)
+            end
+
+            post[:version].merge(:type => post[:type])
+          end
+
+          expect_properties(:versions => versions.reverse)
+
+          get(:client).post.children(post[:entity], post[:id], params)
+        end
+      end
+
+      shared_example :public_versions do
+        expect_response(:status => 200, :schema => :data) do
+          params = {}
+
+          if version_id = get(:version_id)
+            params[:version] = version_id
+          end
+
+          post = get(:post)
+          versions = get(:versions).select { |post| !post[:permissions] }.map do |post|
+            unless get(:is_app)
+              post = TentD::Utils::Hash.deep_dup(post)
+              post[:version].delete(:received_at)
+            end
+
+            post[:version].merge(:type => post[:type])
+          end
+
+          expect_properties(:versions => versions.reverse)
+
+          get(:client).post.children(post[:entity], post[:id], params)
+        end
+      end
+
+      shared_example :not_found do
+        expect_response(:status => 404, :schema => :error) do
+          params = {}
+
+          if version_id = get(:version_id)
+            params[:version] = version_id
+          end
+
+          post = get(:post)
+
+          get(:client).post.children(post[:entity], post[:id], params)
+        end
+      end
+
+      shared_example :not_authorized do
+        context "with public versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_versions.call(post)
+              set(:post, post)
+              set(:versions, children)
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "when version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_versions.call(post)[1]
+              children = create_public_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+
+        context "with public and private versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_and_private_versions.call(post)
+              set(:post, post)
+              set(:versions, children)
+            end
+
+            behaves_as(:public_versions)
+          end
+
+          context "when private version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_and_private_versions.call(post).find { |post| post[:permissions] }
+              children = create_public_and_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:not_found)
+          end
+
+          context "when public version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_and_private_versions.call(post).find { |post| !post[:permissions] }
+              children = create_public_and_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:public_versions)
+          end
+        end
+
+        context "with private versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_private_versions.call(post)
+              set(:post, post)
+            end
+
+            behaves_as(:not_found)
+          end
+
+          context "when version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_private_versions.call(post)[1]
+              children = create_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:not_found)
+          end
+        end
+      end
+
+      shared_example :authorized do
+        context "with public versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_versions.call(post)
+              set(:post, post)
+              set(:versions, children)
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "when version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_versions.call(post)[1]
+              children = create_public_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+
+        context "with public and private versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_and_private_versions.call(post)
+              set(:post, post)
+              set(:versions, children)
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "when private version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_and_private_versions.call(post).find { |post| post[:permissions] }
+              children = create_public_and_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "when public version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_public_and_private_versions.call(post).find { |post| !post[:permissions] }
+              children = create_public_and_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+
+        context "with private versions" do
+          context "when no version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              children = create_private_versions.call(post)
+              set(:post, post)
+              set(:versions, children)
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "when version specified" do
+            setup do
+              post = create_post.call(:public => true, :type => get(:post_type))
+              version = create_private_versions.call(post).last
+              children = create_private_versions.call(version)
+              set(:post, version)
+              set(:versions, children)
+
+              set(:version_id, version[:version][:id])
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+      end
+
+      context "without auth" do
+        setup do
+          set(:is_app, false)
+        end
+
+        setup do
+          set(:client, clients(:no_auth))
+        end
+
+        behaves_as(:not_authorized)
+      end
+
+      context "with auth" do
+        setup do
+          set(:is_app, true)
+        end
+
+        context "when not authorized" do
+          authenticate_with_permissions(:read_post_types => [])
+
+          behaves_as(:not_authorized)
+        end
+
+        context "when limited authorization" do
+          authenticate_with_permissions(:read_post_types => [get(:post_type)])
+
+          behaves_as(:authorized)
+        end
+
+        context "when full authorization" do
+          setup do
+            set(:client, clients(:app))
+          end
+
+          behaves_as(:authorized)
         end
       end
     end
