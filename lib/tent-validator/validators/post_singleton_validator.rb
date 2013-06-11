@@ -71,7 +71,7 @@ module TentValidator
             post = TentD::Utils::Hash.deep_dup(get(:post))
             (post[:app] ||= {})[:id] = property_absent
             post[:received_at] = property_absent
-            post[:version][:received_at]
+            post[:version][:received_at] = property_absent
 
             expect_properties(:post => post)
             expect_properties(:post => { :permissions => property_absent }) unless post.has_key?(:permissions)
