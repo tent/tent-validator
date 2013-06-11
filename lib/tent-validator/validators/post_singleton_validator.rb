@@ -68,7 +68,7 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             expect_schema(:post, '/post')
 
-            post = get(:post).dup
+            post = TentD::Utils::Hash.deep_dup(get(:post))
             (post[:app] ||= {})[:id] = property_absent
             post[:received_at] = property_absent
             post[:version][:received_at]
