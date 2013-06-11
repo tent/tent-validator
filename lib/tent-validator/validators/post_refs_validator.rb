@@ -110,7 +110,7 @@ module TentValidator
         expect_property_length('/refs', 3)
         expect_properties(:post => post)
 
-        clients(:app).post.get(post[:entity], post[:id], :'max-refs' => 3)
+        clients(:app).post.get(post[:entity], post[:id], :'max_refs' => 3)
       end
     end
 
@@ -157,7 +157,7 @@ module TentValidator
         expect_property_length('/refs', reffed_posts.size)
         expect_properties(:posts => posts.reverse)
 
-        clients(:app).post.list(:'max-refs' => 4, :limit => posts.size)
+        clients(:app).post.list(:'max_refs' => 4, :limit => posts.size)
       end
     end
   end
