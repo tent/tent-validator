@@ -357,6 +357,12 @@ module TentValidator
             end
 
             post[:version].merge(:type => post[:type])
+          end.each do |version|
+            version[:parents].each do |parent|
+              if parent[:post] == post[:id]
+                parent[:post] = property_absent
+              end
+            end
           end
 
           expect_properties(:versions => versions.reverse)
@@ -384,6 +390,12 @@ module TentValidator
             end
 
             post[:version].merge(:type => post[:type])
+          end.each do |version|
+            version[:parents].each do |parent|
+              if parent[:post] == post[:id]
+                parent[:post] = property_absent
+              end
+            end
           end
 
           expect_properties(:versions => versions.reverse)
