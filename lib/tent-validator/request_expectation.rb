@@ -11,12 +11,7 @@ module TentValidator
       end
 
       def as_json(options = {})
-        res = results.inject(Hash.new) do |memo, result|
-          result = result.dup
-          deep_merge!((memo[result.delete(:key)] ||= Hash.new), result)
-          memo
-        end
-
+        res = merge_keys(results)
         merge_diffs!(res)
 
         {
