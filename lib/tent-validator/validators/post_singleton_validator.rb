@@ -289,48 +289,51 @@ module TentValidator
     describe "GET post with children accept header" do
       set(:post_type, %(https://tent.io/types/status/v0#))
 
-      create_public_versions = lambda do |post|
+      create_public_versions = lambda do |post, opts={}|
         post_type = post[:type]
+        opts[:parent] ||= post
 
         versions = 3.times.map do
           create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
           })
         end
 
         versions
       end
 
-      create_public_and_private_versions = lambda do |post|
+      create_public_and_private_versions = lambda do |post, opts={}|
         post_type = post[:type]
+        opts[:parent] ||= post
 
         public_versions = 2.times.map do
           create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
           })
         end
 
         private_versions = 2.times.map do
           create_post_version.call(post, :type => post_type, :public => false, :version => {
-            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
           })
         end
 
         public_versions_2 = 2.times.map do
           create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
           })
         end
 
         public_versions + private_versions + public_versions_2
       end
 
-      create_private_versions = lambda do |post|
+      create_private_versions = lambda do |post, opts={}|
         post_type = post[:type]
+        opts[:parent] ||= post
 
         versions = 3.times.map do
           create_post_version.call(post, :type => post_type, :public => false, :version => {
-            :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
           })
         end
 
@@ -431,7 +434,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_versions.call(parent)
+              children = create_public_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, children)
               set(:parent, parent)
@@ -460,7 +463,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_and_private_versions.call(parent)
+              children = create_public_and_private_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, children)
               set(:parent, parent)
@@ -503,7 +506,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_private_versions.call(parent)
+              children = create_private_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, [])
               set(:parent, parent)
@@ -534,7 +537,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_versions.call(parent)
+              children = create_public_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, children)
               set(:parent, parent)
@@ -563,7 +566,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_and_private_versions.call(parent)
+              children = create_public_and_private_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, children)
               set(:parent, parent)
@@ -606,7 +609,7 @@ module TentValidator
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
               parent = create_post.call(:public => true, :type => get(:post_type))
-              children = create_private_versions.call(parent)
+              children = create_private_versions.call(parent, :parent => post)
               set(:post, post)
               set(:versions, children)
               set(:parent, parent)
