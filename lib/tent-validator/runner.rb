@@ -7,13 +7,21 @@ module TentValidator
     class Results
       include ApiValidator::Mixins::DeepMerge
 
-      attr_reader :results
+      attr_reader :results, :num_skipped
       def initialize
         @results = {}
+        @num_skipped = 0
       end
 
       def merge!(validator_results)
         deep_merge!(results, validator_results.results)
+      end
+
+      def skipped(validator)
+        if validator.respond_to?(:expectations)
+          @num_skipped += validator.expectations.size
+        end
+        validator.validations.each { |v| skipped(v) }
       end
 
       def as_json(options = {})
@@ -39,6 +47,7 @@ module TentValidator
           if e.results
             _setup_failure_results = ApiValidator::ResponseExpectation::Results.new(e.response, [e.results])
             results.merge!(ApiValidator::Spec::Results.new(validator, [_setup_failure_results]))
+            results.skipped(validator)
           else
             puts %(<#{validator.name} SetupFailure "#{e.message}">:)
 

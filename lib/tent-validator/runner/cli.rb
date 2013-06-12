@@ -29,10 +29,16 @@ module TentValidator
 
         print "\n"
         if @invalid.any?
-          puts green("#{@valid.uniq.size} validations valid\t") + red("#{@invalid.uniq.size} failed")
+          print green("#{@valid.uniq.size} validations valid\t") + red("#{@invalid.uniq.size} failed")
         else
-          puts green("#{@valid.uniq.size} validations valid\t0 failed")
+          print green("#{@valid.uniq.size} validations valid\t0 failed")
         end
+        if results.num_skipped > 0
+          print yellow("\t#{results.num_skipped} skipped")
+        else
+          print green("\t0 skipped")
+        end
+        print "\n"
         print "\n"
 
         exit(1) if @invalid.any?

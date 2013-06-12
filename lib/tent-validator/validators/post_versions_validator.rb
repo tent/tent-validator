@@ -50,7 +50,7 @@ module TentValidator
 
     create_post_version = lambda do |post, client, opts={}|
       data = generate_status_post(post[:permissions].nil? || false)
-      data[:version] = { :parents => [{:version => post[:version][:id] }] }
+      data[:version] = { :parents => [{:version => post[:version][:id], :post => post[:id]}] }
 
       if post[:attachments] && opts[:keep_attachments]
         data[:attachments] = post[:attachments]
