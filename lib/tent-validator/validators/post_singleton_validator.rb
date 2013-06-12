@@ -482,9 +482,10 @@ module TentValidator
               post = create_post.call(:public => true, :type => get(:post_type))
               children = create_private_versions.call(post)
               set(:post, post)
+              set(:versions, [])
             end
 
-            behaves_as(:not_found)
+            behaves_as(:all_versions)
           end
 
           context "when version specified" do
