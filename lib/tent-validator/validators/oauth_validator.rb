@@ -4,12 +4,10 @@ module TentValidator
     require 'tent-validator/validators/support/app_post_generators'
     include Support::AppPostGenerators
 
-    SetupFailure = Class.new(StandardError)
-
     def create_app
       client = clients(:no_auth)
       res = client.post.create(generate_app_post)
-      raise SetupFailure.new("Could not create app! #{res.status}: #{res.body.inspect}") unless res.success?
+      raise SetupFailure.new("Could not create app!", res) unless res.success?
       set(:app, res.body['post'])
 
       links = TentClient::LinkHeader.parse(res.headers['Link'].to_s).links
@@ -17,12 +15,12 @@ module TentValidator
       if credentials_url
         credentials_url = credentials_url.uri
         res = client.http.get(credentials_url)
-        raise SetupFailure.new("Could not fetch app credentials! #{res.status}: #{res.body.inspect}") unless res.success?
+        raise SetupFailure.new("Could not fetch app credentials!", res) unless res.success?
         set(:app_credentials, :id => res.body['post']['id'],
                               :hawk_key => res.body['post']['content']['hawk_key'],
                               :hawk_algorithm => res.body['post']['content']['hawk_algorithm'])
       else
-        raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers.inspect}")
+        raise SetupFailure.new("App credentials not linked!", res)
       end
     end
 

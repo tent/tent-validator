@@ -1,7 +1,5 @@
 module TentValidator
   class PostAttachmentsValidator < TentValidator::Spec
-    SetupFailure = Class.new(StandardError)
-
     require 'tent-validator/validators/support/post_generators'
     class << self
       include Support::PostGenerators
@@ -30,7 +28,7 @@ module TentValidator
             }
           }
         ).validate(res)
-        raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+        raise SetupFailure.new("Failed to create post with attachments!", res, res_validation) unless res_validation[:valid]
       end
 
       [TentD::Utils::Hash.symbolize_keys(res.body['post'] || res.body), attachments]

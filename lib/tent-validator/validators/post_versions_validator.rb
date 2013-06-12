@@ -1,7 +1,5 @@
 module TentValidator
   class PostVersionsValidator < TentValidator::Spec
-    SetupFailure = Class.new(StandardError)
-
     require 'tent-validator/validators/support/post_generators'
     class << self
       include Support::PostGenerators
@@ -30,7 +28,7 @@ module TentValidator
       if TentValidator.remote_auth_details
         data.delete(:permissions) if opts[:public] == true
         res_validation = ApiValidator::Json.new(:post => data).validate(res)
-        raise SetupFailure.new("Failed to create post! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+        raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
 
         if attachments
           res_validation = ApiValidator::Json.new(
@@ -43,7 +41,7 @@ module TentValidator
               }
             }
           ).validate(res)
-          raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+          raise SetupFailure.new("Failed to create post with attachments!", res, res_validation) unless res_validation[:valid]
         end
       end
 

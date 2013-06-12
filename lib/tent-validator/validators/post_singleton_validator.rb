@@ -1,7 +1,5 @@
 module TentValidator
   class PostSingletonValidator < TentValidator::Spec
-    SetupFailure = Class.new(StandardError)
-
     require 'tent-validator/validators/support/post_generators'
     class << self
       include Support::PostGenerators
@@ -52,7 +50,7 @@ module TentValidator
       end
 
       res_validation = ApiValidator::Json.new(:post => data).validate(res)
-      raise SetupFailure.new("Failed to create post with attachments! #{res.status}\n\t#{Yajl::Encoder.encode(res_validation[:diff])}\n\t#{res.body}") unless res_validation[:valid]
+      raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
 
       TentD::Utils::Hash.symbolize_keys(res.body['post'])
     end
@@ -341,6 +339,8 @@ module TentValidator
 
       shared_example :all_versions do
         expect_response(:status => 200, :schema => :data) do
+          expect_headers('Content-Type' => %(application/vnd.tent.post-children.v0+json))
+
           params = {}
 
           if version_id = get(:version_id)
@@ -360,6 +360,7 @@ module TentValidator
           end
 
           expect_properties(:versions => versions.reverse)
+          expect_property_length('/versions', versions.size)
 
           get(:client).post.children(post[:entity], post[:id], params)
         end
@@ -367,6 +368,8 @@ module TentValidator
 
       shared_example :public_versions do
         expect_response(:status => 200, :schema => :data) do
+          expect_headers('Content-Type' => %(application/vnd.tent.post-children.v0+json))
+
           params = {}
 
           if version_id = get(:version_id)
@@ -384,6 +387,7 @@ module TentValidator
           end
 
           expect_properties(:versions => versions.reverse)
+          expect_property_length('/versions', versions.size)
 
           get(:client).post.children(post[:entity], post[:id], params)
         end

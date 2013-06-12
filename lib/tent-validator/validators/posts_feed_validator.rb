@@ -1,8 +1,6 @@
 module TentValidator
   class PostsFeedValidator < TentValidator::Spec
 
-    SetupFailure = Class.new(StandardError)
-
     require 'tent-validator/validators/support/post_generators'
     include Support::PostGenerators
 
@@ -14,7 +12,7 @@ module TentValidator
 
     def create_post(client, attrs)
       res = client.post.create(attrs)
-      raise SetupFailure.new("Failed to create post: #{res.status}\n#{res.body.inspect}") unless res.success?
+      raise SetupFailure.new("Failed to create post!", res) unless res.success?
       res.body['post']
     end
 
@@ -125,7 +123,7 @@ module TentValidator
 
       context "when using default sort order" do
         expect_response(:status => 200, :schema => :data) do
-          posts = get(:posts).sort_by { |post| post['received_at'] * -1 }
+          posts = get(:posts).sort_by { |post| post['received_at'].to_i * -1 }
           expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'received_at') })
 
           clients(:app).post.list(:sort_by => 'received_at')
@@ -135,7 +133,7 @@ module TentValidator
       context "with sort_by param" do
         context "when received_at" do
           expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort_by { |post| post['received_at'] * -1 }
+            posts = get(:posts).sort_by { |post| post['received_at'].to_i * -1 }
             expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'received_at') })
 
             clients(:app).post.list(:sort_by => 'received_at')
@@ -144,7 +142,7 @@ module TentValidator
 
         context "when published_at" do
           expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort_by { |post| post['published_at'] * -1 }
+            posts = get(:posts).sort_by { |post| post['published_at'].to_i * -1 }
             expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
 
             clients(:app).post.list(:sort_by => 'published_at')
@@ -153,7 +151,7 @@ module TentValidator
 
         context "when version.received_at" do
           expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort_by { |post| post['version']['received_at'] * -1 }
+            posts = get(:posts).sort_by { |post| post['version']['received_at'].to_i * -1 }
             expect_properties(:posts => posts.map { |post| { :version => TentD::Utils::Hash.slice(post['version'], 'received_at') } })
 
             clients(:app).post.list(:sort_by => 'version.received_at')
@@ -162,7 +160,7 @@ module TentValidator
 
         context "when version.published_at" do
           expect_response(:status => 200, :schema => :data) do
-            posts = get(:posts).sort_by { |post| post['version']['published_at'] * -1 }
+            posts = get(:posts).sort_by { |post| post['version']['published_at'].to_i * -1 }
             expect_properties(:posts => posts.map { |post| { :version => TentD::Utils::Hash.slice(post['version'], 'published_at') } })
 
             clients(:app).post.list(:sort_by => 'version.published_at')

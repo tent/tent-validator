@@ -14,7 +14,13 @@ module TentValidator
   require 'tent-validator/faraday/validator_rack_adapter'
   require 'tent-validator/faraday/validator_net_http_adapter'
 
-  SetupFailure = Class.new(StandardError)
+  SetupFailure = Class.new(StandardError) do
+    attr_reader :response, :results
+    def initialize(message, response, results=nil)
+      super(message)
+      @response, @results = response, results
+    end
+  end
 
   class << self
     attr_writer :remote_auth_details
@@ -66,7 +72,7 @@ module TentValidator
     )
 
     unless res.success?
-      raise SetupFailure.new("Failed to register app on remote server! #{res.status}: #{res.body.inspect}")
+      raise SetupFailure.new("Failed to register app on remote server!", res)
     end
 
     app = res.body['post']
@@ -76,13 +82,13 @@ module TentValidator
     credentials_url = credentials_url.uri if credentials_url
 
     unless credentials_url
-      raise SetupFailure.new("App credentials not linked! #{res.status}: #{res.headers}")
+      raise SetupFailure.new("App credentials not linked!", res)
     end
 
     res = client.http.get(credentials_url)
 
     unless res.success?
-      raise SetupFailure.new("Failed to fetch app credentials! #{res.status}: #{res.body.inspect}")
+      raise SetupFailure.new("Failed to fetch app credentials!", res)
     end
 
     app_credentials = {
