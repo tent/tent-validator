@@ -348,6 +348,7 @@ module TentValidator
           end
 
           post = get(:post)
+          versions_parent = get(:parent)
           versions = get(:versions)
 
           versions = get(:versions).map do |post|
@@ -359,8 +360,10 @@ module TentValidator
             post[:version].merge(:type => post[:type])
           end.each do |version|
             version[:parents].each do |parent|
-              if parent[:post] == post[:id]
+              if !versions_parent || parent[:post] == versions_parent[:id]
                 parent[:post] = property_absent
+              else
+                parent[:post] = post[:id]
               end
             end
           end
@@ -383,6 +386,7 @@ module TentValidator
           end
 
           post = get(:post)
+          versions_parent = get(:parent)
           versions = get(:versions).select { |post| !post[:permissions] }.map do |post|
             unless get(:is_app)
               post = TentD::Utils::Hash.deep_dup(post)
@@ -392,8 +396,10 @@ module TentValidator
             post[:version].merge(:type => post[:type])
           end.each do |version|
             version[:parents].each do |parent|
-              if parent[:post] == post[:id]
+              if !versions_parent || parent[:post] == versions_parent[:id]
                 parent[:post] = property_absent
+              else
+                parent[:post] = post[:id]
               end
             end
           end
@@ -424,9 +430,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_versions.call(parent)
               set(:post, post)
               set(:versions, children)
+              set(:parent, parent)
             end
 
             behaves_as(:all_versions)
@@ -451,9 +459,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_and_private_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_and_private_versions.call(parent)
               set(:post, post)
               set(:versions, children)
+              set(:parent, parent)
             end
 
             behaves_as(:public_versions)
@@ -492,9 +502,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_private_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_private_versions.call(parent)
               set(:post, post)
               set(:versions, [])
+              set(:parent, parent)
             end
 
             behaves_as(:all_versions)
@@ -521,9 +533,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_versions.call(parent)
               set(:post, post)
               set(:versions, children)
+              set(:parent, parent)
             end
 
             behaves_as(:all_versions)
@@ -548,9 +562,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_public_and_private_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_public_and_private_versions.call(parent)
               set(:post, post)
               set(:versions, children)
+              set(:parent, parent)
             end
 
             behaves_as(:all_versions)
@@ -589,9 +605,11 @@ module TentValidator
           context "when no version specified" do
             setup do
               post = create_post.call(:public => true, :type => get(:post_type))
-              children = create_private_versions.call(post)
+              parent = create_post.call(:public => true, :type => get(:post_type))
+              children = create_private_versions.call(parent)
               set(:post, post)
               set(:versions, children)
+              set(:parent, parent)
             end
 
             behaves_as(:all_versions)
