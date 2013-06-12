@@ -291,12 +291,25 @@ module TentValidator
 
       create_public_versions = lambda do |post, opts={}|
         post_type = post[:type]
+
+        if opts[:parent]
+          method = :post
+        else
+          method = :put
+        end
+
         opts[:parent] ||= post
 
         versions = 3.times.map do
-          create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
-          })
+          if method == :put
+            create_post_version.call(post, :type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          else
+            create_post.call(:type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          end
         end
 
         versions
@@ -304,24 +317,49 @@ module TentValidator
 
       create_public_and_private_versions = lambda do |post, opts={}|
         post_type = post[:type]
+
+        if opts[:parent]
+          method = :post
+        else
+          method = :put
+        end
+
         opts[:parent] ||= post
 
         public_versions = 2.times.map do
-          create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
-          })
+          if method == :put
+            create_post_version.call(post, :type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          else
+            create_post.call(:type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          end
         end
 
         private_versions = 2.times.map do
-          create_post_version.call(post, :type => post_type, :public => false, :version => {
-            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
-          })
+          if method == :put
+            create_post_version.call(post, :type => post_type, :public => false, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          else
+            create_post.call(:type => post_type, :public => false, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          end
         end
 
         public_versions_2 = 2.times.map do
-          create_post_version.call(post, :type => post_type, :public => true, :version => {
-            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
-          })
+          if method == :put
+            create_post_version.call(post, :type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          else
+            create_post.call(:type => post_type, :public => true, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          end
         end
 
         public_versions + private_versions + public_versions_2
@@ -329,12 +367,25 @@ module TentValidator
 
       create_private_versions = lambda do |post, opts={}|
         post_type = post[:type]
+
+        if opts[:parent]
+          method = :post
+        else
+          method = :put
+        end
+
         opts[:parent] ||= post
 
         versions = 3.times.map do
-          create_post_version.call(post, :type => post_type, :public => false, :version => {
-            :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
-          })
+          if method == :put
+            create_post_version.call(post, :type => post_type, :public => false, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          else
+            create_post.call(:type => post_type, :public => false, :version => {
+              :parents => [{ :version => opts[:parent][:version][:id], :post => opts[:parent][:id] }]
+            })
+          end
         end
 
         versions
