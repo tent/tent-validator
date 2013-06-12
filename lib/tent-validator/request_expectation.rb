@@ -139,6 +139,9 @@ module TentValidator
       initialize_params(options.delete(:params))
       initialize_schema(options.delete(:schema))
       initialize_body(options.delete(:body))
+
+      # capture setup via method calls
+      instance_eval(&block) if block_given?
     end
 
     def header_expectations
@@ -173,6 +176,7 @@ module TentValidator
       return unless expected_headers
       header_expectations << HeaderExpectation.new(expected_headers)
     end
+    alias expect_headers initialize_headers
 
     def initialize_method(expected_method)
       return unless expected_method
@@ -188,16 +192,19 @@ module TentValidator
       return unless expected_params
       param_expectations << ParamExpectation.new(expected_params)
     end
+    alias expect_params initialize_params
 
     def initialize_schema(expected_schema, path=nil)
       return unless expected_schema
       schema_expectations << SchemaExpectation.new(expected_schema, path)
     end
+    alias expect_schema initialize_schema
 
     def initialize_body(expected_body)
       return unless expected_body
       json_expectations << JsonExpectation.new(expected_body)
     end
+    alias expect_properties initialize_body
 
     def run
       env, response = nil
@@ -222,6 +229,18 @@ module TentValidator
 
     def validate(request)
       expectations.map { |expectation| expectation.validate(request) }
+    end
+
+    def respond_to_missing?(method)
+      @validator.respond_to?(method)
+    end
+
+    def method_missing(method, *args, &block)
+      if respond_to_missing?(method)
+        @validator.send(method, *args, &block)
+      else
+        super
+      end
     end
 
     private
