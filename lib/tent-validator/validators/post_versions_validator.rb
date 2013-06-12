@@ -56,13 +56,16 @@ module TentValidator
         data[:attachments] = post[:attachments]
       end
 
+      if attachments = opts[:attachments]
+        res = client.post.update(post[:entity], post[:id], data, {}, :attachments => attachments.map(&:dup))
+      else
+        res = client.post.update(post[:entity], post[:id], data)
+      end
+
+      data[:version][:parents].first.delete(:post)
       set(:post_version, data)
 
-      if attachments = opts[:attachments]
-        client.post.update(post[:entity], post[:id], data, {}, :attachments => attachments.map(&:dup))
-      else
-        client.post.update(post[:entity], post[:id], data)
-      end
+      res
     end
 
     shared_example :create_post_version do

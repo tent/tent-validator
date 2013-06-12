@@ -77,6 +77,7 @@ module TentValidator
 
           expected_data = TentD::Utils::Hash.deep_dup(data)
           expected_data.delete(:permissions)
+          expected_data[:version][:parents].first.delete(:post)
 
           expect_properties(:post => expected_data)
           expect_schema(:post, '/post')
