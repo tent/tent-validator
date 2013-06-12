@@ -24,7 +24,7 @@ module TentValidator
       end
 
       if opts[:version]
-        data[:version] = opts[:version]
+        data[:version] = TentD::Utils::Hash.deep_dup(opts[:version])
       end
 
       if opts[:type]
@@ -720,6 +720,188 @@ module TentValidator
           end
 
           behaves_as(:authorized)
+        end
+      end
+    end
+
+    describe "GET post versions" do
+      set(:post_type, %(https://tent.io/types/status/v0#reply))
+
+      create_versions = lambda do |post, opts|
+        version_parent = { :version => post[:version][:id], :post => post[:id] }
+        versions = 3.times.map do
+          create_post_version.call(post, :type => get(:post_type), :public => opts[:public], :version => { :parents => [version_parent] })
+        end
+
+        versions
+      end
+
+      shared_example :all_versions do
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+          versions = get(:versions)
+          is_app = get(:is_app)
+
+          expect_headers('Content-Type' => %(application/vnd.tent.post-versions.v0+json))
+
+          expect_property_length('/versions', versions.size)
+          expect_properties(:versions => versions.reverse.map { |_post|
+            version = TentD::Utils::Hash.deep_dup(_post[:version])
+            (version[:parents] || []).each { |parent| parent.delete(:post) }
+            version[:type] = _post[:type]
+            version[:received_at] = property_absent unless is_app
+            version
+          })
+
+          get(:client).post.versions(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :not_found do
+        expect_response(:status => 404, :schema => :error) do
+          post = get(:post)
+          get(:client).post.versions(post[:entity], post[:id])
+        end
+      end
+
+      context "when post and versions public" do
+        setup do
+          post = create_post.call(:public => true, :type => get(:post_type))
+          versions = create_versions.call(post, :public => true)
+
+          set(:post, post)
+          set(:versions, [post] + versions)
+        end
+
+        context "when not authenticated" do
+          setup do
+            set(:is_app, false)
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:all_versions)
+        end
+
+        context "when authenticated" do
+          setup do
+            set(:is_app, true)
+          end
+
+          context "without authorization" do
+            authenticate_with_permissions(:read_post_types => [])
+
+            behaves_as(:all_versions)
+          end
+
+          context "with limited authorization" do
+            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+
+            behaves_as(:all_versions)
+          end
+
+          context "with full authorization" do
+            setup do
+              set(:client, clients(:app))
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+      end
+
+      context "when post private and versions public" do
+        setup do
+          post = create_post.call(:public => false, :type => get(:post_type))
+          versions = create_versions.call(post, :public => true)
+
+          set(:post, post)
+          set(:public_versions, versions)
+          set(:versions, [post] + versions)
+        end
+
+        context "when not authenticated" do
+          setup do
+            set(:is_app, false)
+            set(:client, clients(:no_auth))
+            set(:versions, get(:public_versions))
+          end
+
+          behaves_as(:all_versions)
+        end
+
+        context "when authenticated" do
+          setup do
+            set(:is_app, true)
+          end
+
+          context "without authorization" do
+            authenticate_with_permissions(:read_post_types => [])
+
+            setup do
+              set(:versions, get(:public_versions))
+            end
+
+            behaves_as(:all_versions)
+          end
+
+          context "with limited authorization" do
+            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+
+            behaves_as(:all_versions)
+          end
+
+          context "with full authorization" do
+            setup do
+              set(:client, clients(:app))
+            end
+
+            behaves_as(:all_versions)
+          end
+        end
+      end
+
+      context "when post and versions private" do
+        setup do
+          post = create_post.call(:public => false, :type => get(:post_type))
+          versions = create_versions.call(post, :public => false)
+
+          set(:post, post)
+          set(:versions, [post] + versions)
+        end
+
+        context "when not authenticated" do
+          setup do
+            set(:is_app, false)
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:not_found)
+        end
+
+        context "when authenticated" do
+          setup do
+            set(:is_app, true)
+          end
+
+          context "without authorization" do
+            authenticate_with_permissions(:read_post_types => [])
+
+            behaves_as(:not_found)
+          end
+
+          context "with limited authorization" do
+            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+
+            behaves_as(:all_versions)
+          end
+
+          context "with full authorization" do
+            setup do
+              set(:client, clients(:app))
+            end
+
+            behaves_as(:all_versions)
+          end
         end
       end
     end
