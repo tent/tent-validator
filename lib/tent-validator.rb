@@ -53,23 +53,27 @@ module TentValidator
       :server_meta => remote_server_meta
     )
 
-    res = client.post.create(
-      :type => "https://tent.io/types/app/v0#",
-      :content => {
-        :name => "Validator",
-        :description => "Tent 0.3 Protocol Validator",
-        :url => "http://localhost/validator",
-        :redirect_uri => "null://validator/callback",
-        :post_types => {
-          :read => %w( all ),
-          :write => %w( all )
+    begin
+      res = client.post.create(
+        :type => "https://tent.io/types/app/v0#",
+        :content => {
+          :name => "Validator",
+          :description => "Tent 0.3 Protocol Validator",
+          :url => "http://localhost/validator",
+          :redirect_uri => "null://validator/callback",
+          :post_types => {
+            :read => %w( all ),
+            :write => %w( all )
+          },
+          :scopes => %w( all )
         },
-        :scopes => %w( all )
-      },
-      :permissions => {
-        :public => false
-      }
-    )
+        :permissions => {
+          :public => false
+        }
+      )
+    rescue Faraday::Error::ConnectionFailed
+      raise SetupFailure.new("Failed to register app on remote server!", Faraday::Response.new(:env => {}))
+    end
 
     unless res.success?
       raise SetupFailure.new("Failed to register app on remote server!", res)
@@ -85,7 +89,11 @@ module TentValidator
       raise SetupFailure.new("App credentials not linked!", res)
     end
 
-    res = client.http.get(credentials_url)
+    begin
+      res = client.http.get(credentials_url)
+    rescue Faraday::Error::ConnectionFailed
+      raise SetupFailure.new("Failed to fetch app credentials from #{credentials_url.to_s.inspect}!", Faraday::Response.new(:env => {}))
+    end
 
     unless res.success?
       raise SetupFailure.new("Failed to fetch app credentials!", res)
@@ -105,19 +113,27 @@ module TentValidator
 
     oauth_uri = client.oauth_redirect_uri(:client_id => app['id'])
 
-    res = client.http.get(oauth_uri.to_s)
-    return (self.remote_auth_details = nil) unless res.status == 302
-    oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
+    begin
+      res = client.http.get(oauth_uri.to_s)
+      return (self.remote_auth_details = nil) unless res.status == 302
+      oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
+    rescue Faraday::Error::ConnectionFailed
+      raise SetupFailure.new("OAuth request failed (#{oauth_uri.to_s.inspect})!", Faraday::Response.new(:env => {}))
+    end
 
-    if res.status == 302 && (res = app_client.oauth_token_exchange(:code => oauth_code)) && res.success?
-      oauth_credentials = res.body
-      self.remote_auth_details = {
-        :id => oauth_credentials['access_token'],
-        :hawk_key => oauth_credentials['hawk_key'],
-        :hawk_algorithm => oauth_credentials['hawk_algorithm']
-      }
-    else
-      self.remote_auth_details = nil
+    begin
+      if res.status == 302 && (res = app_client.oauth_token_exchange(:code => oauth_code)) && res.success?
+        oauth_credentials = res.body
+        self.remote_auth_details = {
+          :id => oauth_credentials['access_token'],
+          :hawk_key => oauth_credentials['hawk_key'],
+          :hawk_algorithm => oauth_credentials['hawk_algorithm']
+        }
+      else
+        self.remote_auth_details = nil
+      end
+    rescue Faraday::Error::ConnectionFailed
+      raise SetupFailure.new("OAuth token exchange failed!", Faraday::Response.new(:env => {}))
     end
   end
 
