@@ -112,6 +112,24 @@ module TentValidator
       end
     end
 
+    class SchemaExpectation < ApiValidator::JsonSchema
+      def validate(request)
+        request_body = begin
+                         Yajl::Parser.parse(request.body)
+                       rescue Yajl::ParseError
+                         Hash.new
+                       end
+        _failed_assertions = failed_assertions(request_body)
+        _diff = diff(response_body, _failed_assertions)
+        super.merge(
+          :key => :request_body,
+          :failed_assertions => _failed_assertions.map(&:to_hash),
+          :diff => _diff,
+          :valid => _diff.empty?
+        )
+      end
+    end
+
     attr_accessor :request, :response
     def initialize(validator, options, &block)
       @validator = validator
@@ -119,6 +137,7 @@ module TentValidator
       initialize_method(options.delete(:method))
       initialize_path(options.delete(:path))
       initialize_params(options.delete(:params))
+      initialize_schema(options.delete(:schema))
       initialize_body(options.delete(:body))
     end
 
@@ -142,8 +161,12 @@ module TentValidator
       @json_expectations ||= []
     end
 
+    def schema_expectations
+      @schema_expectations ||= []
+    end
+
     def expectations
-      header_expectations + method_expectations + path_expectations + param_expectations + json_expectations
+      header_expectations + method_expectations + path_expectations + param_expectations + schema_expectations + json_expectations
     end
 
     def initialize_headers(expected_headers)
@@ -164,6 +187,11 @@ module TentValidator
     def initialize_params(expected_params)
       return unless expected_params
       param_expectations << ParamExpectation.new(expected_params)
+    end
+
+    def initialize_schema(expected_schema, path=nil)
+      return unless expected_schema
+      schema_expectations << SchemaExpectation.new(expected_schema, path)
     end
 
     def initialize_body(expected_body)
