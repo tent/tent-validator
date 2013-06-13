@@ -174,14 +174,8 @@ module TentValidator
       context "with invalid content-type header" do
         data = get(:post)
         expect_response(:headers => :error, :status => 415, :schema => :error) do
-          if attachments = get(:post_attachments)
-            get(:client).post.create(data, :attachments => attachments) do |request|
-              request.headers['Content-Type'] = 'application/json'
-            end
-          else
-            get(:client).post.create(data) do |request|
-              request.headers['Content-Type'] = 'application/json'
-            end
+          get(:client).post.create(data) do |request|
+            request.headers['Content-Type'] = 'application/json'
           end
         end
       end
