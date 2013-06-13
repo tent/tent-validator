@@ -145,6 +145,14 @@ module TentValidator
     @pending_local_requests ||= []
   end
 
+  def self.async_local_request_expectations
+    @async_local_request_expectations ||= []
+  end
+
+  def self.local_requests
+    @local_requests ||= []
+  end
+
   def self.wrap_local_server(app)
     lambda do |env|
       match = env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
@@ -159,9 +167,19 @@ module TentValidator
       status, headers, body = app.call(env)
 
       TentValidator.mutex.synchronize do
-        if TentValidator.watch_local_requests[env['current_user'].id]
+        if TentValidator.async_local_request_expectations.any?
           env['REQUEST_BODY'] = env['rack.input'].read
           env['rack.input'].rewind
+
+          TentValidator.local_requests << [env, [status, headers, body]]
+        end
+
+        if TentValidator.watch_local_requests[env['current_user'].id]
+          env['REQUEST_BODY'] ||= begin
+            _body = env['rack.input'].read
+            env['rack.input'].rewind
+            _body
+          end
           TentValidator.pending_local_requests << [env, [status, headers, body]]
         end
       end

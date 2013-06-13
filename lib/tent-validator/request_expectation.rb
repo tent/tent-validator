@@ -125,7 +125,7 @@ module TentValidator
       end
     end
 
-    attr_accessor :request, :response
+    attr_accessor :request, :response, :validator
     def initialize(validator, options, &block)
       @validator = validator
       initialize_headers(options.delete(:headers))
@@ -213,10 +213,11 @@ module TentValidator
       response_expectation
     end
 
-    def run
-      env, response = nil
-      TentValidator.mutex.synchronize do
-        env, response = Array(TentValidator.pending_local_requests.shift)
+    def run(env = nil, response = nil)
+      unless env && response
+        TentValidator.mutex.synchronize do
+          env, response = Array(TentValidator.pending_local_requests.shift)
+        end
       end
 
       request = Request.new
@@ -293,6 +294,7 @@ module TentValidator
 
     def parse_url(env)
       return unless env
+      return unless env['REQUEST_PATH']
       url = "#{env['rack.url_scheme']}://#{env['HTTP_HOST']}#{env['REQUEST_PATH']}"
       url << "?#{env['QUERY_STRING']}" unless env['QUERY_STRING'] == ""
       url

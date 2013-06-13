@@ -67,7 +67,56 @@ module TentValidator
         end
       end
 
-      results
+      TentValidator.mutex.synchronize do
+        if TentValidator.async_local_request_expectations.empty?
+          return results
+        else
+          timeout = Time.now.to_i + 10
+          expectations = []
+          print "\n"
+          print "Wating for incoming requests... "
+          until TentValidator.async_local_request_expectations.empty?
+            TentValidator.local_requests.each do |req|
+              _env, _res = req
+              _req_path, _req_method = _env['PATH_INFO'], _env['REQUEST_METHOD']
+              if _expectation = TentValidator.async_local_request_expectations.find do |expectation|
+                expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
+                expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
+              end
+                TentValidator.async_local_request_expectations.delete(_expectation)
+                expectations << [req, _expectation]
+              end
+            end
+
+            break if Time.now.to_i >= timeout
+            if TentValidator.async_local_request_expectations.any?
+              print ".#{timeout - Time.now.to_i}"
+              sleep(1)
+            end
+          end
+          print "\n"
+
+          # Requests found for these expectations
+          expectations.each do |i|
+            _req, expectation = i
+            _env, _res = _req
+
+            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run(_env, _res)]))
+          end
+
+          # No requests found for these expectations
+          TentValidator.async_local_request_expectations.each do |expectation|
+            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run({}, [])]))
+          end
+
+          # Reset
+          TentValidator.async_local_request_expectations.delete_if { true }
+
+          block.call(results)
+
+          results
+        end
+      end
     end
 
   end

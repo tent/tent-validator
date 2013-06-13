@@ -128,5 +128,15 @@ module TentValidator
       expectation
     end
 
+    def expect_async_request(options = {}, &block)
+      expectation = RequestExpectation.new(self, options, &block)
+
+      TentValidator.mutex.synchronize do
+        TentValidator.async_local_request_expectations << expectation
+      end
+
+      expectation
+    end
+
   end
 end
