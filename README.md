@@ -32,24 +32,26 @@ server_url = "http://127.0.0.1:3000" # change to wherever the server is running
 TentValidator.setup!(
   :remote_entity_uri => server_url,
   :remote_server_meta => { # change to suite your server setup
-    "entity" => server_url,
-    "previous_entities" => [],
-    "servers" => [
-      {
-        "version" => "0.3",
-        "urls" => {
-          "oauth_auth" => "#{server_url}/oauth/authorize",
-          "oauth_token" => "#{server_url}/oauth/token",
-          "posts_feed" => "#{server_url}/posts",
-          "new_post" => "#{server_url}/posts",
-          "post" => "#{server_url}/posts/{entity}/{post}",
-          "post_attachment" => "#{server_url}/posts/{entity}/{post}/attachments/{name}",
-          "batch" => "#{server_url}/batch",
-          "server_info" => "#{server_url}/server"
-        },
-        "preference" => 0
-      }
-    ]
+    "content" => {
+      "entity" => server_url,
+      "previous_entities" => [],
+      "servers" => [
+        {
+          "version" => "0.3",
+          "urls" => {
+            "oauth_auth" => "#{server_url}/oauth/authorize",
+            "oauth_token" => "#{server_url}/oauth/token",
+            "posts_feed" => "#{server_url}/posts",
+            "new_post" => "#{server_url}/posts",
+            "post" => "#{server_url}/posts/{entity}/{post}",
+            "post_attachment" => "#{server_url}/posts/{entity}/{post}/attachments/{name}",
+            "batch" => "#{server_url}/batch",
+            "server_info" => "#{server_url}/server"
+          },
+          "preference" => 0
+        }
+      ]
+    }
   },
   :tent_database_url => ENV['VALIDATOR_TENTD_DATABASE_URL'] # tent-validator uses tentd
 )
