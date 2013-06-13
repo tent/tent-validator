@@ -189,9 +189,9 @@ module TentValidator
     end
     alias expect_params initialize_params
 
-    def initialize_schema(expected_schema, path=nil)
+    def initialize_schema(expected_schema, path=nil, options = {})
       return unless expected_schema
-      schema_expectations << SchemaExpectation.new(expected_schema, path)
+      schema_expectations << SchemaExpectation.new(expected_schema, path, {:required_key => :app_required}.merge(options))
     end
     alias expect_schema initialize_schema
 
