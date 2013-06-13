@@ -6,6 +6,17 @@ module TentValidator
       describe "Relationship initialization" do
         expect_response(:status => 200, :schema => :data) do
           expect_schema(:post, '/post')
+          expect_schema(:post_meta, '/post/content')
+
+          remote_entity = TentValidator.remote_entity_uri
+          client = TentClient.new(remote_entity)
+
+          TentClient::Discovery.discover(client, remote_entity, :return_response => true) || Faraday::Response.new({})
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          expect_schema(:post, '/post')
+          expect_schema(:post_relationship, '/post/content')
 
           ##
           # Create user on local server
@@ -26,6 +37,18 @@ module TentValidator
           expect_headers(
             'Link' => %r{rel=['"]#{Regexp.escape("https://tent.io/rels/credentials")}['"]}
           )
+
+          ##
+          # Setup asyc request expectation for relationship# post
+          expect_async_request(
+            :method => "PUT",
+            :path => "/post", # new_post
+            :headers => {
+              'Content-Type' => TentD::API::POST_CONTENT_TYPE % %(https://tent.io/types/relationship/v0#)
+            }
+          ) do
+            expect_schema(:post)
+          end
 
           ##
           # Start watching local requests
@@ -92,8 +115,65 @@ module TentValidator
           watch_local_requests(false, user.id)
 
           ##
+          # Cache credentials link for next response expectation
+          links = TentClient::LinkHeader.parse(res.headers['Link'].to_s).links
+          credentials_url = links.find { |link| link[:rel] == 'https://tent.io/rels/credentials' }
+          set(:credentials_url, credentials_url.uri) if credentials_url
+
+          ##
           # Validate response
           res
+        end
+
+        ##
+        # Fetch credentials post from target server
+        expect_response(:status => 200, :schema => :data) do
+          expect_schema(:post, '/post')
+          expect_schema(:post_credentials, '/post/content')
+
+          if url = get(:credentials_url)
+            res = clients(:no_auth).http.get(url)
+
+            if res.status == 200 && (Hash === res.body)
+              set(:credentials_post, TentD::Utils::Hash.symbolize_keys(res.body)[:post])
+            end
+
+            res
+          else
+            Faraday::Response.new({})
+          end
+        end
+
+        ##
+        # Fetch target relationship post via credentials post mention
+        expect_response(:status => 200, :schema => :data) do
+          expect_schema(:post, '/post')
+          expect_schema(:post_relationship, '/post/content')
+
+          if credentials_post = get(:credentials_post)
+            mention = credentials_post[:mentions].to_a.find { |m|
+              TentClient::TentType.new(m[:type]).base == %(https://tent.io/types/relationship)
+            }
+
+            unless mention
+              return Faraday::Response.new({})
+            end
+
+            credentials = {
+              :id => credentials_post[:id],
+              :hawk_key => credentials_post[:content][:hawk_key],
+              :hawk_algorithm => credentials_post[:content][:hawk_algorithm]
+            }
+            res = clients(:custom, credentials).post.get(credentials_post[:entity], mention[:post])
+
+            if res.status == 200
+              set(:relationship_post, TentD::Utils::Hash.symbolize_keys(res.body)[:post])
+            end
+
+            res
+          else
+            Faraday::Response.new({})
+          end
         end
       end
 
