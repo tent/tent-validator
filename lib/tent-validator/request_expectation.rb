@@ -206,6 +206,18 @@ module TentValidator
     end
     alias expect_properties initialize_body
 
+    def response_expectations
+      @response_expectations ||= []
+    end
+
+    def expect_response(options = {}, &block)
+      _block = lambda {}
+      response_expectation = ApiValidator::ResponseExpectation.new(@validator, options, &_block)
+      response_expectation.instance_eval(&block)
+      response_expectations << response_expectation
+      response_expectation
+    end
+
     def run
       env, response = nil
       TentValidator.mutex.synchronize do
@@ -220,15 +232,38 @@ module TentValidator
       request.method = env ? env['REQUEST_METHOD'] : nil
       request.body = env ? env['REQUEST_BODY'] : nil
 
-      response = Response.new(*response)
+      status, headers, body = response
+      body = body ? body.first : body
+      response = Response.new(status, headers, body)
       response.headers ||= Hash.new
 
-      expectations = validate(request)
+      expectations = validate(request) + (env ? validate_response(env, response) : [])
       Results.new(request, response, expectations)
     end
 
     def validate(request)
       expectations.map { |expectation| expectation.validate(request) }
+    end
+
+    def validate_response(env, response)
+      body = begin
+        Yajl::Parser.parse(response.body)
+      rescue Yajl::ParseError
+        Hash.new
+      end
+
+      faraday_response = Faraday::Response.new(
+        :status => response.status,
+        :response_headers => response.headers,
+        :body => body
+      )
+
+      response_expectations.inject([]) do |memo, response_expectation|
+        response_expectation.expectations.map do |expectation|
+          memo << expectation.validate(faraday_response)
+        end
+        memo
+      end
     end
 
     def respond_to_missing?(method)
