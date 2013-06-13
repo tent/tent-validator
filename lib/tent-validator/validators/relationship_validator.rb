@@ -54,7 +54,7 @@ module TentValidator
             :method => :get,
             :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
             :headers => {
-              "Accept" => TentD::API::POST_CONTENT_TYPE % user.meta_post.type
+              "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
             }
           ).expect_response(:status => 200, :schema => :data) do
             expect_properties(:post => user.meta_post.as_json)
@@ -66,7 +66,7 @@ module TentValidator
             :method => :get,
             :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{credentials_post.public_id}",
             :headers => {
-              "Accept" => TentD::API::POST_CONTENT_TYPE % credentials_post.type
+              "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
             }
           ).expect_response(:status => 200, :schema => :data) do
             expect_properties(:post => credentials_post.as_json)
@@ -78,7 +78,7 @@ module TentValidator
             :method => :get,
             :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{relationship_post.public_id}",
             :headers => {
-              "Accept" => TentD::API::POST_CONTENT_TYPE % relationship_post.type
+              "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
             }
           ) do
             expect_headers('Authorization' => %r{\bHawk\b})
