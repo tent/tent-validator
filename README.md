@@ -43,7 +43,7 @@ TentValidator.setup!(
           "posts_feed" => "#{server_url}/posts",
           "new_post" => "#{server_url}/posts",
           "post" => "#{server_url}/posts/{entity}/{post}",
-          "post_attachment" => "#{server_url}/posts/{entity}/{post}/attachments/{name}?version={version}",
+          "post_attachment" => "#{server_url}/posts/{entity}/{post}/attachments/{name}",
           "batch" => "#{server_url}/batch",
           "server_info" => "#{server_url}/server"
         },
