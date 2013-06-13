@@ -58,8 +58,7 @@ module TentValidator
           res = clients(:no_auth).http.get(:post_attachment,
             :entity => post[:entity],
             :post => post[:id],
-            :name => attachment[:name],
-            :version => 'latest'
+            :name => attachment[:name]
           )
 
           if res.status == 302
@@ -133,8 +132,7 @@ module TentValidator
             clients(:no_auth).http.get(:post_attachment,
               :entity => post[:entity],
               :post => post[:id],
-              :name => attachment[:name],
-              :version => 'latest'
+              :name => attachment[:name]
             )
           end
         end
@@ -163,8 +161,7 @@ module TentValidator
               get(:client).http.get(:post_attachment,
                 :entity => post[:entity],
                 :post => post[:id],
-                :name => attachment[:name],
-                :version => 'latest'
+                :name => attachment[:name]
               )
             end
           end
@@ -200,8 +197,7 @@ module TentValidator
               res = get(:client).http.get(:post_attachment,
                 :entity => post[:entity],
                 :post => post[:id],
-                :name => attachment[:name],
-                :version => 'latest'
+                :name => attachment[:name]
               )
 
               if res.status == 302
@@ -279,8 +275,7 @@ module TentValidator
               res = get(:client).http.get(:post_attachment,
                 :entity => post[:entity],
                 :post => post[:id],
-                :name => attachment[:name],
-                :version => 'latest'
+                :name => attachment[:name]
               )
 
               if res.status == 302
