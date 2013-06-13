@@ -115,7 +115,7 @@ module TentValidator
                          Hash.new
                        end
         _failed_assertions = failed_assertions(request_body)
-        _diff = diff(response_body, _failed_assertions)
+        _diff = diff(request_body, _failed_assertions)
         super.merge(
           :key => :request_body,
           :failed_assertions => _failed_assertions.map(&:to_hash),
