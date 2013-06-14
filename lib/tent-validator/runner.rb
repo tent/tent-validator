@@ -73,8 +73,7 @@ module TentValidator
         else
           timeout = Time.now.to_i + 10
           expectations = []
-          print "\n"
-          print "Wating for incoming requests... "
+          ticks = 0
           until TentValidator.async_local_request_expectations.empty?
             TentValidator.local_requests.each do |req|
               _env, _res = req
@@ -90,11 +89,15 @@ module TentValidator
 
             break if Time.now.to_i >= timeout
             if TentValidator.async_local_request_expectations.any?
-              print ".#{timeout - Time.now.to_i}"
+              if ticks == 0
+                print "\n"
+                print "Wating for incoming requests... "
+              end
+              print "#{timeout - Time.now.to_i}."
+              ticks += 1
               sleep(1)
             end
           end
-          print "\n"
 
           # Requests found for these expectations
           expectations.each do |i|
