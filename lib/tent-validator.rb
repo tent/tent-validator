@@ -32,6 +32,7 @@ module TentValidator
     self.local_database_url = options[:tent_database_url] || ENV['TENT_DATABASE_URL']
     ENV['DB_LOGFILE'] ||= '/dev/null'
     TentD.setup!(:database_url => self.local_database_url)
+    TentD::Worker.configure_client(:namespace => 'tent.validator.sidekiq')
 
     require 'tent-validator/tentd/model/user'
 
