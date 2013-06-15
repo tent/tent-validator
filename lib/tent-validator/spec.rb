@@ -33,6 +33,17 @@ module TentValidator
             :server_meta => TentValidator.remote_server_meta
           ))
         else
+          user = options[:user]
+          opts = {
+            :faraday_adapter => TentValidator.remote_adapter,
+            :server_meta => TentD::Utils::Hash.stringify_keys(user.meta_post.as_json)
+          }
+
+          if type == :app
+            TentClient.new(user.entity, TentD::Utils::Hash.symbolize_keys(user.server_credentials).merge(opts))
+          else # no_auth
+            TentClient.new(user.entity, opts)
+          end
         end
       end
 
