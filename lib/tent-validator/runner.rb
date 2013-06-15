@@ -1,5 +1,6 @@
 require 'api-validator'
 require 'awesome_print'
+require 'benchmark'
 
 module TentValidator
   module Runner
@@ -34,8 +35,12 @@ module TentValidator
     def self.run(&block)
       TentValidator.run_local_server!
 
-      paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
-      paths.each { |path| require path }
+      print "Loading validations..."
+      load_time = Benchmark.realtime do
+        paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
+        paths.each { |path| require path }
+      end
+      print " #{load_time}s\n"
 
       results = Results.new
 
