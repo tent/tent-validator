@@ -83,10 +83,20 @@ module TentValidator
             TentValidator.local_requests.each do |req|
               _env, _res = req
               _req_path, _req_method = _env['PATH_INFO'], _env['REQUEST_METHOD']
-              if _expectation = TentValidator.async_local_request_expectations.find do |expectation|
+              if (_expectations = TentValidator.async_local_request_expectations.select { |expectation|
                 expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
                 expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
-              end
+              }) && _expectations.any?
+                if _expectations.size == 1
+                  _expectation = _expectations.first
+                else
+                  _expectation = _expectations.find { |expectation|
+                    expectation.validate(expectation.build_request(_env)).any? { |r|
+                      r[:valid]
+                    }
+                  } || _expectations.first
+                end
+
                 TentValidator.async_local_request_expectations.delete(_expectation)
                 expectations << [req, _expectation]
               end

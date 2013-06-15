@@ -220,13 +220,7 @@ module TentValidator
         end
       end
 
-      request = Request.new
-      request.headers = parse_headers(env)
-      request.url = parse_url(env)
-      request.path = env ? env['PATH_INFO'] : nil
-      request.params = parse_params(env)
-      request.method = env ? env['REQUEST_METHOD'] : nil
-      request.body = env ? env['REQUEST_BODY'] : nil
+      request = build_request(env)
 
       status, headers, body = response
       body = body ? body.first : body
@@ -235,6 +229,17 @@ module TentValidator
 
       expectations = validate(request) + (env ? validate_response(env, response) : [])
       Results.new(request, response, expectations)
+    end
+
+    def build_request(env)
+      request = Request.new
+      request.headers = parse_headers(env)
+      request.url = parse_url(env)
+      request.path = env ? env['PATH_INFO'] : nil
+      request.params = parse_params(env)
+      request.method = env ? env['REQUEST_METHOD'] : nil
+      request.body = env ? env['REQUEST_BODY'] : nil
+      request
     end
 
     def validate(request)
