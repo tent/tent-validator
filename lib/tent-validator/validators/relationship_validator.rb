@@ -43,13 +43,13 @@ module TentValidator
           expect_async_request(
             :method => "PUT",
             :path => %r{\A/posts/#{Regexp.escape(URI.encode_www_form_component(TentValidator.remote_entity_uri))}/[^/]+\Z},
-            :headers => {
-              'Content-Type' => TentD::API::POST_CONTENT_TYPE % %(https://tent.io/types/relationship/v0#)
-            }
           ) do
             expect_schema(:post)
             expect_headers(
               'Content-Type' => %r{\brel=['"]#{Regexp.escape("https://tent.io/rels/notification")}['"]}
+            )
+            expect_headers(
+              'Content-Type' => %r{\A#{Regexp.escape(TentD::API::POST_CONTENT_TYPE % %(https://tent.io/types/relationship/v0#))}}
             )
           end.expect_response(:status => 200, :schema => :data) do
             expect_schema(:post, '/post')
