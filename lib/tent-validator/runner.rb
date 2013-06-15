@@ -73,9 +73,7 @@ module TentValidator
       end
 
       TentValidator.mutex.synchronize do
-        if TentValidator.async_local_request_expectations.empty?
-          return results
-        else
+        if TentValidator.async_local_request_expectations.any?
           timeout = Time.now.to_i + 10
           expectations = []
           ticks = 0
@@ -134,10 +132,10 @@ module TentValidator
           TentValidator.async_local_request_expectations.delete_if { true }
 
           block.call(results)
-
-          results
         end
       end
+
+      results
     end
 
     def self.parse_url(env)

@@ -29,11 +29,23 @@ module TentValidator
   end
 
   def self.setup!(options = {})
-    require 'tentd'
     self.local_database_url = options[:tent_database_url] || ENV['TENT_DATABASE_URL']
+
     ENV['DB_LOGFILE'] ||= '/dev/null'
+    ENV['REDIS_NAMESPACE'] = 'validator.tentd.worker'
+    ENV['DATABASE_URL'] = self.local_database_url
+
+    require 'tentd/worker'
+    sidekiq_pid = TentD::Worker.run_server
+    puts "Validator sidekiq server running (pid: #{sidekiq_pid})"
+
+    at_exit do
+      Process.kill("INT", sidekiq_pid)
+    end
+
+    require 'tentd'
     TentD.setup!(:database_url => self.local_database_url)
-    TentD::Worker.configure_client(:namespace => 'tent.validator.sidekiq')
+    TentD::Worker.configure_client
 
     require 'tent-validator/tentd/model/user'
 
