@@ -87,6 +87,7 @@ module TentValidator
                 expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
                 expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
               }) && _expectations.any?
+                TentValidator.local_requests.delete(req)
                 if _expectations.size == 1
                   _expectation = _expectations.first
                 else
