@@ -24,15 +24,15 @@ module TentValidator
 
           ##
           # Create relationship#initial post
-          relationship_post = TentD::Model::Relationship.create_initial(user, TentValidator.remote_entity_uri.to_s)
-          relationship_data = relationship_post.as_json
+          relationship = TentD::Model::Relationship.create_initial(user, TentValidator.remote_entity_uri.to_s)
+          relationship_data = relationship.post.as_json
 
-          expect_headers('Content-Type' => TentD::API::POST_CONTENT_TYPE % relationship_post.type)
+          expect_headers('Content-Type' => TentD::API::POST_CONTENT_TYPE % relationship.post.type)
           expect_properties(:post => relationship_data)
 
           ##
           # Create credentials post which mentions relationship#initial
-          credentials_post = TentD::Model::Credentials.generate(user, relationship_post)
+          credentials_post = relationship.credentials_post
 
           expect_headers(
             'Link' => %r{rel=['"]#{Regexp.escape("https://tent.io/rels/credentials")}['"]}
@@ -107,7 +107,7 @@ module TentValidator
           # Expect relationship#initial post to be fetched
           expect_request(
             :method => :get,
-            :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{relationship_post.public_id}",
+            :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{relationship.post.public_id}",
             :headers => {
               "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
             }
