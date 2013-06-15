@@ -1,8 +1,25 @@
+require 'yajl'
+
 module TentValidator
   module Support
     module OAuth
 
+      def self.client_mapping
+        @client_mapping ||= {}
+      end
+
+      def self.client_mapping_key(options)
+        Spec.hex_digest(Yajl::Encoder.encode(options))
+      end
+
       def authenticate_with_permissions(options = {})
+        client_mapping_key = OAuth.client_mapping_key(options)
+
+        if client = OAuth.client_mapping[client_mapping_key]
+          set(:client, client)
+          return
+        end
+
         # create app
         expect_response(:status => 200, :schema => :data) do
           expect_schema(:post, '/post')
@@ -85,7 +102,9 @@ module TentValidator
                 :hawk_algorithm => res.body['hawk_algorithm']
               )
 
-              set(:client, clients(:custom, get(:limited_credentials)))
+              client = clients(:custom, get(:limited_credentials))
+              OAuth.client_mapping[client_mapping_key] = client
+              set(:client, client)
             else
               set(:client, clients(:no_auth))
             end
