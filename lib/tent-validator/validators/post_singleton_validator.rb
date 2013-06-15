@@ -52,6 +52,11 @@ module TentValidator
       res_validation = ApiValidator::Json.new(:post => data).validate(res)
       raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
 
+      if opts[:public] == true
+        res_validation = ApiValidator::Json.new(:post => {:permissions => Spec.property_absent}).validate(res)
+        raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
+      end
+
       TentD::Utils::Hash.symbolize_keys(res.body['post'])
     end
 

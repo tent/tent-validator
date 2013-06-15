@@ -125,6 +125,10 @@ module TentValidator
     end
     include SharedClassAndInstanceMethods
 
+    def self.property_absent
+      ApiValidator::ResponseExpectation::PropertyAbsent.new
+    end
+
     def watch_local_requests(should, user_id)
       if should
         TentValidator.watch_local_requests[user_id] = should
