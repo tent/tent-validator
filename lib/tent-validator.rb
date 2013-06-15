@@ -4,6 +4,7 @@ require 'api-validator'
 require 'faraday'
 require 'tent-client'
 require 'thread'
+require 'benchmark'
 
 module TentValidator
 
@@ -192,37 +193,45 @@ module TentValidator
   def self.run_local_server!
     return if @local_server_running
 
-    # get random port
-    require 'socket'
-    tmp_socket = Socket.new(:INET, :STREAM)
-    tmp_socket.bind(Addrinfo.tcp("127.0.0.1", 0))
-    tentd_host, tentd_port = tmp_socket.local_address.getnameinfo
-    tmp_socket.close
+    boot_time = Benchmark.realtime do
 
-    tentd_thread = Thread.new do
-      require 'puma/cli'
+      # get random port
+      require 'socket'
+      tmp_socket = Socket.new(:INET, :STREAM)
+      tmp_socket.bind(Addrinfo.tcp("127.0.0.1", 0))
+      tentd_host, tentd_port = tmp_socket.local_address.getnameinfo
+      tmp_socket.close
 
-      puts "Booting Validator Tent server on port #{tentd_port}..."
+      tentd_thread = Thread.new do
+        require 'puma/cli'
 
-      cli = Puma::CLI.new ['--port', tentd_port.to_s]
-      local_server = self.local_server
-      cli.instance_eval { @options[:app] = local_server; @options[:quiet] = true }
-      cli.run
-    end
+        puts "Booting Validator Tent server on port #{tentd_port}..."
 
-    # wait until tentd server boots
-    @local_server_running = false
-    until @local_server_running
-      begin
-        Socket.tcp("127.0.0.1", tentd_port) do |connection|
-          @local_server_running = true
-          connection.close
-        end
-      rescue Errno::ECONNREFUSED
+        cli = Puma::CLI.new ['--port', tentd_port.to_s]
+        local_server = self.local_server
+        cli.instance_eval { @options[:app] = local_server; @options[:quiet] = true }
+        cli.run
       end
+
+      # wait until tentd server boots
+      @local_server_running = false
+      until @local_server_running
+        begin
+          Socket.tcp("127.0.0.1", tentd_port) do |connection|
+            @local_server_running = true
+            connection.close
+          end
+        rescue Errno::ECONNREFUSED
+        end
+      end
+
+      TentValidator.local_server_port = tentd_port
+
     end
 
-    TentValidator.local_server_port = tentd_port
+    puts "Server booted in #{boot_time}s"
+
+    TentValidator.local_server_port
   end
 
   def self.remote_auth_details
