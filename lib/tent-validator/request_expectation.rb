@@ -283,7 +283,7 @@ module TentValidator
         headers[k.sub(/\AHTTP_/, '')] = v
         headers
       end
-      headers.merge(TentD::Utils::Hash.slice(env, 'CONTENT_TYPE'))
+      headers.merge!(TentD::Utils::Hash.slice(env, 'CONTENT_TYPE'))
       %w[ VERSION USER_AGENT CONNECTION HOST ].each { |k| headers.delete(k) }
       headers.inject(Hash.new) do |headers, (key, val)|
         key = key.downcase.split('_').map { |part| part.sub(/\A([a-z])/) { $1.upcase } }.join('-')
