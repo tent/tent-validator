@@ -1,4 +1,6 @@
 require 'awesome_print'
+require 'benchmark'
+
 module TentValidator
   module Runner
 
@@ -21,9 +23,14 @@ module TentValidator
         @invalid = []
 
         puts "Running Protocol Validations..."
-        results = Runner.run do |results|
-          print_results(results.as_json)
+
+        results = nil
+        exec_time = Benchmark.realtime do
+          results = Runner.run do |results|
+            print_results(results.as_json)
+          end
         end
+
         print "\n"
         validator_complete(results.as_json)
 
@@ -38,6 +45,9 @@ module TentValidator
         else
           print green("\t0 skipped")
         end
+
+        print "\t#{exec_time}s"
+
         print "\n"
         print "\n"
 
