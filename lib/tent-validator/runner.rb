@@ -115,6 +115,7 @@ module TentValidator
               sleep(1)
             end
           end
+          print "\t"
 
           # Requests found for these expectations
           expectations.each do |i|
