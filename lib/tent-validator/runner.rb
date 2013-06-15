@@ -82,8 +82,9 @@ module TentValidator
           until TentValidator.async_local_request_expectations.empty?
             TentValidator.local_requests.each do |req|
               _env, _res = req
-              _req_path, _req_method = _env['PATH_INFO'], _env['REQUEST_METHOD']
+              _req_path, _req_method, _req_url = _env['PATH_INFO'], _env['REQUEST_METHOD'], parse_url(_env)
               if (_expectations = TentValidator.async_local_request_expectations.select { |expectation|
+                expectation.url_expectations.any? { |e| e.send(:failed_assertions, _req_url).empty? } &&
                 expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
                 expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
               }) && _expectations.any?
@@ -136,6 +137,14 @@ module TentValidator
           results
         end
       end
+    end
+
+    def self.parse_url(env)
+      return unless env
+      return unless env['REQUEST_PATH']
+      url = "#{env['rack.url_scheme']}://#{env['HTTP_HOST']}#{env['REQUEST_PATH']}"
+      url << "?#{env['QUERY_STRING']}" unless env['QUERY_STRING'] == ""
+      url
     end
 
   end

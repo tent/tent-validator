@@ -41,6 +41,7 @@ module TentValidator
         # Setup asyc request expectation for relationship# post
         expect_async_request(
           :method => "PUT",
+          :url => %r{\A#{Regexp.escape(user.entity)}},
           :path => %r{\A/posts/#{Regexp.escape(URI.encode_www_form_component(TentValidator.remote_entity_uri))}/[^/]+\Z},
         ) do
           expect_schema(:post)
@@ -78,10 +79,12 @@ module TentValidator
         # Expect discovery
         expect_request(
           :method => :head,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
           :path => "/"
         )
         expect_request(
           :method => :get,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
           :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
           :headers => {
             "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
@@ -94,6 +97,7 @@ module TentValidator
         # Expect credentials post to be fetched
         expect_request(
           :method => :get,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
           :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{credentials_post.public_id}",
           :headers => {
             "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
@@ -106,6 +110,7 @@ module TentValidator
         # Expect relationship#initial post to be fetched
         expect_request(
           :method => :get,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
           :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{relationship.post.public_id}",
           :headers => {
             "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))

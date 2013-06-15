@@ -61,6 +61,20 @@ module TentValidator
       end
     end
 
+    class URLExpectation < MethodExpectation
+      def validate(request)
+        request_url = request.url
+        _failed_assertions = failed_assertions(request_url)
+        {
+          :assertions => assertions.map(&:to_hash),
+          :key => :request_url,
+          :failed_assertions => _failed_assertions.map(&:to_hash),
+          :diff => diff(request_url, _failed_assertions),
+          :valid => _failed_assertions.empty?
+        }
+      end
+    end
+
     class PathExpectation < MethodExpectation
       def validate(request)
         request_path = request.path
@@ -130,6 +144,7 @@ module TentValidator
       @validator = validator
       initialize_headers(options.delete(:headers))
       initialize_method(options.delete(:method))
+      initialize_url(options.delete(:url))
       initialize_path(options.delete(:path))
       initialize_params(options.delete(:params))
       initialize_schema(options.delete(:schema))
@@ -145,6 +160,10 @@ module TentValidator
 
     def method_expectations
       @method_expectations ||= []
+    end
+
+    def url_expectations
+      @url_expectations ||= []
     end
 
     def path_expectations
@@ -164,7 +183,7 @@ module TentValidator
     end
 
     def expectations
-      header_expectations + method_expectations + path_expectations + param_expectations + schema_expectations + json_expectations
+      header_expectations + method_expectations + url_expectations + path_expectations + param_expectations + schema_expectations + json_expectations
     end
 
     def initialize_headers(expected_headers)
@@ -176,6 +195,11 @@ module TentValidator
     def initialize_method(expected_method)
       return unless expected_method
       method_expectations << MethodExpectation.new(expected_method.to_s.upcase)
+    end
+
+    def initialize_url(expected_url)
+      return unless expected_url
+      url_expectations << URLExpectation.new(expected_url)
     end
 
     def initialize_path(expected_path)
