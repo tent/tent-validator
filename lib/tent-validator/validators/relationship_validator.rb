@@ -52,7 +52,7 @@ module TentValidator
               'Content-Type' => %r{\brel=['"]#{Regexp.escape("https://tent.io/rels/notification")}['"]}
             )
           end.expect_response(:status => 200, :schema => :data) do
-            expect_schema(:post)
+            expect_schema(:post, '/post')
             expect_headers(
               'Content-Type' => TentD::API::POST_CONTENT_TYPE % %(https://tent.io/types/relationship/v0#)
             )
