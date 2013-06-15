@@ -25,24 +25,22 @@ module TentValidator
         res = clients(:app).post.create(data)
       end
 
-      if TentValidator.remote_auth_details
-        data.delete(:permissions) if opts[:public] == true
-        res_validation = ApiValidator::Json.new(:post => data).validate(res)
-        raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
+      data.delete(:permissions) if opts[:public] == true
+      res_validation = ApiValidator::Json.new(:post => data).validate(res)
+      raise SetupFailure.new("Failed to create post!", res, res_validation) unless res_validation[:valid]
 
-        if attachments
-          res_validation = ApiValidator::Json.new(
-            :post => {
-              :attachments => attachments.map { |a|
-                a = a.dup
-                a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
-                a.delete(:data)
-                a
-              }
+      if attachments
+        res_validation = ApiValidator::Json.new(
+          :post => {
+            :attachments => attachments.map { |a|
+              a = a.dup
+              a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+              a.delete(:data)
+              a
             }
-          ).validate(res)
-          raise SetupFailure.new("Failed to create post with attachments!", res, res_validation) unless res_validation[:valid]
-        end
+          }
+        ).validate(res)
+        raise SetupFailure.new("Failed to create post with attachments!", res, res_validation) unless res_validation[:valid]
       end
 
       TentD::Utils::Hash.symbolize_keys(res.body['post'])
