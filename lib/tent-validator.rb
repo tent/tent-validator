@@ -57,8 +57,6 @@ module TentValidator
         self.send("#{key}=", options.delete(key))
       end
     end
-
-    remote_registration
   end
 
   def self.remote_registration

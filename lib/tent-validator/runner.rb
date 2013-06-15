@@ -5,6 +5,8 @@ require 'benchmark'
 module TentValidator
   module Runner
 
+    ValidatorPlaceholder = Struct.new(:name)
+
     class Results
       include ApiValidator::Mixins::DeepMerge
 
@@ -32,44 +34,58 @@ module TentValidator
 
     require 'tent-validator/runner/cli'
 
+    def self.merge_setup_failure(e, results, validator)
+      if e.results
+        _setup_failure_results = ApiValidator::ResponseExpectation::Results.new(e.response, [e.results])
+        results.merge!(ApiValidator::Spec::Results.new(validator, [_setup_failure_results]))
+        results.skipped(validator)
+      else
+        puts %(<#{validator.name} SetupFailure "#{e.message}">:)
+
+        if e.response
+          print "\tRESPONSE:\n\t"
+          print "status: #{e.response.status}\n\t"
+          begin
+            if String === e.response.body
+              print e.response.body
+            else
+              print Yajl::Encoder.encode(e.response.body)
+            end
+          rescue
+            print e.response.body
+          end
+          print "\n\n"
+        end
+
+        puts "\t" + e.backtrace.join("\n\t")
+      end
+    end
+
     def self.run(&block)
       TentValidator.run_local_server!
 
-      print "Loading validations..."
-      load_time = Benchmark.realtime do
-        paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
-        paths.each { |path| require path }
-      end
-      print " #{load_time}s\n"
-
       results = Results.new
 
-      TentValidator.validators.each do |validator|
-        begin
-          results.merge!(validator.run)
-          block.call(results) if block
-        rescue SetupFailure => e
-          if e.results
-            _setup_failure_results = ApiValidator::ResponseExpectation::Results.new(e.response, [e.results])
-            results.merge!(ApiValidator::Spec::Results.new(validator, [_setup_failure_results]))
-            results.skipped(validator)
-          else
-            puts %(<#{validator.name} SetupFailure "#{e.message}">:)
+      begin
+        TentValidator.remote_registration
 
-            if e.response
-              print "\tRESPONSE:\n\t"
-              print "status: #{e.response.status}\n\t"
-              begin
-                print Yajl::Encoder.encode(e.response.body)
-              rescue
-                print e.response.body
-              end
-              print "\n\n"
-            end
+        print "Loading validations..."
+        load_time = Benchmark.realtime do
+          paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
+          paths.each { |path| require path }
+        end
+        print " #{load_time}s\n"
 
-            puts "\t" + e.backtrace.join("\n\t")
+        TentValidator.validators.each do |validator|
+          begin
+            results.merge!(validator.run)
+            block.call(results) if block
+          rescue SetupFailure => e
+            merge_setup_failure(e, results, validator)
           end
         end
+      rescue SetupFailure => e
+        merge_setup_failure(e, results, ValidatorPlaceholder.new("Validator Setup"))
       end
 
       TentValidator.mutex.synchronize do
