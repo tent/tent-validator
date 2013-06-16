@@ -106,11 +106,14 @@ module TentValidator
                 if _expectations.size == 1
                   _expectation = _expectations.first
                 else
-                  _expectation = _expectations.find { |expectation|
-                    expectation.validate(expectation.build_request(_env)).any? { |r|
-                      r[:valid]
+                  # multiple expectations matched
+                  # find expectation with the most passing validations
+                  _expectation = _expectations.sort_by { |expectation|
+                    expectation.validate(expectation.build_request(_env)).inject(0) { |m, r|
+                      m += 1 if r[:valid]
+                      m
                     }
-                  } || _expectations.first
+                  }.last
                 end
 
                 TentValidator.async_local_request_expectations.delete(_expectation)
