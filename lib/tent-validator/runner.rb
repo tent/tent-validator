@@ -94,30 +94,30 @@ module TentValidator
           expectations = []
           ticks = 0
           until TentValidator.async_local_request_expectations.empty?
-            TentValidator.local_requests.each do |req|
-              _env, _res = req
-              _req_path, _req_method, _req_url = _env['PATH_INFO'], _env['REQUEST_METHOD'], parse_url(_env)
-              if (_expectations = TentValidator.async_local_request_expectations.select { |expectation|
+            TentValidator.async_local_request_expectations.reject! do |expectation|
+              _request = TentValidator.local_requests.select { |req|
+                _env, _res = req
+                _req_path, _req_method, _req_url = _env['PATH_INFO'], _env['REQUEST_METHOD'], parse_url(_env)
                 expectation.url_expectations.any? { |e| e.send(:failed_assertions, _req_url).empty? } &&
                 expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
                 expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
-              }) && _expectations.any?
-                TentValidator.local_requests.delete(req)
-                if _expectations.size == 1
-                  _expectation = _expectations.first
-                else
-                  # multiple expectations matched
-                  # find expectation with the most passing validations
-                  _expectation = _expectations.sort_by { |expectation|
-                    expectation.validate(expectation.build_request(_env)).inject(0) { |m, r|
-                      m += 1 if r[:valid]
-                      m
-                    }
-                  }.last
-                end
+              }.sort_by { |req|
+                _env, _res = req
+                expectation_results = expectation.validate(expectation.build_request(_env))
+                expectation_results += expectation.validate_response(_env, expectation.build_response(_res))
+                expectation_results.inject(0) { |m, r|
+                  m += 1 if r[:valid]
+                  m
+                }
+              }.last
 
-                TentValidator.async_local_request_expectations.delete(_expectation)
-                expectations << [req, _expectation]
+              if _request
+                TentValidator.local_requests.delete(_request)
+                expectations << [_request, expectation]
+
+                true # expectation paired to request
+              else
+                false
               end
             end
 
