@@ -135,11 +135,15 @@ module TentValidator
           print "\t"
 
           # Requests found for these expectations
+          expectations_results = []
           expectations.each do |i|
             _req, expectation = i
             _env, _res = _req
 
-            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run(_env, _res)]))
+            expectation_results = expectation.run(_env, _res)
+            expectations_results += expectation_results.results
+
+            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation_results]))
           end
 
           # No requests found for these expectations
@@ -147,7 +151,7 @@ module TentValidator
             results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run({}, [])]))
           end
 
-          if TentValidator.async_local_request_expectations.any?
+          if TentValidator.async_local_request_expectations.any? || expectations_results.any? { |r| !r[:valid] }
             # print out all unmatched local requests
             TentValidator.local_requests.each do |req|
               _env, _res = req

@@ -83,11 +83,17 @@ module TentValidator
           next if name == :results
           child_results = children[:results]
           child_results.each do |r|
-            next if result_valid?(r)
+            next if (valid = result_valid?(r))
 
-            print "\n"
-            puts red((parent_names + [name]).join(" "))
-            print "\n"
+            if valid.nil?
+              print "\n"
+              puts yellow((parent_names + [name]).join(" "))
+              print "\n"
+            else
+              print "\n"
+              puts red((parent_names + [name]).join(" "))
+              print "\n"
+            end
 
             actual = r.as_json[:actual]
             puts "REQUEST:"
@@ -108,12 +114,14 @@ module TentValidator
             end
             print "\n"
 
-            puts "DIFF:"
-            r.as_json[:expected].each_pair do |key, val|
-              next if val[:valid] || val[:diff].empty?
+            unless valid.nil?
+              puts "DIFF:"
+              r.as_json[:expected].each_pair do |key, val|
+                next if val[:valid] || val[:diff].empty?
 
-              puts key
-              ap val[:diff].map { |i| translate_keys(i.dup) }
+                puts key
+                ap val[:diff].map { |i| translate_keys(i.dup) }
+              end
             end
           end
           validator_complete(children, parent_names + [name])
