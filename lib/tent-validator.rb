@@ -25,7 +25,7 @@ module TentValidator
 
   class << self
     attr_writer :remote_auth_details
-    attr_accessor :remote_server_meta, :remote_entity_uri, :local_database_url, :local_server, :local_server_port, :mutex
+    attr_accessor :remote_server_meta, :remote_entity_uri, :local_database_url, :local_server, :local_server_port, :mutex, :debug
   end
 
   def self.setup!(options = {})

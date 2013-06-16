@@ -245,11 +245,7 @@ module TentValidator
       end
 
       request = build_request(env)
-
-      status, headers, body = response
-      body = body ? body.first : body
-      response = Response.new(status, headers, body)
-      response.headers ||= Hash.new
+      response = build_response(response)
 
       expectations = validate(request) + (env ? validate_response(env, response) : [])
       Results.new(request, response, expectations)
@@ -264,6 +260,14 @@ module TentValidator
       request.method = env ? env['REQUEST_METHOD'] : nil
       request.body = env ? env['REQUEST_BODY'] : nil
       request
+    end
+
+    def build_response(response)
+      status, headers, body = response
+      body = body ? body.first : body
+      response = Response.new(status, headers, body)
+      response.headers ||= Hash.new
+      response
     end
 
     def validate(request)
