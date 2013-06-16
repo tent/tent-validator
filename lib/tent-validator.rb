@@ -179,13 +179,6 @@ module TentValidator
       status, headers, body = app.call(env)
 
       TentValidator.mutex.synchronize do
-        if TentValidator.async_local_request_expectations.any?
-          env['REQUEST_BODY'] = env['rack.input'].read
-          env['rack.input'].rewind
-
-          TentValidator.local_requests << [env, [status, headers, body]]
-        end
-
         if TentValidator.watch_local_requests[env['current_user'].id]
           env['REQUEST_BODY'] ||= begin
             _body = env['rack.input'].read
@@ -193,6 +186,11 @@ module TentValidator
             _body
           end
           TentValidator.pending_local_requests << [env, [status, headers, body]]
+        elsif TentValidator.async_local_request_expectations.any?
+          env['REQUEST_BODY'] = env['rack.input'].read
+          env['rack.input'].rewind
+
+          TentValidator.local_requests << [env, [status, headers, body]]
         end
       end
 
