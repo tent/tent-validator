@@ -67,8 +67,10 @@ module TentValidator
               print green(".")
             else
               next if @invalid.index(id)
-              @invalid << id
-              print red("F")
+              if valid == false
+                @invalid << id
+                print red("F")
+              end
             end
           end
           print_results(children, parent_names + [name])
@@ -108,7 +110,7 @@ module TentValidator
 
             puts "DIFF:"
             r.as_json[:expected].each_pair do |key, val|
-              next if val[:valid]
+              next if val[:valid] || val[:diff].empty?
 
               puts key
               ap val[:diff].map { |i| translate_keys(i.dup) }
@@ -120,7 +122,8 @@ module TentValidator
 
       def result_valid?(result)
         valid = result.as_json[:expected].inject(true) { |memo, (k,v)|
-          memo = false if v.has_key?(:valid) && !v[:valid]
+          memo = false if v.has_key?(:valid) && v[:valid] == false
+          memo = nil if v.has_key?(:valid) && v[:valid].nil? && memo == true
           memo
         }
       end

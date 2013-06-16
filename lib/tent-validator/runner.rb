@@ -144,7 +144,7 @@ module TentValidator
             results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run({}, [])]))
           end
 
-          if TentValidator.debug == true
+          if TentValidator.async_local_request_expectations.any?
             # print out all unmatched local requests
             TentValidator.local_requests.each do |req|
               _env, _res = req
@@ -155,7 +155,7 @@ module TentValidator
                   [RequestExpectation::Results.new(
                     expectation.build_request(_env),
                     expectation.build_response(_res),
-                    [{ :valid => false, :diff => [], :failed_assertions => [] }]
+                    [{ :valid => nil, :diff => [], :failed_assertions => [] }]
                 )])
               )
             end
