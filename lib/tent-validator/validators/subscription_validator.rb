@@ -62,6 +62,9 @@ module TentValidator
             :content => {
               :type => get(:subscription_type)
             },
+            :permissions => {
+              :entities => [TentValidator.remote_entity_uri]
+            }
           }
           clients(:app, :server => :local, :user => get(:user)).post.create(data)
         end
