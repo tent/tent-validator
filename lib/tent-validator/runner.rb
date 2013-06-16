@@ -70,6 +70,7 @@ module TentValidator
         TentValidator.remote_registration
 
         print "Loading validations..."
+        require 'tent-validator/validators/support/tent_schemas'
         load_time = Benchmark.realtime do
           paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
           paths.each { |path| require path }
