@@ -17,7 +17,7 @@ createdb tent-validator-tentd && DATABASE_URL=postgres://localhost/tent-validato
 echo "VALIDATOR_DATABASE_URL=postgres://localhost/tent-validator 
 TENT_DATABASE_URL=postgres://localhost/tent-validator-tentd 
 REDIS_URL=redis://127.0.0.1:6379/0 
-REDIS_NAMESPACE=tent-validator " >> .env
+REDIS_NAMESPACE=tent-validator " > .env
 ```
 
 #### Commandline Runner
@@ -31,29 +31,7 @@ server_url = "http://127.0.0.1:3000" # change to wherever the server is running
 
 TentValidator.setup!(
   :remote_entity_uri => server_url,
-  :remote_server_meta => { # change to suite your server setup
-    "content" => {
-      "entity" => server_url,
-      "previous_entities" => [],
-      "servers" => [
-        {
-          "version" => "0.3",
-          "urls" => {
-            "oauth_auth" => "#{server_url}/oauth/authorize",
-            "oauth_token" => "#{server_url}/oauth/token",
-            "posts_feed" => "#{server_url}/posts",
-            "new_post" => "#{server_url}/posts",
-            "post" => "#{server_url}/posts/{entity}/{post}",
-            "post_attachment" => "#{server_url}/posts/{entity}/{post}/attachments/{name}",
-            "batch" => "#{server_url}/batch",
-            "server_info" => "#{server_url}/server"
-          },
-          "preference" => 0
-        }
-      ]
-    }
-  },
-  :tent_database_url => ENV['VALIDATOR_TENTD_DATABASE_URL'] # tent-validator uses tentd
+  :tent_database_url => ENV['VALIDATOR_TENTD_DATABASE_URL'] # tent-validator uses tentd (defaults to `ENV['TENT_DATABASE_URL']`)
 )
 
 TentValidator::Runner::CLI.run

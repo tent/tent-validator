@@ -52,7 +52,7 @@ module TentValidator
     self.local_server = wrap_local_server(TentD::API.new)
     self.mutex = Mutex.new
 
-    [:remote_entity_uri, :remote_auth_details, :remote_server_meta].each do |key|
+    [:remote_entity_uri, :remote_auth_details].each do |key|
       if options.has_key?(key)
         self.send("#{key}=", options.delete(key))
       end
@@ -61,9 +61,20 @@ module TentValidator
 
   def self.remote_registration
     client = TentClient.new(remote_entity_uri,
-      :faraday_adapter => remote_adapter,
-      :server_meta => remote_server_meta
+      :faraday_adapter => remote_adapter
     )
+
+    res =  TentClient::Discovery.discover(client, remote_entity_uri, :return_response => true)
+
+    unless res
+      raise SetupFailure.new("Failed to perform discovery on remote server!", Faraday::Response.new({}))
+    end
+
+    unless res.status == 200
+      raise SetupFailure.new("Failed to fetch meta post from remote server!", res)
+    end
+
+    self.remote_server_meta = res.body['post']
 
     begin
       res = client.post.create(
@@ -84,7 +95,7 @@ module TentValidator
         }
       )
     rescue Faraday::Error::ConnectionFailed
-      raise SetupFailure.new("Failed to register app on remote server!", Faraday::Response.new(:env => {}))
+      raise SetupFailure.new("Failed to register app on remote server!", Faraday::Response.new({}))
     end
 
     unless res.success?
@@ -104,7 +115,7 @@ module TentValidator
     begin
       res = client.http.get(credentials_url)
     rescue Faraday::Error::ConnectionFailed
-      raise SetupFailure.new("Failed to fetch app credentials from #{credentials_url.to_s.inspect}!", Faraday::Response.new(:env => {}))
+      raise SetupFailure.new("Failed to fetch app credentials from #{credentials_url.to_s.inspect}!", Faraday::Response.new({}))
     end
 
     unless res.success?
@@ -130,7 +141,7 @@ module TentValidator
       return (self.remote_auth_details = nil) unless res.status == 302
       oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
     rescue Faraday::Error::ConnectionFailed
-      raise SetupFailure.new("OAuth request failed (#{oauth_uri.to_s.inspect})!", Faraday::Response.new(:env => {}))
+      raise SetupFailure.new("OAuth request failed (#{oauth_uri.to_s.inspect})!", Faraday::Response.new({}))
     end
 
     begin
@@ -145,7 +156,7 @@ module TentValidator
         self.remote_auth_details = nil
       end
     rescue Faraday::Error::ConnectionFailed
-      raise SetupFailure.new("OAuth token exchange failed!", Faraday::Response.new(:env => {}))
+      raise SetupFailure.new("OAuth token exchange failed!", Faraday::Response.new({}))
     end
   end
 
