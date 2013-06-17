@@ -191,6 +191,7 @@ module TentValidator
           expect_schema(:post_status, '/post/content')
 
           parent_post = get(:post)
+          set(:parent_post, parent_post)
 
           data = generate_status_post
           data[:version] = {
@@ -256,6 +257,23 @@ module TentValidator
           expect_properties(:profiles => {})
 
           clients(:app).post.get(post['entity'], post['id'], :profiles => 'refs')
+        end
+
+        context "with children accept header" do
+          ##
+          # Expect profile to be returned via profiles=entity
+          expect_response(:status => 200, :schema => :data) do
+            parent_post = get(:parent_post)
+
+            meta_profile = get(:meta_post_data)['content']['profile']
+            expect_properties(:profiles => {
+              parent_post['entity'] => meta_profile
+            })
+
+            expect_property_length('/versions', 1)
+
+            clients(:app).post.children(parent_post['entity'], parent_post['id'], :version => parent_post['version']['id'], :profiles => 'entity')
+          end
         end
       end
     end
