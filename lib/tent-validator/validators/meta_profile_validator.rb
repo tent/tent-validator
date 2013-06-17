@@ -82,8 +82,13 @@ module TentValidator
 
         data = generate_status_post
 
+        data[:mentions] = [
+          { :entity => TentValidator.remote_entity_uri }
+        ]
+
         expected_data = TentD::Utils::Hash.deep_dup(data)
         expected_data[:permissions] = property_absent
+        expected_data[:mentions][0].delete(:entity)
 
         expect_properties(:post => expected_data)
 
@@ -99,7 +104,7 @@ module TentValidator
       end
 
       ##
-      # Expect profile to be returned
+      # Expect profile to be returned via profiles=entity
       expect_response(:status => 200, :schema => :data) do
         expect_schema(:post, '/post')
         expect_schema(:post_status, '/post/content')
@@ -112,6 +117,22 @@ module TentValidator
         })
 
         clients(:app).post.get(post['entity'], post['id'], :profiles => 'entity')
+      end
+
+      ##
+      # Expect profile to be returned via profiles=mentions
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        meta_profile = get(:meta_post_data)['content']['profile']
+        expect_properties(:profiles => {
+          post['entity'] => meta_profile
+        })
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'mentions')
       end
     end
 
