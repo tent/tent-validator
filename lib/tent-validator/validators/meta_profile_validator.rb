@@ -275,6 +275,54 @@ module TentValidator
             clients(:app).post.children(parent_post['entity'], parent_post['id'], :version => parent_post['version']['id'], :profiles => 'entity')
           end
         end
+
+        context "with mentions accept header" do
+          ##
+          # Create post mentioning other post
+          expect_response(:status => 200, :schema => :data) do
+            expect_schema(:post, '/post')
+            expect_schema(:post_status, '/post/content')
+
+            post = get(:post)
+
+            data = generate_status_post
+
+            data[:mentions] = [
+              { :entity => post['entity'], :post => post['id'] }
+            ]
+
+            expected_data = TentD::Utils::Hash.deep_dup(data)
+            expected_data[:permissions] = property_absent
+            expected_data[:mentions][0].delete(:entity)
+
+            expect_properties(:post => expected_data)
+
+            res = clients(:app).post.create(data)
+
+            if res.status == 200
+              set(:mention_post, res.body['post'])
+            else
+              set(:mention_post, {})
+            end
+
+            res
+          end
+
+          ##
+          # Expect profile to be returned via profiles=entity
+          expect_response(:status => 200, :schema => :data) do
+            post = get(:post)
+
+            meta_profile = get(:meta_post_data)['content']['profile']
+            expect_properties(:profiles => {
+              post['entity'] => meta_profile
+            })
+
+            expect_property_length('/mentions', 1)
+
+            clients(:app).post.mentions(post['entity'], post['id'], :profiles => 'entity')
+          end
+        end
       end
     end
 
