@@ -557,8 +557,6 @@ module TentValidator
 
           context "when last page" do
             expect_response(:status => 200, :schema => :data) do
-              posts = get(:sorted_posts)
-
               expect_properties_absent('/pages/last', '/pages/next')
               expect_properties_present('/pages/first', '/pages/prev')
 
