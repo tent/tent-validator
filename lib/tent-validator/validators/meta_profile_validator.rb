@@ -323,6 +323,21 @@ module TentValidator
             clients(:app).post.mentions(post['entity'], post['id'], :profiles => 'entity')
           end
         end
+
+        context "with versions accept header" do
+          expect_response(:status => 200, :schema => :data) do
+            post = get(:post)
+
+            meta_profile = get(:meta_post_data)['content']['profile']
+            expect_properties(:profiles => {
+              post['entity'] => meta_profile
+            })
+
+            expect_property_length('/versions', 2)
+
+            clients(:app).post.versions(post['entity'], post['id'], :profiles => 'entity')
+          end
+        end
       end
     end
 
