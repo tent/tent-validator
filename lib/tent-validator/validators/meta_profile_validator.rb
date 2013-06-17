@@ -75,7 +75,7 @@ module TentValidator
       end
 
       ##
-      # Create a post
+      # Create a post with mentions and refs
       expect_response(:status => 200, :schema => :data) do
         expect_schema(:post, '/post')
         expect_schema(:post_status, '/post/content')
@@ -86,9 +86,15 @@ module TentValidator
           { :entity => TentValidator.remote_entity_uri }
         ]
 
+        meta_post = TentValidator.remote_server_meta
+        data[:refs] = [
+          { :entity => meta_post['content']['entity'], :post => meta_post['id'] }
+        ]
+
         expected_data = TentD::Utils::Hash.deep_dup(data)
         expected_data[:permissions] = property_absent
         expected_data[:mentions][0].delete(:entity)
+        expected_data[:refs][0].delete(:entity)
 
         expect_properties(:post => expected_data)
 
@@ -133,6 +139,122 @@ module TentValidator
         })
 
         clients(:app).post.get(post['entity'], post['id'], :profiles => 'mentions')
+      end
+
+      ##
+      # Expect profile to be returned via profiles=refs
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        meta_profile = get(:meta_post_data)['content']['profile']
+        expect_properties(:profiles => {
+          post['entity'] => meta_profile
+        })
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'refs')
+      end
+
+      ##
+      # Expect no profile to be returned via profile=permissions
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        expect_properties(:profiles => {})
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'permissions')
+      end
+
+      ##
+      # Expect profile to be returned via profile=parents
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        expect_properties(:profiles => {})
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'parents')
+      end
+
+      ##
+      # Create version of post without mentions or refs
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        parent_post = get(:post)
+
+        data = generate_status_post
+        data[:version] = {
+          :parents => [
+            { :version => parent_post['version']['id'], :post => parent_post['id'] }
+          ]
+        }
+
+        expected_data = TentD::Utils::Hash.deep_dup(data)
+        expected_data[:permissions] = property_absent
+        expected_data[:version][:parents][0].delete(:post)
+
+        expect_properties(:post => expected_data)
+
+        res = clients(:app).post.update(parent_post['entity'], parent_post['id'], data)
+
+        if res.status == 200
+          set(:post, res.body['post'])
+        else
+          set(:post, {})
+        end
+
+        res
+      end
+
+      ##
+      # Expect profile to be returned via profile=parents
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        meta_profile = get(:meta_post_data)['content']['profile']
+        expect_properties(:profiles => {
+          post['entity'] => meta_profile
+        })
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'parents')
+      end
+
+      ##
+      # Expect no profile to be returned via profile=mentions
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        expect_properties(:profiles => {})
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'mentions')
+      end
+
+      ##
+      # Expect no profile to be returned via profile=refs
+      expect_response(:status => 200, :schema => :data) do
+        expect_schema(:post, '/post')
+        expect_schema(:post_status, '/post/content')
+
+        post = get(:post)
+
+        expect_properties(:profiles => {})
+
+        clients(:app).post.get(post['entity'], post['id'], :profiles => 'refs')
       end
     end
 
