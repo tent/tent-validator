@@ -43,6 +43,8 @@ module TentValidator
         }
         attachments = [avatar_attachment]
 
+        avatar_digest = hex_digest(avatar_attachment[:data])
+
         expected_data['attachments'] = attachments.map { |a|
           a = a.dup
           a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
@@ -54,7 +56,11 @@ module TentValidator
           :post => expected_data
         )
 
-        set(:meta_post_data, expected_data)
+        set(:meta_profile_data, expected_data)
+
+        expected_data = TentD::Utils::Hash.deep_dup(expected_data['content']['profile'])
+        expected_data['avatar_digest'] = avatar_digest
+        set(:meta_profile, expected_data)
 
         res = clients(:app).post.update(meta_post['entity'], meta_post['id'], data, {}, :attachments => attachments)
 
@@ -69,7 +75,7 @@ module TentValidator
         expect_schema(:post, '/post')
         expect_schema(:post_meta, '/post/content')
 
-        expect_properties(:post => get(:meta_post_data))
+        expect_properties(:post => get(:meta_profile_data))
 
         TentClient::Discovery.discover(clients(:no_auth), TentValidator.remote_entity_uri, :return_response => true) || Faraday::Response.new({})
       end
@@ -118,7 +124,7 @@ module TentValidator
 
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -134,7 +140,7 @@ module TentValidator
 
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -150,7 +156,7 @@ module TentValidator
 
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -225,7 +231,7 @@ module TentValidator
 
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -265,7 +271,7 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             parent_post = get(:parent_post)
 
-            meta_profile = get(:meta_post_data)['content']['profile']
+            meta_profile = get(:meta_profile)
             expect_properties(:profiles => {
               parent_post['entity'] => meta_profile
             })
@@ -313,7 +319,7 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             post = get(:post)
 
-            meta_profile = get(:meta_post_data)['content']['profile']
+            meta_profile = get(:meta_profile)
             expect_properties(:profiles => {
               post['entity'] => meta_profile
             })
@@ -328,7 +334,7 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             post = get(:post)
 
-            meta_profile = get(:meta_post_data)['content']['profile']
+            meta_profile = get(:meta_profile)
             expect_properties(:profiles => {
               post['entity'] => meta_profile
             })
@@ -381,7 +387,7 @@ module TentValidator
         expect_response(:status => 200, :schema => :data) do
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -394,7 +400,7 @@ module TentValidator
         expect_response(:status => 200, :schema => :data) do
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -407,7 +413,7 @@ module TentValidator
         expect_response(:status => 200, :schema => :data) do
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
@@ -463,7 +469,7 @@ module TentValidator
         expect_response(:status => 200, :schema => :data) do
           post = get(:post)
 
-          meta_profile = get(:meta_post_data)['content']['profile']
+          meta_profile = get(:meta_profile)
           expect_properties(:profiles => {
             post['entity'] => meta_profile
           })
