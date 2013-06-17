@@ -82,10 +82,20 @@ module TentValidator
         results.each_pair do |name, children|
           next if name == :results
           child_results = children[:results]
+          all_valid = child_results.inject(true) { |v, r|
+            _valid = result_valid?(r)
+            v = false if !_valid
+            v
+          }
           child_results.each do |r|
-            next if (valid = result_valid?(r))
+            valid = result_valid?(r)
+            next if valid && all_valid
 
-            if valid.nil?
+            if valid
+              print "\n"
+              puts green((parent_names + [name]).join(" "))
+              print "\n"
+            elsif valid.nil?
               print "\n"
               puts yellow((parent_names + [name]).join(" "))
               print "\n"
