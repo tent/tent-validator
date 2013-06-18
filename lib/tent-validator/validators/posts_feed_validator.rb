@@ -74,6 +74,12 @@ module TentValidator
 
           clients(:app).post.list
         end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          clients(:app).post.head.list
+        end
       end
 
       context "with type param" do
@@ -84,6 +90,15 @@ module TentValidator
           expect_properties(:posts => types.map { |type| { :type => type } })
 
           clients(:app).post.list(:types => types.join(","))
+        end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          types = get(:post_types)
+          types = [types.first, types.last]
+
+          clients(:app).post.head.list(:types => types.join(","))
         end
 
         context "when using fragment wildcard" do
@@ -97,6 +112,14 @@ module TentValidator
 
             clients(:app).post.list(:types => type.to_s(:fragment => false))
           end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            type = TentClient::TentType.new('https://tent.io/types/status/v0')
+
+            clients(:app).post.head.list(:types => type.to_s(:fragment => false))
+          end
         end
       end
 
@@ -107,6 +130,12 @@ module TentValidator
 
             clients(:app).post.list(:entities => "https://fictitious.entity.example.org")
           end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => '0')
+
+            clients(:app).post.head.list(:entities => "https://fictitious.entity.example.org")
+          end
         end
 
         context "when matching entities" do
@@ -115,6 +144,14 @@ module TentValidator
             expect_properties(:posts => entities.map { |e| { :entity => e } })
 
             clients(:app).post.list(:entities => entities.uniq.join(','))
+          end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            entities = get(:posts).map { |p| p['entity'] }
+
+            clients(:app).post.head.list(:entities => entities.uniq.join(','))
           end
         end
 
@@ -128,6 +165,12 @@ module TentValidator
 
           clients(:app).post.list(:sort_by => 'received_at')
         end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          clients(:app).post.head.list(:sort_by => 'received_at')
+        end
       end
 
       context "with sort_by param" do
@@ -138,6 +181,12 @@ module TentValidator
 
             clients(:app).post.list(:sort_by => 'received_at')
           end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            clients(:app).post.head.list(:sort_by => 'received_at')
+          end
         end
 
         context "when published_at" do
@@ -146,6 +195,12 @@ module TentValidator
             expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'published_at') })
 
             clients(:app).post.list(:sort_by => 'published_at')
+          end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            clients(:app).post.head.list(:sort_by => 'published_at')
           end
         end
 
@@ -156,6 +211,12 @@ module TentValidator
 
             clients(:app).post.list(:sort_by => 'version.received_at')
           end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            clients(:app).post.head.list(:sort_by => 'version.received_at')
+          end
         end
 
         context "when version.published_at" do
@@ -164,6 +225,12 @@ module TentValidator
             expect_properties(:posts => posts.map { |post| { :version => TentD::Utils::Hash.slice(post['version'], 'published_at') } })
 
             clients(:app).post.list(:sort_by => 'version.published_at')
+          end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            clients(:app).post.head.list(:sort_by => 'version.published_at')
           end
         end
       end
@@ -191,6 +258,19 @@ module TentValidator
 
               clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              since_post = posts.shift
+              since = since_post['published_at']
+
+              limit = 2
+
+              clients(:app).post.head.list(:since => since, :sort_by => :published_at, :limit => limit)
+            end
           end
 
           context "using timestamp + version" do
@@ -206,6 +286,19 @@ module TentValidator
               expect_properties(:posts => posts.map { |post| TentD::Utils::Hash.slice(post, 'id', 'published_at') })
 
               clients(:app).post.list(:since => since, :sort_by => :published_at, :limit => limit)
+            end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              since_post = posts.shift
+              since = "#{since_post['published_at']} #{since_post['version']['id']}"
+
+              limit = 2
+
+              clients(:app).post.head.list(:since => since, :sort_by => :published_at, :limit => limit)
             end
           end
         end
@@ -226,6 +319,20 @@ module TentValidator
 
               clients(:app).post.list(:until => until_param, :sort_by => :published_at)
             end
+
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts)
+
+              until_post = posts.shift
+              posts.shift # has the same published_at
+              until_param = until_post['published_at']
+
+              posts = posts.reverse
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:until => until_param, :sort_by => :published_at)
+            end
           end
 
           context "using timestamp + version" do
@@ -241,6 +348,19 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:until => until_param, :sort_by => :published_at)
+            end
+
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts)
+
+              until_post = posts.shift
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              posts = posts.reverse
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:until => until_param, :sort_by => :published_at)
             end
           end
         end
@@ -259,6 +379,18 @@ module TentValidator
 
               clients(:app).post.list(:before => before, :sort_by => :published_at, :limit => posts.size)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # has the same timestamp, don't expect it
+              before = before_post['published_at']
+
+              clients(:app).post.head.list(:before => before, :sort_by => :published_at, :limit => posts.size)
+            end
           end
 
           context "using timestamp + version" do
@@ -272,6 +404,17 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:before => before, :sort_by => :published_at, :limit => posts.size)
+            end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              clients(:app).post.head.list(:before => before, :sort_by => :published_at, :limit => posts.size)
             end
           end
         end
@@ -295,6 +438,22 @@ module TentValidator
               clients(:app).post.list(:before => before, :since => since, :sort_by => :published_at)
             end
 
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # same timestamp
+              before = before_post['published_at']
+
+              since_post = posts.pop
+              posts.pop # same timestamp
+              since = since_post['published_at']
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:before => before, :since => since, :sort_by => :published_at)
+            end
+
             expect_response(:status => 200, :schema => :data) do
               posts = get(:sorted_posts)
 
@@ -314,6 +473,24 @@ module TentValidator
 
               clients(:app).post.list(:before => before, :since => since, :sort_by => :published_at, :limit => limit)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              before_post = posts.pop
+              posts.pop # same timestamp
+              before = before_post['published_at']
+
+              since_post = posts.shift
+              posts.shift # same timestamp
+              since = since_post['published_at']
+
+              limit = 1
+
+              clients(:app).post.head.list(:before => before, :since => since, :sort_by => :published_at, :limit => limit)
+            end
           end
 
           context "using timestamp + version" do
@@ -332,6 +509,20 @@ module TentValidator
               clients(:app).post.list(:before => before, :since => since, :sort_by => :published_at)
             end
 
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              since_post = posts.pop
+              since = [since_post['published_at'], since_post['version']['id']].join(' ')
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:before => before, :since => since, :sort_by => :published_at)
+            end
+
             expect_response(:status => 200, :schema => :data) do
               posts = get(:sorted_posts)
 
@@ -348,6 +539,22 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:before => before, :since => since, :sort_by => :published_at, :limit => limit)
+            end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              before_post = posts.pop
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              since_post = posts.shift
+              since = [since_post['published_at'], since_post['version']['id']].join(' ')
+
+              limit = 2
+
+              clients(:app).post.head.list(:before => before, :since => since, :sort_by => :published_at, :limit => limit)
             end
           end
         end
@@ -371,6 +578,22 @@ module TentValidator
               clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at)
             end
 
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # same timestamp
+              before = before_post['published_at']
+
+              until_post = posts.pop
+              posts.pop # same timestamp
+              until_param = until_post['published_at']
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:before => before, :until => until_param, :sort_by => :published_at)
+            end
+
             expect_response(:status => 200, :schema => :data) do
               posts = get(:sorted_posts).reverse
 
@@ -390,6 +613,25 @@ module TentValidator
 
               clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
             end
+
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              posts.shift # same timestamp
+              before = before_post['published_at']
+
+              until_post = posts.pop
+              posts.pop # same timestamp
+              until_param = until_post['published_at']
+
+              limit = 1
+              posts = posts.slice(0, limit)
+
+              expect_headers('Count' => /\A\d+\Z/)
+
+              clients(:app).post.head.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
+            end
           end
 
           context "using timestamp + version" do
@@ -408,6 +650,20 @@ module TentValidator
               clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at)
             end
 
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              until_post = posts.pop
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              expect_headers('Count' => posts.size.to_s)
+
+              clients(:app).post.head.list(:before => before, :until => until_param, :sort_by => :published_at)
+            end
+
             expect_response(:status => 200, :schema => :data) do
               posts = get(:sorted_posts).reverse
 
@@ -424,6 +680,22 @@ module TentValidator
               expect_property_length('/posts', posts.size)
 
               clients(:app).post.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
+            end
+
+            expect_response(:status => 200) do
+              posts = get(:sorted_posts).reverse
+
+              before_post = posts.shift
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              until_post = posts.pop
+              until_param = [until_post['published_at'], until_post['version']['id']].join(' ')
+
+              limit = 2
+
+              expect_headers('Count' => /\A\d+\Z/)
+
+              clients(:app).post.head.list(:before => before, :until => until_param, :sort_by => :published_at, :limit => limit)
             end
           end
         end
@@ -478,6 +750,20 @@ module TentValidator
               res
             end
 
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              i = 3 # fourth post
+              before_post = posts[i]
+              before = [before_post['published_at'], before_post['version']['id']].join(' ')
+
+              limit = 2
+
+              clients(:app).post.head.list(:limit => limit, :before => before, :sort_by => :published_at)
+            end
+
             describe "`pages.next`" do
               expect_response(:status => 200, :schema => :data) do
                 pages = get(:pages) || {}
@@ -489,6 +775,15 @@ module TentValidator
                 expect_property_length('/posts', 2) # first post + some other post (at least the meta post will be there)
 
                 clients(:app).post.list(next_params)
+              end
+
+              expect_response(:status => 200) do
+                expect_headers('Count' => /\A\d+\Z/)
+
+                pages = get(:pages) || {}
+                next_params = parse_params(pages['next'].to_s)
+
+                clients(:app).post.head.list(next_params)
               end
             end
 
@@ -504,6 +799,15 @@ module TentValidator
 
                 clients(:app).post.list(prev_params)
               end
+
+              expect_response(:status => 200) do
+                expect_headers('Count' => /\A\d+\Z/)
+
+                pages = get(:pages) || {}
+                prev_params = parse_params(pages['prev'].to_s)
+
+                clients(:app).post.head.list(prev_params)
+              end
             end
 
             describe "`pages.first`" do
@@ -518,6 +822,15 @@ module TentValidator
 
                 clients(:app).post.list(first_params)
               end
+
+              expect_response(:status => 200) do
+                expect_headers('Count' => /\A\d+\Z/)
+
+                pages = get(:pages) || {}
+                first_params = parse_params(pages['first'].to_s)
+
+                clients(:app).post.head.list(first_params)
+              end
             end
 
             describe "`pages.last`" do
@@ -525,6 +838,12 @@ module TentValidator
                 res = clients(:app).post.list(:sort_by => :published_at, :limit => 2, :since => 0)
                 set(:last_posts, res.body['posts']) if res.success?
                 res
+              end
+
+              expect_response(:status => 200) do
+                expect_headers('Count' => /\A\d+\Z/)
+
+                clients(:app).post.head.list(:sort_by => :published_at, :limit => 2, :since => 0)
               end
 
               expect_response(:status => 200, :schema => :data) do
@@ -537,6 +856,15 @@ module TentValidator
                 expect_property_length('/posts', posts.size)
 
                 clients(:app).post.list(last_params)
+              end
+
+              expect_response(:status => 200) do
+                expect_headers('Count' => /\A\d+\Z/)
+
+                pages = get(:pages) || {}
+                last_params = parse_params(pages['last'].to_s)
+
+                clients(:app).post.head.list(last_params)
               end
             end
           end
@@ -553,6 +881,15 @@ module TentValidator
 
               clients(:app).post.list(:limit => limit, :sort_by => :published_at)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              posts = get(:sorted_posts)
+
+              limit = get(:limit)
+              clients(:app).post.head.list(:limit => limit, :sort_by => :published_at)
+            end
           end
 
           context "when last page" do
@@ -565,6 +902,13 @@ module TentValidator
 
               clients(:app).post.list(:limit => limit, :sort_by => :published_at, :since => 0)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              limit = get(:limit)
+              clients(:app).post.head.list(:limit => limit, :sort_by => :published_at, :since => 0)
+            end
           end
         end
       end
@@ -575,6 +919,12 @@ module TentValidator
 
           clients(:app).post.list(:limit => 2)
         end
+
+        expect_response(:status => 200, :schema => :data) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          clients(:app).post.head.list(:limit => 2)
+        end
       end
 
       # default limit is 25, make sure there are more than 25 posts (create_posts already called once and it creates 4 posts)
@@ -583,6 +933,12 @@ module TentValidator
           expect_property_length("/posts", 25)
 
           clients(:app).post.list
+        end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          clients(:app).post.head.list
         end
       end
 
@@ -600,6 +956,14 @@ module TentValidator
 
               clients(:app).post.list(:mentions => entity)
             end
+
+            expect_response(:status => 200, :schema => :data) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+
+              expect_headers('Count' => /\A\d+\Z/)
+
+              clients(:app).post.head.list(:mentions => entity)
+            end
           end
 
           context "entity with post" do
@@ -612,6 +976,15 @@ module TentValidator
               expect_properties(:posts => posts.map { |post| { :mentions => post['mentions'].map {|m| {:entity => property_absent, :post=>m['post']} } } })
 
               clients(:app).post.list(:mentions => [entity, post].join(' '))
+            end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              post = get(:mentions_posts).first['id'] # first status post
+
+              clients(:app).post.head.list(:mentions => [entity, post].join(' '))
             end
           end
 
@@ -628,6 +1001,15 @@ module TentValidator
 
               clients(:app).post.list(:mentions => [entity, fictitious_entity].join(','))
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+
+              clients(:app).post.head.list(:mentions => [entity, fictitious_entity].join(','))
+            end
           end
 
           context "entity OR entity with post" do
@@ -642,6 +1024,16 @@ module TentValidator
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')].join(','))
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              post = get(:mentions_posts).first['id'] # first status post
+
+              clients(:app).post.head.list(:mentions => [fictitious_entity, [entity, post].join(' ')].join(','))
+            end
           end
         end
 
@@ -654,6 +1046,15 @@ module TentValidator
               expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [fictitious_entity, entity])
+            end
+
+            expect_response(:status => 200) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+
+              expect_headers('Count' => '0')
+
+              clients(:app).post.head.list(:mentions => [fictitious_entity, entity])
             end
           end
 
@@ -668,6 +1069,15 @@ module TentValidator
               clients(:app).post.list(:mentions => [entity, [entity, post].join(' ')])
             end
 
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              post = get(:mentions_posts).first['id'] # first status post
+
+              clients(:app).post.head.list(:mentions => [entity, [entity, post].join(' ')])
+            end
+
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
@@ -676,6 +1086,16 @@ module TentValidator
               expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [fictitious_entity, [entity, post].join(' ')])
+            end
+
+            expect_response(:status => 200) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              post = get(:mentions_posts).first['id'] # first status post
+
+              expect_headers('Count' => '0')
+
+              clients(:app).post.head.list(:mentions => [fictitious_entity, [entity, post].join(' ')])
             end
           end
 
@@ -690,6 +1110,15 @@ module TentValidator
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), entity])
             end
 
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+
+              clients(:app).post.head.list(:mentions => [[fictitious_entity, entity].join(','), entity])
+            end
+
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
@@ -698,6 +1127,16 @@ module TentValidator
               expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), entity])
+            end
+
+            expect_response(:status => 200) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+
+              expect_headers('Count' => '0')
+
+              clients(:app).post.head.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), entity])
             end
           end
 
@@ -712,6 +1151,15 @@ module TentValidator
               clients(:app).post.list(:mentions => 2.times.map { [fictitious_entity, entity].join(',') })
             end
 
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+
+              clients(:app).post.head.list(:mentions => 2.times.map { [fictitious_entity, entity].join(',') })
+            end
+
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
@@ -720,6 +1168,16 @@ module TentValidator
               expect_properties(:posts => [])
 
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [fictitious_entity, entity].join(',')])
+            end
+
+            expect_response(:status => 200) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+
+              expect_headers('Count' => '0')
+
+              clients(:app).post.head.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [fictitious_entity, entity].join(',')])
             end
           end
 
@@ -735,6 +1193,17 @@ module TentValidator
               clients(:app).post.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [entity, post].join(' ')])
             end
 
+            expect_response(:status => 200) do
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              post = get(:mentions_posts).first['id'] # first status post
+
+              expect_headers('Count' => '0')
+
+              clients(:app).post.head.list(:mentions => [[fictitious_entity, other_fictitious_entity].join(','), [entity, post].join(' ')])
+            end
+
             expect_response(:status => 200, :schema => :data) do
               entity = get(:mentions_posts).first['entity'] # remote entity
               fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
@@ -745,6 +1214,17 @@ module TentValidator
               expect_properties(:posts => posts.map { |post| {:id => post['id']} })
 
               clients(:app).post.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
+            end
+
+            expect_response(:status => 200, :schema => :data) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              entity = get(:mentions_posts).first['entity'] # remote entity
+              fictitious_entity = "https://fictitious.entity.example.org" # an entity not mentioned by any post on remote server
+              other_fictitious_entity = "https://other.fictitious.entity.example.com"
+              post = get(:mentions_posts).first['id'] # first status post
+
+              clients(:app).post.head.list(:mentions => [[fictitious_entity, entity].join(','), [entity, post].join(' ')])
             end
           end
         end
@@ -757,6 +1237,12 @@ module TentValidator
 
           clients(:no_auth).post.list(:limit => 2)
         end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+
+          clients(:no_auth).post.head.list(:limit => 2)
+        end
       end
 
       context "with authentication", :before => :create_private_posts do
@@ -767,6 +1253,12 @@ module TentValidator
             expect_property_length('/posts', 2)
 
             clients(:app).post.list(:limit => 2)
+          end
+
+          expect_response(:status => 200) do
+            expect_headers('Count' => /\A\d+\Z/)
+
+            clients(:app).post.head.list(:limit => 2)
           end
         end
 
@@ -780,6 +1272,12 @@ module TentValidator
 
               get(:client).post.list(:limit => 2)
             end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              get(:client).post.head.list(:limit => 2)
+            end
           end
 
           context "when limited base" do
@@ -792,6 +1290,12 @@ module TentValidator
               expect_property_length('/posts', 2)
 
               get(:client).post.list(:limit => 2)
+            end
+
+            expect_response(:status => 200) do
+              expect_headers('Count' => /\A\d+\Z/)
+
+              get(:client).post.head.list(:limit => 2)
             end
           end
         end
