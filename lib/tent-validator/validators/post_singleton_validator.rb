@@ -180,6 +180,14 @@ module TentValidator
           post = get(:post)
           get(:client).post.mentions(post[:entity], post[:id])
         end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+          expect_headers('Content-Type' => %(application/vnd.tent.post-mentions.v0+json))
+
+          post = get(:post)
+          get(:client).post.head.mentions(post[:entity], post[:id])
+        end
       end
 
       shared_example :get_public_mentions do
@@ -194,6 +202,14 @@ module TentValidator
 
           post = get(:post)
           get(:client).post.mentions(post[:entity], post[:id])
+        end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+          expect_headers('Content-Type' => %(application/vnd.tent.post-mentions.v0+json))
+
+          post = get(:post)
+          get(:client).post.head.mentions(post[:entity], post[:id])
         end
       end
 
@@ -432,6 +448,21 @@ module TentValidator
 
           get(:client).post.children(post[:entity], post[:id], params)
         end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+          expect_headers('Content-Type' => %(application/vnd.tent.post-children.v0+json))
+
+          params = {}
+
+          if version_id = get(:version_id)
+            params[:version] = version_id
+          end
+
+          post = get(:post)
+
+          get(:client).post.head.children(post[:entity], post[:id], params)
+        end
       end
 
       shared_example :public_versions do
@@ -467,6 +498,21 @@ module TentValidator
           expect_property_length('/versions', versions.size)
 
           get(:client).post.children(post[:entity], post[:id], params)
+        end
+
+        expect_response(:status => 200) do
+          expect_headers('Count' => /\A\d+\Z/)
+          expect_headers('Content-Type' => %(application/vnd.tent.post-children.v0+json))
+
+          params = {}
+
+          if version_id = get(:version_id)
+            params[:version] = version_id
+          end
+
+          post = get(:post)
+
+          get(:client).post.head.children(post[:entity], post[:id], params)
         end
       end
 
@@ -759,6 +805,16 @@ module TentValidator
           })
 
           get(:client).post.versions(post[:entity], post[:id])
+        end
+
+        expect_response(:status => 200) do
+          post = get(:post)
+          versions = get(:versions)
+
+          expect_headers('Content-Type' => %(application/vnd.tent.post-versions.v0+json))
+          expect_headers('Count' => versions.size.to_s)
+
+          get(:client).post.head.versions(post[:entity], post[:id])
         end
       end
 
