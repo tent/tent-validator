@@ -165,6 +165,143 @@ module TentValidator
       end
     end
 
+    describe "DELETE post" do
+      shared_example :get_post do
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+          get(:client).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :delete_post_with_record do
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expect_properties(:post => {
+            :entity => post[:entity],
+            :type => "https://tent.io/types/delete/v0#",
+            :refs => [{ :post => post[:id] }]
+          })
+
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :delete_post_without_record do
+        expect_response(:status => 200) do
+          expect_headers('Content-Length' => '0')
+
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id]) do |request|
+            request.headers['Create-Delete-Post'] = 'false'
+          end
+        end
+      end
+
+      shared_example :unauthorized_delete_post do
+        expect_response(:status => 403, :schema => :error) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :not_found_get_post do
+        expect_response(:status => 404, :schema => :error) do
+          post = get(:post)
+          get(:client).post.get(post[:entity], post[:id])
+        end
+      end
+
+      context "when public post" do
+        context "with authentication" do
+          context "when not authorized" do
+            setup do
+              set(:post, create_post.call(:public => true))
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:get_post)
+
+            behaves_as(:unauthorized_delete_post)
+
+            behaves_as(:get_post)
+          end
+
+          context "when limited authorization" do
+            authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
+
+            context "with Create-Delete-Post header set to false" do
+              setup do
+                set(:post, create_post.call(:public => true))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_without_record)
+
+              behaves_as(:not_found_get_post)
+            end
+
+            context "without Create-Delete-Post header" do
+              setup do
+                set(:post, create_post.call(:public => true))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_with_record)
+
+              behaves_as(:not_found_get_post)
+            end
+          end
+
+          context "when full authorization" do
+            setup do
+              set(:post, create_post.call(:public => true))
+              set(:client, clients(:app))
+            end
+
+            context "with Create-Delete-Post header set to false" do
+              setup do
+                set(:post, create_post.call(:public => true))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_without_record)
+
+              behaves_as(:not_found_get_post)
+            end
+
+            context "without Create-Delete-Post header" do
+              setup do
+                set(:post, create_post.call(:public => true))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_with_record)
+
+              behaves_as(:not_found_get_post)
+            end
+          end
+        end
+
+        context "without authentication" do
+          setup do
+            set(:post, create_post.call(:public => true))
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:get_post)
+
+          behaves_as(:unauthorized_delete_post)
+
+          behaves_as(:get_post)
+        end
+      end
+    end
+
     describe "GET post with mentions accept header" do
       shared_example :get_all_mentions do
         expect_response(:status => 200, :schema => :data) do
