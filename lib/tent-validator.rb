@@ -19,6 +19,7 @@ module TentValidator
     attr_reader :response, :results
     def initialize(message, response, results=nil)
       super(message)
+      results = [results] if results && !(Array === results)
       @response, @results = response, results
     end
   end
