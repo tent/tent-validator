@@ -39,10 +39,10 @@ module TentValidator
           expect_response do
             expect_headers('Access-Control-Allow-Origin' => /\A.+\Z/)
 
-            expect_headers('Access-Control-Allow-Headers' => proc { |response|
+            expect_headers('Access-Control-Expose-Headers' => proc { |response|
               header = response.headers['Access-Control-Allow-Headers']
               actual = header.to_s.split(/\s*,\s*/)
-              expected = %w( Server-Authorization Link Count ETag )
+              expected = %w( Server-Authorization Link Count ETag WWW-Authenticate )
 
               if expected.any? { |v| !actual.include?(v) }
                 (actual | expected).compact.join(', ')
