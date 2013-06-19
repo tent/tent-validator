@@ -236,6 +236,34 @@ module TentValidator
             behaves_as(:get_post)
           end
 
+          context "when limited read-only authorization" do
+            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+
+            setup do
+              set(:post, create_post.call(:public => true))
+            end
+
+            behaves_as(:get_post)
+
+            behaves_as(:unauthorized_delete_post)
+
+            behaves_as(:get_post)
+          end
+
+          context "when full read-only authorization" do
+            authenticate_with_permissions(:read_post_types => %w( all ))
+
+            setup do
+              set(:post, create_post.call(:public => true))
+            end
+
+            behaves_as(:get_post)
+
+            behaves_as(:unauthorized_delete_post)
+
+            behaves_as(:get_post)
+          end
+
           context "when limited authorization" do
             authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
 
