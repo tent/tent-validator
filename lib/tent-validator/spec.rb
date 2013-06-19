@@ -47,6 +47,33 @@ module TentValidator
         end
       end
 
+      def expect_discovery(user)
+        expect_request(
+          :method => :head,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
+          :path => "/"
+        )
+        expect_request(
+          :method => :get,
+          :url => %r{\A#{Regexp.escape(user.entity)}},
+          :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
+          :headers => {
+            "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
+          }
+        ).expect_response(:status => 200, :schema => :data) do
+          expect_properties(:post => user.meta_post.as_json)
+        end
+      end
+
+      def catch_faraday_exceptions(msg, &block)
+        begin
+          yield
+        rescue Faraday::Error::ConnectionFailed, Faraday::Error::TimeoutError => e
+          # Expose original exception
+          raise SetupFailure.new("#{msg}: #{e.instance_eval { (@wrapped_exception || self).inspect }}", e.response)
+        end
+      end
+
       def auth_details_for_app_type(type, options={})
         credentials = case type
         when :app_auth
