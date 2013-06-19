@@ -89,7 +89,7 @@ module TentValidator
           }
           child_results.each do |r|
             valid = result_valid?(r)
-            next if valid && all_valid
+            next if valid && ((ENV['PRINT_ERROR_CONTEXT'] != 'true') || all_valid)
 
             if valid
               print "\n"
