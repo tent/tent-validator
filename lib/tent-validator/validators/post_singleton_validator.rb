@@ -268,27 +268,63 @@ module TentValidator
             authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
 
             context "with Create-Delete-Post header set to false" do
-              setup do
-                set(:post, create_post.call(:public => true))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => true))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => true)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_without_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
 
             context "without Create-Delete-Post header" do
-              setup do
-                set(:post, create_post.call(:public => true))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => true))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => true)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_with_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
           end
 
@@ -299,27 +335,63 @@ module TentValidator
             end
 
             context "with Create-Delete-Post header set to false" do
-              setup do
-                set(:post, create_post.call(:public => true))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => true))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => true)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_without_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
 
             context "without Create-Delete-Post header" do
-              setup do
-                set(:post, create_post.call(:public => true))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => true))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => true)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_with_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
           end
         end
@@ -386,27 +458,63 @@ module TentValidator
             authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
 
             context "without Create-Delete-Post header set" do
-              setup do
-                set(:post, create_post.call(:public => false))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => false))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => false)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_with_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
 
             context "with Create-Delete-Post header set to false" do
-              setup do
-                set(:post, create_post.call(:public => false))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => false))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => false)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_without_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
           end
 
@@ -416,27 +524,63 @@ module TentValidator
             end
 
             context "without Create-Delete-Post header set" do
-              setup do
-                set(:post, create_post.call(:public => false))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => false))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => false)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_with_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_with_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
 
             context "with Create-Delete-Post header set to false" do
-              setup do
-                set(:post, create_post.call(:public => false))
+              context "when single version" do
+                setup do
+                  set(:post, create_post.call(:public => false))
+                end
+
+                behaves_as(:get_post)
+
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
               end
 
-              behaves_as(:get_post)
+              context "when multiple versions" do
+                setup do
+                  post = create_post.call(:public => false)
+                  create_post_version.call(post, :public => true, :version => {
+                    :parents => [{ :version => post[:version][:id], :post => post[:id] }]
+                  })
+                  set(:post, post)
+                end
 
-              behaves_as(:delete_post_without_record)
+                behaves_as(:get_post)
 
-              behaves_as(:not_found_get_post)
+                behaves_as(:delete_post_without_record)
+
+                behaves_as(:not_found_get_post)
+              end
             end
           end
         end
