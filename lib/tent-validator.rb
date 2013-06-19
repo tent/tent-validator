@@ -25,8 +25,7 @@ module TentValidator
   end
 
   class << self
-    attr_writer :remote_auth_details
-    attr_accessor :remote_server_meta, :remote_entity_uri, :local_database_url, :local_server, :local_server_port, :mutex
+    attr_accessor :remote_app_authorization_credentials, :remote_app_credentials, :remote_server_meta, :remote_entity_uri, :local_database_url, :local_server, :local_server_port, :mutex
   end
 
   def self.setup!(options = {})
@@ -53,11 +52,7 @@ module TentValidator
     self.local_server = wrap_local_server(TentD::API.new)
     self.mutex = Mutex.new
 
-    [:remote_entity_uri, :remote_auth_details].each do |key|
-      if options.has_key?(key)
-        self.send("#{key}=", options.delete(key))
-      end
-    end
+    self.remote_entity_uri = options.delete(:remote_entity_uri)
   end
 
   def self.remote_registration
@@ -129,6 +124,8 @@ module TentValidator
       :hawk_algorithm => res.body['post']['content']['hawk_algorithm']
     }
 
+    TentValidator.remote_app_credentials = app_credentials
+
     app_client = TentClient.new(remote_entity_uri,
       :faraday_adapter => remote_adapter,
       :server_meta => remote_server_meta,
@@ -139,7 +136,7 @@ module TentValidator
 
     begin
       res = client.http.get(oauth_uri.to_s)
-      return (self.remote_auth_details = nil) unless res.status == 302
+      return (self.remote_app_authorization_credentials = nil) unless res.status == 302
       oauth_code = Spec.parse_params(URI(res.headers["Location"]).query)['code']
     rescue Faraday::Error::ConnectionFailed
       raise SetupFailure.new("OAuth request failed (#{oauth_uri.to_s.inspect})!", Faraday::Response.new({}))
@@ -148,13 +145,13 @@ module TentValidator
     begin
       if res.status == 302 && (res = app_client.oauth_token_exchange(:code => oauth_code)) && res.success?
         oauth_credentials = res.body
-        self.remote_auth_details = {
+        self.remote_app_authorization_credentials = {
           :id => oauth_credentials['access_token'],
           :hawk_key => oauth_credentials['hawk_key'],
           :hawk_algorithm => oauth_credentials['hawk_algorithm']
         }
       else
-        self.remote_auth_details = nil
+        self.remote_app_authorization_credentials = nil
       end
     rescue Faraday::Error::ConnectionFailed
       raise SetupFailure.new("OAuth token exchange failed!", Faraday::Response.new({}))
@@ -252,10 +249,6 @@ module TentValidator
     puts "Server booted in #{boot_time}s"
 
     TentValidator.local_server_port
-  end
-
-  def self.remote_auth_details
-    @remote_auth_details
   end
 
   def self.remote_adapter

@@ -15,7 +15,7 @@ module TentValidator
     create_post_with_attachments = lambda do |opts|
       attachments = 3.times.map { generate_attachment }
       data = generate_status_post(opts[:public].nil? ? true : opts[:public])
-      res = clients(:app).post.create(data, params = {}, :attachments => attachments.map(&:dup))
+      res = clients(:app_auth).post.create(data, params = {}, :attachments => attachments.map(&:dup))
 
       res_validation = ApiValidator::Json.new(
         :post => {
@@ -247,14 +247,14 @@ module TentValidator
 
               expect_body(attachment[:data])
 
-              clients(:app).http.get(:attachment, :entity => post[:entity], :digest => hex_digest(attachment[:data]))
+              clients(:app_auth).http.get(:attachment, :entity => post[:entity], :digest => hex_digest(attachment[:data]))
             end
           end
         end
 
         context "when authorized with full access" do
           setup do
-            set(:client, clients(:app))
+            set(:client, clients(:app_auth))
           end
 
           describe "post_attachment" do
@@ -325,7 +325,7 @@ module TentValidator
 
               expect_body(attachment[:data])
 
-              clients(:app).http.get(:attachment, :entity => post[:entity], :digest => hex_digest(attachment[:data]))
+              clients(:app_auth).http.get(:attachment, :entity => post[:entity], :digest => hex_digest(attachment[:data]))
             end
           end
         end

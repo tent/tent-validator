@@ -20,9 +20,9 @@ module TentValidator
       end
 
       if attachments = opts[:attachments]
-        res = clients(:app).post.create(data, {}, :attachments => attachments.map(&:dup))
+        res = clients(:app_auth).post.create(data, {}, :attachments => attachments.map(&:dup))
       else
-        res = clients(:app).post.create(data)
+        res = clients(:app_auth).post.create(data)
       end
 
       data.delete(:permissions) if opts[:public] == true
@@ -112,7 +112,7 @@ module TentValidator
 
         context "when full authorization" do
           setup do
-            set(:client, clients(:app))
+            set(:client, clients(:app_auth))
           end
 
           expect_response(:status => 200, :schema => :data) do

@@ -67,7 +67,7 @@ module TentValidator
               :entities => [get(:user).entity]
             }
           }
-          clients(:app).post.create(data)
+          clients(:app_auth).post.create(data)
         end
 
       end

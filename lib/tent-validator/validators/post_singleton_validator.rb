@@ -32,13 +32,13 @@ module TentValidator
       end
 
       if opts[:put] && ref_post = opts[:post]
-        res = clients(:app).post.update(ref_post[:entity], ref_post[:id], data)
+        res = clients(:app_auth).post.update(ref_post[:entity], ref_post[:id], data)
 
         data[:version][:parents].each { |parent| parent.delete(:post) if parent[:post] == ref_post[:id] }
 
         data[:id] = ref_post[:id]
       else
-        res = clients(:app).post.create(data)
+        res = clients(:app_auth).post.create(data)
       end
 
       data.delete(:permissions) if opts[:public] == true
@@ -118,7 +118,7 @@ module TentValidator
 
           context "when full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:get_post)
@@ -156,7 +156,7 @@ module TentValidator
 
           context "when full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:get_post)
@@ -331,7 +331,7 @@ module TentValidator
           context "when full authorization" do
             setup do
               set(:post, create_post.call(:public => true))
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             context "with Create-Delete-Post header set to false" do
@@ -520,7 +520,7 @@ module TentValidator
 
           context "when full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             context "without Create-Delete-Post header set" do
@@ -687,7 +687,7 @@ module TentValidator
 
           context "when full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:get_all_mentions)
@@ -733,7 +733,7 @@ module TentValidator
 
           context "when full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:get_all_mentions)
@@ -1202,7 +1202,7 @@ module TentValidator
 
         context "when full authorization" do
           setup do
-            set(:client, clients(:app))
+            set(:client, clients(:app_auth))
           end
 
           behaves_as(:authorized)
@@ -1297,7 +1297,7 @@ module TentValidator
 
           context "with full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:all_versions)
@@ -1348,7 +1348,7 @@ module TentValidator
 
           context "with full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:all_versions)
@@ -1393,7 +1393,7 @@ module TentValidator
 
           context "with full authorization" do
             setup do
-              set(:client, clients(:app))
+              set(:client, clients(:app_auth))
             end
 
             behaves_as(:all_versions)

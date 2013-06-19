@@ -62,7 +62,7 @@ module TentValidator
         expected_data['avatar_digest'] = avatar_digest
         set(:meta_profile, expected_data)
 
-        res = clients(:app).post.update(meta_post['entity'], meta_post['id'], data, {}, :attachments => attachments)
+        res = clients(:app_auth).post.update(meta_post['entity'], meta_post['id'], data, {}, :attachments => attachments)
 
         if res.status == 200
           TentValidator.remote_server_meta = res.body['post']
@@ -105,7 +105,7 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app).post.create(data)
+          res = clients(:app_auth).post.create(data)
 
           if res.status == 200
             set(:post, res.body['post'])
@@ -129,7 +129,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'entity')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'entity')
         end
 
         ##
@@ -145,7 +145,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'mentions')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'mentions')
         end
 
         ##
@@ -161,7 +161,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'refs')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'refs')
         end
 
         ##
@@ -174,7 +174,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'permissions')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'permissions')
         end
 
         ##
@@ -187,7 +187,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'parents')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'parents')
         end
 
         ##
@@ -212,7 +212,7 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app).post.update(parent_post['entity'], parent_post['id'], data)
+          res = clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
 
           if res.status == 200
             set(:post, res.body['post'])
@@ -236,7 +236,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'parents')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'parents')
         end
 
         ##
@@ -249,7 +249,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'mentions')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'mentions')
         end
 
         ##
@@ -262,7 +262,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.get(post['entity'], post['id'], :profiles => 'refs')
+          clients(:app_auth).post.get(post['entity'], post['id'], :profiles => 'refs')
         end
 
         context "with children accept header" do
@@ -278,7 +278,7 @@ module TentValidator
 
             expect_property_length('/versions', 1)
 
-            clients(:app).post.children(parent_post['entity'], parent_post['id'], :version => parent_post['version']['id'], :profiles => 'entity')
+            clients(:app_auth).post.children(parent_post['entity'], parent_post['id'], :version => parent_post['version']['id'], :profiles => 'entity')
           end
         end
 
@@ -303,7 +303,7 @@ module TentValidator
 
             expect_properties(:post => expected_data)
 
-            res = clients(:app).post.create(data)
+            res = clients(:app_auth).post.create(data)
 
             if res.status == 200
               set(:mention_post, res.body['post'])
@@ -326,7 +326,7 @@ module TentValidator
 
             expect_property_length('/mentions', 1)
 
-            clients(:app).post.mentions(post['entity'], post['id'], :profiles => 'entity')
+            clients(:app_auth).post.mentions(post['entity'], post['id'], :profiles => 'entity')
           end
         end
 
@@ -341,7 +341,7 @@ module TentValidator
 
             expect_property_length('/versions', 2)
 
-            clients(:app).post.versions(post['entity'], post['id'], :profiles => 'entity')
+            clients(:app_auth).post.versions(post['entity'], post['id'], :profiles => 'entity')
           end
         end
       end
@@ -371,7 +371,7 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app).post.create(data)
+          res = clients(:app_auth).post.create(data)
 
           if res.status == 200
             set(:post, res.body['post'])
@@ -392,7 +392,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.list(:profiles => 'entity', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'entity', :limit => 1)
         end
 
         ##
@@ -405,7 +405,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.list(:profiles => 'mentions', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'mentions', :limit => 1)
         end
 
         ##
@@ -418,7 +418,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.list(:profiles => 'refs', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'refs', :limit => 1)
         end
 
         ##
@@ -428,7 +428,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.list(:profiles => 'parents', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'parents', :limit => 1)
         end
 
         ##
@@ -453,7 +453,7 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app).post.update(parent_post['entity'], parent_post['id'], data)
+          res = clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
 
           if res.status == 200
             set(:post, res.body['post'])
@@ -474,7 +474,7 @@ module TentValidator
             post['entity'] => meta_profile
           })
 
-          clients(:app).post.list(:profiles => 'parents', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'parents', :limit => 1)
         end
 
         ##
@@ -484,7 +484,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.list(:profiles => 'mentions', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'mentions', :limit => 1)
         end
 
         ##
@@ -494,7 +494,7 @@ module TentValidator
 
           expect_properties(:profiles => {})
 
-          clients(:app).post.list(:profiles => 'refs', :limit => 1)
+          clients(:app_auth).post.list(:profiles => 'refs', :limit => 1)
         end
       end
     end

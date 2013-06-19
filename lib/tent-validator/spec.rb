@@ -49,8 +49,12 @@ module TentValidator
 
       def auth_details_for_app_type(type, options={})
         credentials = case type
+        when :app_auth
+          # app authorization credentials
+          TentValidator.remote_app_authorization_credentials
         when :app
-          TentValidator.remote_auth_details
+          # app credentials
+          TentValidator.remote_app_credentials
         when :custom
           {
             :id => options.delete(:id),

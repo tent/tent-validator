@@ -13,7 +13,7 @@ module TentValidator
         data[:refs] = opts[:refs]
       end
 
-      res = clients(:app).post.create(data)
+      res = clients(:app_auth).post.create(data)
 
       data.delete(:permissions) if opts[:public] == true
       if data[:refs]
@@ -50,7 +50,7 @@ module TentValidator
           expect_properties(:post => expected_data)
           expect_schema(:post, '/post')
 
-          clients(:app).post.create(data)
+          clients(:app_auth).post.create(data)
         end
       end
     end
@@ -80,7 +80,7 @@ module TentValidator
           expect_properties(:post => expected_data)
           expect_schema(:post, '/post')
 
-          clients(:app).post.update(post[:entity], post[:id], data)
+          clients(:app_auth).post.update(post[:entity], post[:id], data)
         end
       end
     end
@@ -107,7 +107,7 @@ module TentValidator
         expect_property_length('/refs', 3)
         expect_properties(:post => post)
 
-        clients(:app).post.get(post[:entity], post[:id], :'max_refs' => 3)
+        clients(:app_auth).post.get(post[:entity], post[:id], :'max_refs' => 3)
       end
     end
 
@@ -154,7 +154,7 @@ module TentValidator
         expect_property_length('/refs', reffed_posts.size)
         expect_properties(:posts => posts.reverse)
 
-        clients(:app).post.list(:'max_refs' => 4, :limit => posts.size)
+        clients(:app_auth).post.list(:'max_refs' => 4, :limit => posts.size)
       end
     end
   end
