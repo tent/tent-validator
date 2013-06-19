@@ -205,6 +205,13 @@ module TentValidator
         end
       end
 
+      shared_example :not_found_delete_post do
+        expect_response(:status => 404, :schema => :error) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+      end
+
       shared_example :not_found_get_post do
         expect_response(:status => 404, :schema => :error) do
           post = get(:post)
@@ -215,6 +222,8 @@ module TentValidator
       context "when public post" do
         context "with authentication" do
           context "when not authorized" do
+            authenticate_with_permissions(:write_post_types => [])
+
             setup do
               set(:post, create_post.call(:public => true))
               set(:client, clients(:no_auth))
@@ -298,6 +307,123 @@ module TentValidator
           behaves_as(:unauthorized_delete_post)
 
           behaves_as(:get_post)
+        end
+      end
+
+      context "when private post" do
+        context "with authentication" do
+          context "when not authorized" do
+            authenticate_with_permissions(:write_post_types => [])
+
+            setup do
+              set(:post, create_post.call(:public => false))
+            end
+
+            behaves_as(:not_found_get_post)
+
+            behaves_as(:not_found_delete_post)
+
+            behaves_as(:not_found_get_post)
+          end
+
+          context "when limited read-only authentication" do
+            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+
+            setup do
+              set(:post, create_post.call(:public => false))
+            end
+
+            behaves_as(:get_post)
+
+            behaves_as(:unauthorized_delete_post)
+
+            behaves_as(:get_post)
+          end
+
+          context "when full read-only authorization" do
+            authenticate_with_permissions(:read_post_types => %w( all ))
+
+            setup do
+              set(:post, create_post.call(:public => false))
+            end
+
+            behaves_as(:get_post)
+
+            behaves_as(:unauthorized_delete_post)
+
+            behaves_as(:get_post)
+          end
+
+          context "when limited authorization" do
+            authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
+
+            context "without Create-Delete-Post header set" do
+              setup do
+                set(:post, create_post.call(:public => false))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_with_record)
+
+              behaves_as(:not_found_get_post)
+            end
+
+            context "with Create-Delete-Post header set to false" do
+              setup do
+                set(:post, create_post.call(:public => false))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_without_record)
+
+              behaves_as(:not_found_get_post)
+            end
+          end
+
+          context "when full authorization" do
+            setup do
+              set(:client, clients(:app))
+            end
+
+            context "without Create-Delete-Post header set" do
+              setup do
+                set(:post, create_post.call(:public => false))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_with_record)
+
+              behaves_as(:not_found_get_post)
+            end
+
+            context "with Create-Delete-Post header set to false" do
+              setup do
+                set(:post, create_post.call(:public => false))
+              end
+
+              behaves_as(:get_post)
+
+              behaves_as(:delete_post_without_record)
+
+              behaves_as(:not_found_get_post)
+            end
+          end
+        end
+
+        context "without authentication" do
+          setup do
+            set(:post, create_post.call(:public => false))
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:not_found_get_post)
+
+          behaves_as(:not_found_delete_post)
+
+          behaves_as(:not_found_get_post)
         end
       end
     end
