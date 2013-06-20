@@ -39,8 +39,8 @@ module TentValidator
             :server_meta => TentD::Utils::Hash.stringify_keys(user.meta_post.as_json)
           }
 
-          if type == :app
-            TentClient.new(user.entity, TentD::Utils::Hash.symbolize_keys(user.server_credentials).merge(opts))
+          if type == :app_auth
+            TentClient.new(user.entity, {:credentials => TentD::Utils::Hash.symbolize_keys(user.server_credentials)}.merge(opts))
           else # no_auth
             TentClient.new(user.entity, opts)
           end
