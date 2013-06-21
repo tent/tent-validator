@@ -278,7 +278,7 @@ module TentValidator
       body = begin
         Yajl::Parser.parse(response.body)
       rescue Yajl::ParseError
-        Hash.new
+        response.body
       end
 
       faraday_response = Faraday::Response.new(
