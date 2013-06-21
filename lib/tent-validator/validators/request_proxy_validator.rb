@@ -65,6 +65,7 @@ module TentValidator
         res
       end
 
+      # Create status post on local server
       expect_response(:status => 200, :schema => :data) do
         data = generate_status_post
 
@@ -85,6 +86,7 @@ module TentValidator
         end
       end
 
+      # Create another status post on local server
       expect_response(:status => 200, :schema => :data) do
         data = generate_status_post
 
@@ -97,14 +99,13 @@ module TentValidator
       end.after do |response, results|
         if !results.any? { |r| !r[:valid] }
           post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
-          post.delete(:received_at)
-          post[:version].delete(:received_at)
           set(:local_cached_post, post)
         else
           raise SetupFailure.new("Failed to create post on local server", response, results)
         end
       end
 
+      # Import the second status post on remote server
       expect_response(:status => 200, :schema => :data) do
         post = get(:local_cached_post)
         clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
@@ -120,6 +121,9 @@ module TentValidator
             post, user = get(:post), get(:user)
             cache_control = get(:cache_control)
 
+            post = TentD::Utils::Hash.deep_dup(post)
+            post.delete(:received_at)
+            post[:version].delete(:received_at)
             expect_properties(:post => post)
 
             watch_local_requests(true, user.id)
@@ -131,8 +135,6 @@ module TentValidator
                 end
               end
             end
-
-            watch_local_requests(true, user.id)
 
             # Expect discovery (no relationship exists)
             expect_request(
@@ -163,6 +165,8 @@ module TentValidator
               expect_properties(:post => post)
             end
 
+            watch_local_requests(false, user.id)
+
             res
           end
         end
@@ -172,6 +176,9 @@ module TentValidator
             post, user = get(:post), get(:user)
             cache_control = get(:cache_control)
 
+            post = TentD::Utils::Hash.deep_dup(post)
+            post.delete(:received_at)
+            post[:version].delete(:received_at)
             expect_properties(:post => post)
 
             catch_faraday_exceptions("Proxied request failed") do
@@ -338,6 +345,291 @@ module TentValidator
         end
       end
 
+      describe "GET posts_feed profiles=entities" do
+        setup do
+          set(:post, get(:local_cached_post))
+        end
+
+        shared_example :fetch_via_proxy do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            cache_control = get(:cache_control)
+
+            expect_properties(:profiles => { user.entity => TentD::API::MetaProfile.profile_as_json(user.meta_post) })
+
+            watch_local_requests(true, user.id)
+
+            res = get(:client).post.list(:limit => 1, :profiles => :entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+
+            # Expect discovery (no relationship exists)
+            expect_request(
+              :method => :head,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/"
+            )
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
+              :headers => {
+                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:post => user.meta_post.as_json)
+            end
+
+            watch_local_requests(false, user.id)
+
+            res
+          end
+        end
+
+        shared_example :fetch_without_proxy do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            cache_control = get(:cache_control)
+
+            expect_properties(:profiles => { user.entity => TentD::API::MetaProfile.profile_as_json(user.meta_post) })
+
+            get(:client).post.list(:limit => 1, :profiles => :entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        shared_example :fetch_no_profiles do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            cache_control = get(:cache_control)
+
+            expect_properties(:profiles => { user.entity => property_absent })
+
+            get(:client).post.list(:limit => 1, :profiles => :entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        context "when not cached" do
+          context "with authentication" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+                set(:is_app, true)
+              end
+
+              context "with `Cache-Control: no-cache`" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "with `Cache-Control: proxy-if-miss`" do
+                setup do
+                  set(:cache_control, 'proxy-if-miss')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "with `Cache-Control: only-if-cached`" do
+                setup do
+                  set(:cache_control, 'only-if-cached')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+            end
+
+            context "when authorization is not an app" do
+              setup do
+                set(:client, clients(:app))
+                set(:is_app, false)
+              end
+
+              context "with `Cache-Control: no-cache`" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+
+              context "with `Cache-Control: proxy-if-miss`" do
+                setup do
+                  set(:cache_control, 'proxy-if-miss')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+
+              context "with `Cache-Control: only-if-cached`" do
+                setup do
+                  set(:cache_control, 'only-if-cached')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+              set(:is_app, false)
+            end
+
+            context "with `Cache-Control: no-cache`" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+
+            context "with `Cache-Control: proxy-if-miss`" do
+              setup do
+                set(:cache_control, 'proxy-if-miss')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+
+            context "with `Cache-Control: only-if-cached`" do
+              setup do
+                set(:cache_control, 'only-if-cached')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+          end
+        end
+
+        context "when cached" do
+          # Import meta post to remote server
+          expect_response(:status => 200, :schema => :data) do
+            post = get(:user).meta_post.as_json
+
+            # ensure it's not at the top of feed
+            post[:received_at] = TentD::Utils.timestamp - 2000
+            post[:version][:received_at] = TentD::Utils.timestamp - 2000
+
+            attachments = [get(:avatar_attachment)]
+
+            clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true, :attachments => attachments)
+          end.after do |response, results|
+            if results.any? { |r| !r[:valid] }
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+            end
+          end
+
+          context "with authentication" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+                set(:is_app, true)
+              end
+
+              context "with `Cache-Control: no-cache`" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "with `Cache-Control: proxy-if-miss`" do
+                setup do
+                  set(:cache_control, 'proxy-if-miss')
+                end
+
+                behaves_as(:fetch_without_proxy)
+              end
+
+              context "with `Cache-Control: only-if-cached`" do
+                setup do
+                  set(:cache_control, 'only-if-cached')
+                end
+
+                behaves_as(:fetch_without_proxy)
+              end
+            end
+
+            context "when authorization is not an app" do
+              setup do
+                set(:client, clients(:app))
+                set(:is_app, false)
+              end
+
+              context "with `Cache-Control: no-cache`" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+
+              context "with `Cache-Control: proxy-if-miss`" do
+                setup do
+                  set(:cache_control, 'proxy-if-miss')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+
+              context "with `Cache-Control: only-if-cached`" do
+                setup do
+                  set(:cache_control, 'only-if-cached')
+                end
+
+                behaves_as(:fetch_no_profiles)
+              end
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+              set(:is_app, false)
+            end
+
+            context "with `Cache-Control: no-cache`" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+
+            context "with `Cache-Control: proxy-if-miss`" do
+              setup do
+                set(:cache_control, 'proxy-if-miss')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+
+            context "with `Cache-Control: only-if-cached`" do
+              setup do
+                set(:cache_control, 'only-if-cached')
+              end
+
+              behaves_as(:fetch_no_profiles)
+            end
+          end
+        end
+      end
+
       describe "GET posts_feed refs" do
         # fetch feed with proxied reffed post
         shared_example :fetch_via_proxy do
@@ -354,17 +646,19 @@ module TentValidator
             end
 
             expect_properties(:posts => [post])
+
+            reffed_post = TentD::Utils::Hash.deep_dup(reffed_post)
+            reffed_post.delete(:received_at)
+            reffed_post[:version].delete(:received_at)
             expect_properties(:refs => [reffed_post])
 
             watch_local_requests(true, user.id)
 
-            res = get(:client).post.list(:limit => 1, :max_refs => 1) do |request|
+            res = get(:client).post.list(:limit => 2, :max_refs => 1) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
-
-            watch_local_requests(false, user.id)
 
             # Expect discovery (no relationship exists)
             expect_request(
@@ -394,6 +688,8 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:post => reffed_post)
             end
+
+            watch_local_requests(false, user.id)
 
             res
           end
@@ -696,313 +992,6 @@ module TentValidator
         end
       end
 
-      describe "GET posts_feed profiles" do
-        setup do
-          set(:post, get(:local_cached_post))
-        end
-
-        shared_example :fetch_via_proxy do
-          expect_response(:status => 200, :schema => :data) do
-            user = get(:user)
-            post = get(:post)
-            cache_control = get(:cache_control)
-
-            unless get(:is_app)
-              post = TentD::Utils::Hash.deep_dup(post)
-              post[:received_at] = property_absent
-              post[:version][:received_at] = property_absent
-            end
-
-            expect_properties(:posts => [post])
-            expect_properties(:profiles => { user.entity => TentD::API::MetaProfile.profile_as_json(user.meta_post) })
-
-            watch_local_requests(true, user.id)
-
-            res = get(:client).post.list(:limit => 1, :profiles => :entity, :entities => user.entity) do |request|
-              if cache_control
-                request.headers['Cache-Control'] = cache_control
-              end
-            end
-
-            watch_local_requests(false, user.id)
-
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
-            res
-          end
-        end
-
-        shared_example :fetch_without_proxy do
-          expect_response(:status => 200, :schema => :data) do
-            user = get(:user)
-            post = get(:post)
-            cache_control = get(:cache_control)
-
-            unless get(:is_app)
-              post = TentD::Utils::Hash.deep_dup(post)
-              post[:received_at] = property_absent
-              post[:version][:received_at] = property_absent
-            end
-
-            expect_properties(:posts => [post])
-            expect_properties(:profiles => { user.entity => TentD::API::MetaProfile.profile_as_json(user.meta_post) })
-
-            get(:client).post.list(:limit => 1, :profiles => :entity, :entities => user.entity) do |request|
-              if cache_control
-                request.headers['Cache-Control'] = cache_control
-              end
-            end
-          end
-        end
-
-        shared_example :fetch_no_profiles do
-          expect_response(:status => 200, :schema => :data) do
-            user = get(:user)
-            post = get(:post)
-            cache_control = get(:cache_control)
-
-            if get(:is_app)
-              expect_properties(:posts => [post])
-            else
-              expect_properties(:posts => [])
-            end
-
-            expect_properties(:profiles => {})
-
-            get(:client).post.list(:limit => 1, :profiles => :entity, :entities => user.entity) do |request|
-              if cache_control
-                request.headers['Cache-Control'] = cache_control
-              end
-            end
-          end
-        end
-
-        context "when not cached" do
-          context "with authentication" do
-            context "when app authorized" do
-              setup do
-                set(:client, clients(:app_auth))
-                set(:is_app, true)
-              end
-
-              context "with `Cache-Control: no-cache`" do
-                setup do
-                  set(:cache_control, 'no-cache')
-                end
-
-                behaves_as(:fetch_via_proxy)
-              end
-
-              context "with `Cache-Control: proxy-if-miss`" do
-                setup do
-                  set(:cache_control, 'proxy-if-miss')
-                end
-
-                behaves_as(:fetch_via_proxy)
-              end
-
-              context "with `Cache-Control: only-if-cached`" do
-                setup do
-                  set(:cache_control, 'only-if-cached')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-            end
-
-            context "when authorization is not an app" do
-              setup do
-                set(:client, clients(:app))
-                set(:is_app, false)
-              end
-
-              context "with `Cache-Control: no-cache`" do
-                setup do
-                  set(:cache_control, 'no-cache')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-
-              context "with `Cache-Control: proxy-if-miss`" do
-                setup do
-                  set(:cache_control, 'proxy-if-miss')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-
-              context "with `Cache-Control: only-if-cached`" do
-                setup do
-                  set(:cache_control, 'only-if-cached')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-            end
-          end
-
-          context "without authentication" do
-            setup do
-              set(:client, clients(:no_auth))
-              set(:is_app, false)
-            end
-
-            context "with `Cache-Control: no-cache`" do
-              setup do
-                set(:cache_control, 'no-cache')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-
-            context "with `Cache-Control: proxy-if-miss`" do
-              setup do
-                set(:cache_control, 'proxy-if-miss')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-
-            context "with `Cache-Control: only-if-cached`" do
-              setup do
-                set(:cache_control, 'only-if-cached')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-          end
-        end
-
-        context "when cached" do
-
-          expect_response(:status => 200, :schema => :data) do
-            post = get(:user).meta_post.as_json
-
-            # ensure it's not at the top of feed
-            post[:received_at] = 0
-            post[:version][:received_at] = 0
-
-            attachments = [get(:avatar_attachment)]
-
-            clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true, :attachments => attachments)
-          end.after do |response, results|
-            if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
-            end
-          end
-
-          context "with authentication" do
-            context "when app authorized" do
-              setup do
-                set(:client, clients(:app_auth))
-                set(:is_app, true)
-              end
-
-              context "with `Cache-Control: no-cache`" do
-                setup do
-                  set(:cache_control, 'no-cache')
-                end
-
-                behaves_as(:fetch_via_proxy)
-              end
-
-              context "with `Cache-Control: proxy-if-miss`" do
-                setup do
-                  set(:cache_control, 'proxy-if-miss')
-                end
-
-                behaves_as(:fetch_without_proxy)
-              end
-
-              context "with `Cache-Control: only-if-cached`" do
-                setup do
-                  set(:cache_control, 'only-if-cached')
-                end
-
-                behaves_as(:fetch_without_proxy)
-              end
-            end
-
-            context "when authorization is not an app" do
-              setup do
-                set(:client, clients(:app))
-                set(:is_app, false)
-              end
-
-              context "with `Cache-Control: no-cache`" do
-                setup do
-                  set(:cache_control, 'no-cache')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-
-              context "with `Cache-Control: proxy-if-miss`" do
-                setup do
-                  set(:cache_control, 'proxy-if-miss')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-
-              context "with `Cache-Control: only-if-cached`" do
-                setup do
-                  set(:cache_control, 'only-if-cached')
-                end
-
-                behaves_as(:fetch_no_profiles)
-              end
-            end
-          end
-
-          context "without authentication" do
-            setup do
-              set(:client, clients(:no_auth))
-              set(:is_app, false)
-            end
-
-            context "with `Cache-Control: no-cache`" do
-              setup do
-                set(:cache_control, 'no-cache')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-
-            context "with `Cache-Control: proxy-if-miss`" do
-              setup do
-                set(:cache_control, 'proxy-if-miss')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-
-            context "with `Cache-Control: only-if-cached`" do
-              setup do
-                set(:cache_control, 'only-if-cached')
-              end
-
-              behaves_as(:fetch_no_profiles)
-            end
-          end
-        end
-      end
     end
 
   end
