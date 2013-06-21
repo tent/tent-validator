@@ -71,6 +71,13 @@ module TentValidator
 
         print "Loading validations..."
         require 'tent-validator/validators/support/tent_schemas'
+
+        # needs to run before relationship validator
+        require 'tent-validator/validators/request_proxy_validator'
+
+        # run near beginning to maximize window for async requests
+        require 'tent-validator/validators/relationship_validator'
+
         load_time = Benchmark.realtime do
           paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
           paths.each { |path| require path }
