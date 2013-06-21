@@ -992,6 +992,220 @@ module TentValidator
         end
       end
 
+      describe "GET posts_feed when entities=foreign entity" do
+        setup do
+          set(:user, TentD::Model::User.generate)
+        end
+
+        # create first post (to be cached)
+        expect_response(:status => 200, :schema => :data) do
+          data = generate_status_post
+
+          res = clients(:app_auth, :server => :local, :user => get(:user)).post.create(data)
+
+          data.delete(:permissions)
+          expect_properties(:post => data)
+
+          res
+        end.after do |response, results|
+          if !results.any? { |r| !r[:valid] }
+            post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+            post.delete(:received_at)
+            post[:version].delete(:received_at)
+            set(:local_cached_post, post)
+          else
+            raise SetupFailure.new("Failed to create post on local server", response, results)
+          end
+        end
+
+        # create second post (not to be cached)
+        expect_response(:status => 200, :schema => :data) do
+          data = generate_status_post
+
+          res = clients(:app_auth, :server => :local, :user => get(:user)).post.create(data)
+
+          data.delete(:permissions)
+          expect_properties(:post => data)
+
+          res
+        end.after do |response, results|
+          if !results.any? { |r| !r[:valid] }
+            post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+            post.delete(:received_at)
+            post[:version].delete(:received_at)
+            set(:local_uncached_post, post)
+          else
+            raise SetupFailure.new("Failed to create post on local server", response, results)
+          end
+        end
+
+        # import (cache) post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:local_cached_post)
+          clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
+        end.after do |response, results|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+          end
+        end
+
+        shared_example :fetch_via_proxy do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            post = get(:local_uncached_post)
+            cache_control = get(:cache_control)
+
+            post = TentD::Utils::Hash.deep_dup(post)
+            post[:received_at] = property_absent
+            post[:version][:received_at] = property_absent
+
+            expect_properties(:posts => [post])
+
+            watch_local_requests(true, user.id)
+
+            res = get(:client).post.list(:limit => 1, :entities => user.entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+
+            watch_local_requests(false, user.id)
+
+            # Expect discovery (no relationship exists)
+            expect_request(
+              :method => :head,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/"
+            )
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
+              :headers => {
+                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:post => user.meta_post.as_json)
+            end
+
+            # Expect post to be fetched
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts",
+              :params => {
+                :limit => '1'
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:posts => [post])
+            end
+
+            res
+          end
+        end
+
+        shared_example :fetch_via_cache do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            post = get(:local_cached_post)
+            cache_control = get(:cache_control)
+
+            expect_properties(:posts => [post])
+
+            get(:client).post.list(:limit => 1, :entities => user.entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        shared_example :fetch_empty_feed do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            cache_control = get(:cache_control)
+
+            expect_properties(:posts => [])
+
+            get(:client).post.list(:limit => 1, :entities => user.entity) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        context "with authentication" do
+          context "when app authorized" do
+            setup do
+              set(:client, clients(:app_auth))
+              set(:is_app, true)
+            end
+
+            context "with `Cache-Control: no-cache`" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:fetch_via_proxy)
+            end
+
+            context "with `Cache-Control: only-if-cached`" do
+              setup do
+                set(:cache_control, 'only-if-cached')
+              end
+
+              behaves_as(:fetch_via_cache)
+            end
+          end
+
+          context "when authorization is not an app" do
+            setup do
+              set(:client, clients(:app))
+              set(:is_app, false)
+            end
+
+            context "with `Cache-Control: no-cache`" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:fetch_empty_feed)
+            end
+
+            context "with `Cache-Control: only-if-cached`" do
+              setup do
+                set(:cache_control, 'only-if-cached')
+              end
+
+              behaves_as(:fetch_empty_feed)
+            end
+          end
+        end
+
+        context "without authentication" do
+          setup do
+            set(:client, clients(:no_auth))
+            set(:is_app, false)
+          end
+
+          context "with `Cache-Control: no-cache`" do
+            setup do
+              set(:cache_control, 'no-cache')
+            end
+
+            behaves_as(:fetch_empty_feed)
+          end
+
+          context "with `Cache-Control: only-if-cached`" do
+            setup do
+              set(:cache_control, 'only-if-cached')
+            end
+
+            behaves_as(:fetch_empty_feed)
+          end
+        end
+      end
     end
 
   end
