@@ -162,6 +162,7 @@ module TentValidator
 
     def watch_local_requests(should, user_id)
       if should
+        TentValidator.pending_local_requests.delete_if { true }
         TentValidator.watch_local_requests[user_id] = should
       else
         TentValidator.watch_local_requests.delete(user_id)
