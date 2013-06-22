@@ -600,6 +600,404 @@ module TentValidator
       end
     end
 
+    describe "DELETE post version" do
+      shared_example :setup do
+        expect_response(:status => 200, :schema => :data) do
+          data = generate_status_post(get(:public))
+
+          expected_data = TentD::Utils::Hash.deep_dup(data)
+
+          if get(:public)
+            expected_data.delete(:permissions)
+          end
+
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.create(data)
+        end.after do |response, results|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create post", response, results)
+          else
+            post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+            set(:post, post)
+          end
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+          data = generate_status_post(get(:public))
+
+          expected_data = TentD::Utils::Hash.deep_dup(data)
+
+          if get(:public)
+            expected_data.delete(:permissions)
+          end
+
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.update(post[:entity], post[:id], data)
+        end.after do |response, results|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create post version", response, results)
+          else
+            post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+            set(:post_version, post)
+          end
+        end
+      end
+
+      shared_example :delete_version do
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          get(:client).post.get(post_version[:entity], post_version[:id])
+        end
+
+        expect_response(:status => 200) do
+          post_version = get(:post_version)
+          create_delete_post = get(:create_delete_post)
+
+          if create_delete_post != false
+            expect_schema(:data, '/')
+            expect_properties(:post => {
+              :entity => post_version[:entity],
+              :type => "https://tent.io/types/delete/v0#",
+              :refs => [{ :post => post_version[:id], :version => post_version[:version][:id] }]
+            })
+          else
+            expect_body('')
+          end
+
+          get(:client).post.delete(post_version[:entity], post_version[:id], :version => post_version[:version][:id]) do |req|
+            case create_delete_post
+            when false
+              req.headers['Create-Delete-Post'] = 'false'
+            when true
+              req.headers['Create-Delete-Post'] = 'true'
+            end
+          end
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expect_properties(:post => post)
+
+          get(:client).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :not_found do
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+
+        expect_response(:status => 404, :schema => :error) do
+          post_version = get(:post_version)
+          create_delete_post = get(:create_delete_post)
+
+          get(:client).post.delete(post_version[:entity], post_version[:id], :version => post_version[:version][:id]) do |req|
+            case create_delete_post
+            when false
+              req.headers['Create-Delete-Post'] = 'false'
+            when true
+              req.headers['Create-Delete-Post'] = 'true'
+            end
+          end
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+      end
+
+      shared_example :not_authorized do
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+
+        expect_response(:status => 403, :schema => :error) do
+          post_version = get(:post_version)
+          create_delete_post = get(:create_delete_post)
+
+          get(:client).post.delete(post_version[:entity], post_version[:id], :version => post_version[:version][:id]) do |req|
+            case create_delete_post
+            when false
+              req.headers['Create-Delete-Post'] = 'false'
+            when true
+              req.headers['Create-Delete-Post'] = 'true'
+            end
+          end
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+      end
+
+      context "when public post" do
+        setup do
+          set(:public, true)
+        end
+
+        context "when `Create-Delete-Post` header not set" do
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_authorized)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_authorized)
+          end
+        end
+
+        context "when `Create-Delete-Post` header set to `true`" do
+          setup do
+            set(:create_delete_post, true)
+          end
+
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_authorized)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_authorized)
+          end
+        end
+
+        context "when `Create-Delete-Post` header set to `false`" do
+          setup do
+            set(:create_delete_post, false)
+          end
+
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_authorized)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_authorized)
+          end
+        end
+      end
+
+      context "when private post" do
+        setup do
+          set(:public, false)
+        end
+
+        context "when `Create-Delete-Post` header not set" do
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_found)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_found)
+          end
+        end
+
+        context "when `Create-Delete-Post` header set to `true`" do
+          setup do
+            set(:create_delete_post, true)
+          end
+
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_found)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_found)
+          end
+        end
+
+        context "when `Create-Delete-Post` header set to `false`" do
+          setup do
+            set(:create_delete_post, false)
+          end
+
+          context "with authentication" do
+            context "when type not authorized" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+
+              behaves_as(:setup)
+              behaves_as(:not_found)
+            end
+
+            context "when limited authorization" do
+              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+
+            context "when full authorization" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              behaves_as(:setup)
+              behaves_as(:delete_version)
+            end
+          end
+
+          context "without authentication" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:not_found)
+          end
+        end
+      end
+    end
+
     describe "GET post with mentions accept header" do
       shared_example :get_all_mentions do
         expect_response(:status => 200, :schema => :data) do
