@@ -66,6 +66,8 @@ module TentValidator
 
       results = Results.new
 
+      validation_benchmarks = {}
+
       begin
         TentValidator.remote_registration
 
@@ -85,11 +87,13 @@ module TentValidator
         print " #{load_time}s\n"
 
         TentValidator.validators.each do |validator|
-          begin
-            results.merge!(validator.run)
-            block.call(results) if block
-          rescue SetupFailure => e
-            merge_setup_failure(e, results, validator)
+          validation_benchmarks[validator.name] = Benchmark.realtime do
+            begin
+              results.merge!(validator.run)
+              block.call(results) if block
+            rescue SetupFailure => e
+              merge_setup_failure(e, results, validator)
+            end
           end
         end
       rescue SetupFailure => e
@@ -178,6 +182,16 @@ module TentValidator
 
           # Reset
           TentValidator.async_local_request_expectations.delete_if { true }
+
+          if ENV['BENCHMARKS']
+            puts "\nBenchmaks:"
+
+            validation_benchmarks.each_pair do |name, time|
+              puts "#{name.sub(/\ATentValidator::/, '')}\t\t\t#{time}"
+            end
+
+            print "\n"
+          end
 
           block.call(results)
         end
