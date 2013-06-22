@@ -1250,7 +1250,7 @@ module TentValidator
         end
 
         shared_example :fetch_via_proxy do
-          expect_response(:status => 200, :schema => :data) do
+          expect_response(:status => 200) do
             post, user = get(:post), get(:user)
             cache_control = get(:cache_control)
 
@@ -1301,7 +1301,7 @@ module TentValidator
         end
 
         shared_example :fetch_without_proxy do
-          expect_response(:status => 200, :schema => :data) do
+          expect_response(:status => 200) do
             post, user = get(:post), get(:user)
             cache_control = get(:cache_control)
 
@@ -1474,6 +1474,308 @@ module TentValidator
             end
 
             context "when `Cache-Control: no-cache`" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+
+            context "when `Cache-Control: only-if-cache" do
+              setup do
+                set(:cache_control, 'only-if-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+          end
+        end
+      end
+
+      describe "GET post_attachment" do
+        setup do
+          set(:user, TentD::Model::User.generate)
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          user = get(:user)
+
+          attachment = {
+            :content_type => "application/pdf",
+            :category => 'fictitious',
+            :name => 'fictitious.pdf',
+            :data => "Fake pdf data"
+          }
+          attachments = [attachment]
+
+          set(:attachment, attachment)
+
+          data = generate_status_post
+
+          expected_data = TentD::Utils::Hash.deep_dup(data)
+          expected_data.delete(:permissions)
+          expected_data['attachments'] = attachments.map { |a|
+            a = a.dup
+            a.merge!(:digest => hex_digest(a[:data]), :size => a[:data].size)
+            a.delete(:data)
+            a
+          }
+
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth, :server => :local, :user => user).post.create(data, {}, :attachments => attachments)
+        end.after do |response, results|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create post with attachemnts on local server", response, results)
+          else
+            post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+            post[:attachments].first.merge!(get(:attachment))
+            set(:attachment, post[:attachments].first)
+            set(:post, TentD::Utils::Hash.symbolize_keys(post))
+          end
+        end
+
+        shared_example :fetch_via_proxy do
+          expect_response(:status => 302) do
+            post, user = get(:post), get(:user)
+            cache_control = get(:cache_control)
+
+            attachment = get(:attachment)
+
+            watch_local_requests(true, user.id)
+
+            res = catch_faraday_exceptions("Proxied request failed") do
+              get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
+                if cache_control
+                  request.headers['Cache-Control'] = cache_control
+                end
+              end
+            end
+
+            expect_headers(
+              'Location' => Regexp.new(Regexp.escape(URI(TentD::Utils.expand_uri_template(
+                Spec.uri_tempalte(:attachment, :server => :remote, :match => res.env[:url].to_s),
+                :entity => user.entity,
+                :digest => attachment[:digest]
+              )).path))
+            )
+
+            # Expect discovery (no relationship exists)
+            expect_request(
+              :method => :head,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/"
+            )
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
+              :headers => {
+                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:post => user.meta_post.as_json)
+            end
+
+            # Expect attachment to be fetched via redirect
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{post[:id]}/attachments/#{attachment[:name]}"
+            ).expect_response(:status => 302) do
+              expect_headers(
+                'Location' => %r{/attachments/#{Regexp.escape(URI.encode_www_form_component(user.entity))}/#{attachment[:digest]}}
+              )
+            end
+
+            watch_local_requests(false, user.id)
+
+            res
+          end
+        end
+
+        shared_example :fetch_without_proxy do
+          expect_response(:status => 302) do
+            post, user = get(:post), get(:user)
+            cache_control = get(:cache_control)
+
+            attachment = get(:attachment)
+
+            res = catch_faraday_exceptions("Proxied request failed") do
+              get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
+                if cache_control
+                  request.headers['Cache-Control'] = cache_control
+                end
+              end
+            end
+
+            expect_headers(
+              'Location' => Regexp.new(Regexp.escape(URI(TentD::Utils.expand_uri_template(
+                Spec.uri_tempalte(:attachment, :server => :remote, :match => res.env[:url].to_s),
+                :entity => user.entity,
+                :digest => attachment[:digest]
+              )).path))
+            )
+
+            res
+          end
+        end
+
+        shared_example :not_found do
+          expect_response(:status => 404, :schema => :error) do
+            post, user = get(:post), get(:user)
+            cache_control = get(:cache_control)
+
+            attachment = post[:attachments].first
+
+            catch_faraday_exceptions("Proxied request failed") do
+              get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
+                if cache_control
+                  request.headers['Cache-Control'] = cache_control
+                end
+              end
+            end
+          end
+        end
+
+        context "when not cached" do
+          context "when authenticated" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+            end
+
+            context "when not app authorized" do
+              setup do
+                set(:client, clients(:app))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+            end
+          end
+
+          context "when not authenticated" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            context "when `Cache-Control: no-cache" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+
+            context "when `Cache-Control: only-if-cache" do
+              setup do
+                set(:cache_control, 'only-if-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+          end
+        end
+
+        context "when cached" do
+          # Import post on remote server
+          expect_response(:status => 200, :schema => :data) do
+            post = get(:post)
+
+            attachment = post[:attachments].first
+
+            attachments = [attachment]
+
+            clients(:app_auth).post.update(post[:entity], post[:id], post.merge(:attachments => []), {}, :import => true, :attachments => attachments)
+          end.after do |response, results|
+            if results.any? { |r| !r[:valid] }
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+            end
+          end
+
+          context "when authenticated" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:fetch_without_proxy)
+              end
+            end
+
+            context "when not app authorized" do
+              setup do
+                set(:client, clients(:app))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+            end
+          end
+
+          context "when not authenticated" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            context "when `Cache-Control: no-cache" do
               setup do
                 set(:cache_control, 'no-cache')
               end

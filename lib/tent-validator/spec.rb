@@ -25,6 +25,28 @@ module TentValidator
         end
       end
 
+      def uri_tempalte(name, options = {})
+        meta = case options.delete(:server)
+        when :local
+          TentD::Utils::Hash.stringify_keys(options.delete(:user).meta_post.as_json)
+        else
+          TentValidator.remote_server_meta
+        end
+
+        servers = meta['content']['servers'].sort_by { |s| s['preference'] }
+        server = if match_url = options.delete(:match)
+          match_url = URI(match_url)
+          servers.find { |s|
+            _uri = URI(s['urls'][name.to_s].gsub(/{|}/, ''))
+            _uri.host == match_url.host && _uri.port == match_url.port && _uri.scheme == match_url.scheme
+          }
+        else
+          servers.first
+        end
+
+        server ? server['urls'][name.to_s] : nil
+      end
+
       def clients(type, options = {})
         server = options.delete(:server) || :remote
         if server == :remote
