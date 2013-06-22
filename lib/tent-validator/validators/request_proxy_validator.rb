@@ -1491,6 +1491,291 @@ module TentValidator
           end
         end
       end
+
+      describe "GET post mentions" do
+        shared_example :fetch_via_proxy do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            post = get(:post)
+            mentioned_post = get(:mentioned_post)
+            cache_control = get(:cache_control)
+
+            expect_properties(:mentions => [{ :post => post[:id], :type => post[:type] }])
+
+            watch_local_requests(true, user.id)
+
+            res = get(:client).post.mentions(mentioned_post[:entity], mentioned_post[:id]) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+
+            # Expect discovery (no relationship exists)
+            expect_request(
+              :method => :head,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/"
+            )
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
+              :headers => {
+                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:post => user.meta_post.as_json)
+            end
+
+            expect_request(
+              :method => :get,
+              :url => %r{\A#{Regexp.escape(user.entity)}},
+              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{mentioned_post[:id]}",
+              :headers => {
+                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::MENTIONS_CONTENT_TYPE))
+              }
+            ).expect_response(:status => 200, :schema => :data) do
+              expect_properties(:mentions => [{ :post => post[:id], :type => post[:type] }])
+            end
+
+            watch_local_requests(false, user.id)
+
+            res
+          end
+        end
+
+        shared_example :fetch_without_proxy do
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            post = get(:post)
+            mentioned_post = get(:mentioned_post)
+            cache_control = get(:cache_control)
+
+            expect_properties(:mentions => [{ :post => post[:id], :type => post[:type] }])
+
+            get(:client).post.mentions(mentioned_post[:entity], mentioned_post[:id]) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        shared_example :not_found do
+          expect_response(:status => 404, :schema => :error) do
+            user = get(:user)
+            post = get(:post)
+            cache_control = get(:cache_control)
+
+            get(:client).post.mentions(post[:entity], post[:id]) do |request|
+              if cache_control
+                request.headers['Cache-Control'] = cache_control
+              end
+            end
+          end
+        end
+
+        context "when not cached" do
+          setup do
+            set(:mentioned_post, get(:local_uncached_post))
+          end
+
+          # create post mentioning another post (both on local server)
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            mentioned_post = get(:mentioned_post)
+
+            data = generate_status_post
+            data[:mentions] = [
+              { :entity => mentioned_post[:entity], :post => mentioned_post[:id] }
+            ]
+
+            expected_data = TentD::Utils::Hash.deep_dup(data)
+            expected_data[:mentions][0].delete(:entity)
+            expected_data.delete(:permissions)
+            expect_properties(:post => expected_data)
+
+            clients(:app_auth, :server => :local, :user => user).post.create(data)
+          end.after do |response, results|
+            if results.any? { |r| !r[:valid] }
+              raise SetupFailure.new("Failed to create post on local server", response, results)
+            else
+              post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+              set(:post, post)
+            end
+          end
+
+          context "when authenticated" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+            end
+
+            context "when not app authorized" do
+              setup do
+                set(:client, clients(:app))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+              end
+            end
+          end
+
+          context "when not authenticated" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            context "when `Cache-Control: no-cache" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+            end
+
+            context "when `Cache-Control: only-if-cache" do
+              setup do
+                set(:cache_control, 'only-if-cache')
+              end
+            end
+          end
+        end
+
+        context "when cached" do
+          setup do
+            set(:mentioned_post, get(:local_cached_post))
+          end
+
+          # create post mentioning another post (both on local and remote servers)
+          expect_response(:status => 200, :schema => :data) do
+            user = get(:user)
+            mentioned_post = get(:mentioned_post)
+
+            data = generate_status_post
+            data[:mentions] = [
+              { :entity => mentioned_post[:entity], :post => mentioned_post[:id] }
+            ]
+
+            expected_data = TentD::Utils::Hash.deep_dup(data)
+            expected_data[:mentions][0].delete(:entity)
+            expected_data.delete(:permissions)
+            expect_properties(:post => expected_data)
+
+            clients(:app_auth, :server => :local, :user => user).post.create(data)
+          end.after do |response, results|
+            if results.any? { |r| !r[:valid] }
+              raise SetupFailure.new("Failed to create post on local server", response, results)
+            else
+              post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
+              set(:post, post)
+            end
+          end
+
+          # Import post on remote server
+          expect_response(:status => 200, :schema => :data) do
+            post = get(:post)
+            clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
+          end.after do |response, results|
+            if results.any? { |r| !r[:valid] }
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+            end
+          end
+
+          context "when authenticated" do
+            context "when app authorized" do
+              setup do
+                set(:client, clients(:app_auth))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:fetch_without_proxy)
+              end
+            end
+
+            context "when not app authorized" do
+              setup do
+                set(:client, clients(:app))
+              end
+
+              context "when `Cache-Control: no-cache" do
+                setup do
+                  set(:cache_control, 'no-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+
+              context "when `Cache-Control: only-if-cache" do
+                setup do
+                  set(:cache_control, 'only-if-cache')
+                end
+
+                behaves_as(:not_found)
+              end
+            end
+          end
+
+          context "when not authenticated" do
+            setup do
+              set(:client, clients(:no_auth))
+            end
+
+            context "when `Cache-Control: no-cache" do
+              setup do
+                set(:cache_control, 'no-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+
+            context "when `Cache-Control: only-if-cache" do
+              setup do
+                set(:cache_control, 'only-if-cache')
+              end
+
+              behaves_as(:not_found)
+            end
+          end
+        end
+
+      end
     end
 
   end
