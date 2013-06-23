@@ -205,6 +205,13 @@ module TentValidator
         end
       end
 
+      shared_example :unauthorized_delete_post_401 do
+        expect_response(:status => 401, :schema => :error) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+      end
+
       shared_example :not_found_delete_post do
         expect_response(:status => 404, :schema => :error) do
           post = get(:post)
@@ -404,7 +411,7 @@ module TentValidator
 
           behaves_as(:get_post)
 
-          behaves_as(:unauthorized_delete_post)
+          behaves_as(:unauthorized_delete_post_401)
 
           behaves_as(:get_post)
         end
@@ -753,6 +760,38 @@ module TentValidator
         end
       end
 
+      shared_example :not_authorized_401 do
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+
+        expect_response(:status => 401, :schema => :error) do
+          post_version = get(:post_version)
+          create_delete_post = get(:create_delete_post)
+
+          get(:client).post.delete(post_version[:entity], post_version[:id], :version => post_version[:version][:id]) do |req|
+            case create_delete_post
+            when false
+              req.headers['Create-Delete-Post'] = 'false'
+            when true
+              req.headers['Create-Delete-Post'] = 'true'
+            end
+          end
+        end
+
+        expect_response(:status => 200, :schema => :data) do
+          post_version = get(:post_version)
+
+          expect_properties(:post => post_version)
+
+          clients(:app_auth).post.get(post_version[:entity], post_version[:id])
+        end
+      end
+
       context "when public post" do
         setup do
           set(:public, true)
@@ -790,7 +829,7 @@ module TentValidator
             end
 
             behaves_as(:setup)
-            behaves_as(:not_authorized)
+            behaves_as(:not_authorized_401)
           end
         end
 
@@ -830,7 +869,7 @@ module TentValidator
             end
 
             behaves_as(:setup)
-            behaves_as(:not_authorized)
+            behaves_as(:not_authorized_401)
           end
         end
 
@@ -870,7 +909,7 @@ module TentValidator
             end
 
             behaves_as(:setup)
-            behaves_as(:not_authorized)
+            behaves_as(:not_authorized_401)
           end
         end
       end
