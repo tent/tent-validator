@@ -998,6 +998,367 @@ module TentValidator
       end
     end
 
+    describe "PUT post with delete post notification" do
+      shared_example :setup_relationship do
+        # [author:fake] import relationship#initial
+        expect_response(:status => 200, :schema => :data) do
+          fake_entity = "http://fictitious-#{TentD::Utils.timestamp}.example.org"
+          set(:fake_entity, fake_entity)
+
+          remote_entity = TentValidator.remote_entity_uri
+          set(:remote_entity, remote_entity)
+
+          data = {
+            :id => TentD::Utils.random_id,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :entity => fake_entity,
+            :type => "https://tent.io/types/relationship/v0#initial",
+            :mentions => [{ :entity => remote_entity }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp,
+            },
+            :permissions => {
+              :public => false
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:fake_relationship_initial, data)
+
+          expect_properties(:post => data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+
+        # [author:fake] import credentials (mentions relationship#initial)
+        expect_response(:status => 200, :schema => :data) do
+          fake_entity = get(:fake_entity)
+          fake_relationship_initial = get(:fake_relationship_initial)
+
+          data = {
+            :id => TentD::Utils.random_id,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :entity => fake_entity,
+            :type => "https://tent.io/types/credentials/v0#",
+            :mentions => [{
+              :entity => fake_entity,
+              :post => fake_relationship_initial[:id],
+              :type => fake_relationship_initial[:type]
+            }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp,
+            },
+            :content => {
+              :hawk_key => TentD::Utils.hawk_key,
+              :hawk_algorithm => TentD::Utils.hawk_algorithm
+            },
+            :permissions => {
+              :public => false
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:fake_credentials, data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+
+        # [author:remote] import relationship# (mentions relationship#initial)
+        expect_response(:status => 200, :schema => :data) do
+          fake_entity = get(:fake_entity)
+          fake_relationship_initial = get(:fake_relationship_initial)
+
+          remote_entity = get(:remote_entity)
+
+          data = {
+            :id => TentD::Utils.random_id,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :entity => remote_entity,
+            :type => "https://tent.io/types/relationship/v0#",
+            :mentions => [{
+              :entity => fake_entity,
+              :post => fake_relationship_initial[:id],
+              :type => fake_relationship_initial[:type]
+            }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp,
+            },
+            :permissions => {
+              :public => false
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:remote_relationship, data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+
+        # [author:remote] import credentials (mentions relationship#)
+        expect_response(:status => 200, :schema => :data) do
+          fake_entity = get(:fake_entity)
+          fake_relationship_initial = get(:fake_relationship_initial)
+
+          remote_entity = get(:remote_entity)
+          remote_relationship = get(:remote_relationship)
+
+          data = {
+            :id => TentD::Utils.random_id,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :entity => remote_entity,
+            :type => "https://tent.io/types/credentials/v0#",
+            :mentions => [{
+              :entity => remote_entity,
+              :post => remote_relationship[:id],
+              :type => remote_relationship[:type]
+            }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp,
+            },
+            :content => {
+              :hawk_key => TentD::Utils.hawk_key,
+              :hawk_algorithm => TentD::Utils.hawk_algorithm
+            },
+            :permissions => {
+              :public => false
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:remote_credentials, data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+
+        # [author:fake] import relationship# (mentions [author:remote] relationship#)
+        expect_response(:status => 200, :schema => :data) do
+          fake_entity = get(:fake_entity)
+          fake_relationship_initial = get(:fake_relationship_initial)
+
+          remote_entity = get(:remote_entity)
+          remote_relationship = get(:remote_relationship)
+
+          data = {
+            :id => fake_relationship_initial[:id],
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :entity => fake_entity,
+            :type => "https://tent.io/types/relationship/v0#",
+            :mentions => [{
+              :entity => remote_entity,
+              :post => remote_relationship[:id],
+              :type => remote_relationship[:type]
+            }],
+            :version => {
+              :parents => [{
+                :entity => fake_entity,
+                :post => fake_relationship_initial[:id],
+                :version => fake_relationship_initial[:version][:id]
+              }]
+            },
+            :permissions => {
+              :public => false
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:fake_relationship, data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+      end
+
+      shared_example :setup do
+        # [author:fake] status# post notification using [author:remote] relationship credentials
+        expect_response(:status => 200, :schema => :data) do
+          data = generate_status_post.merge(
+            :entity => get(:fake_entity),
+            :id => TentD::Utils.random_id,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp
+            }
+          )
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:fake_status, data)
+
+          remote_credentials = get(:remote_credentials)
+          client = clients(:custom, remote_credentials[:content].merge(:id => remote_credentials[:id]))
+
+          client.post.update(data[:entity], data[:id], data, {}, :notification => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+      end
+
+      shared_example :delete_notification do
+        # make sure we can get the status post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:fake_status)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:received_at)
+          expected_data.delete(:permissions)
+          expected_data[:version].delete(:received_at)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+
+        # send delete notification for the status post
+        expect_response(:status => 200) do
+          post = get(:fake_status)
+
+          data = generate_status_post.merge(
+            :entity => get(:fake_entity),
+            :id => TentD::Utils.random_id,
+            :type => %(https://tent.io/types/delete/v0#),
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :refs => [{ :entity => post[:entity], :post => post[:id] }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp
+            }
+          )
+          data[:version][:id] = generate_version_signature(data)
+
+          get(:client).post.update(data[:entity], data[:id], data, {}, :notification => true)
+        end
+
+        # make sure we can't get the status post
+        expect_response(:status => 404, :schema => :error) do
+          post = get(:fake_status)
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :not_authorized do
+        # make sure we can get the status post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:fake_status)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:received_at)
+          expected_data.delete(:permissions)
+          expected_data[:version].delete(:received_at)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+
+        # send delete notification for the status post
+        expect_response(:status => 403) do
+          post = get(:fake_status)
+
+          data = generate_status_post.merge(
+            :entity => get(:fake_entity),
+            :id => TentD::Utils.random_id,
+            :type => %(https://tent.io/types/delete/v0#),
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :refs => [{ :entity => post[:entity], :post => post[:id] }],
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp
+            }
+          )
+          data[:version][:id] = generate_version_signature(data)
+
+          get(:client).post.update(data[:entity], data[:id], data, {}, :notification => true)
+        end
+
+        # make sure we can still get the status post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:fake_status)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:received_at)
+          expected_data.delete(:permissions)
+          expected_data[:version].delete(:received_at)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+      end
+
+      behaves_as :setup_relationship
+
+      context "when signed using valid relationship credentials" do
+        setup do
+          remote_credentials = get(:remote_credentials)
+          client = clients(:custom, remote_credentials[:content].merge(:id => remote_credentials[:id]))
+
+          set(:client, client)
+        end
+
+        behaves_as :setup
+        behaves_as :delete_notification
+      end
+
+      context "when signed using invalid relationship credentials" do
+        setup do
+          client = clients(:custom,
+           :id => 'fake-id',
+           :hawk_key => 'fake-key',
+           :hawk_algorithm => TentD::Utils.hawk_algorithm
+          )
+
+          set(:client, client)
+        end
+
+        behaves_as :setup
+        behaves_as :not_authorized
+      end
+
+      context "when not signed" do
+        setup do
+          set(:client, clients(:no_auth))
+        end
+
+        behaves_as :setup
+        behaves_as :not_authorized
+      end
+    end
+
     describe "GET post with mentions accept header" do
       shared_example :get_all_mentions do
         expect_response(:status => 200, :schema => :data) do
