@@ -37,7 +37,7 @@ module TentValidator
     def self.merge_setup_failure(e, results, validator)
       if e.results
         _setup_failure_results = ApiValidator::ResponseExpectation::Results.new(e.response, e.results)
-        results.merge!(ApiValidator::Spec::Results.new(validator, [_setup_failure_results]))
+        results.merge!(ApiValidator::Spec::Results.new(e.validator || validator, [_setup_failure_results]))
         results.skipped(validator)
       else
         puts %(<#{validator.name} SetupFailure "#{e.message}">:)

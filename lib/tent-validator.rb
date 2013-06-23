@@ -16,11 +16,11 @@ module TentValidator
   require 'tent-validator/faraday/validator_net_http_adapter'
 
   SetupFailure = Class.new(StandardError) do
-    attr_reader :response, :results
-    def initialize(message, response, results=nil)
+    attr_reader :response, :results, :validator
+    def initialize(message, response, results=nil, validator=nil)
       super(message)
       results = [results] if results && !(Array === results)
-      @response, @results = response, results
+      @response, @results, @validator = response, results, validator
     end
   end
 
