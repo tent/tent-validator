@@ -182,12 +182,23 @@ module TentValidator
       ApiValidator::ResponseExpectation::PropertyAbsent.new
     end
 
+    Webhook = Struct.new(:id, :url)
+    def generate_webhook
+      id = TentD::Utils.random_id
+      TentValidator.mutex.synchronize do
+        TentValidator.webhooks[id] = { :response => [200, {}, []] }
+      end
+      Webhook.new(id, "http://localhost:#{TentValidator.local_server_port}/#{id}/webhooks")
+    end
+
     def watch_local_requests(should, user_id)
-      if should
-        TentValidator.pending_local_requests.delete_if { true }
-        TentValidator.watch_local_requests[user_id] = should
-      else
-        TentValidator.watch_local_requests.delete(user_id)
+      TentValidator.mutex.synchronize do
+        if should
+          TentValidator.pending_local_requests.delete_if { true }
+          TentValidator.watch_local_requests[user_id] = should
+        else
+          TentValidator.watch_local_requests.delete(user_id)
+        end
       end
     end
 

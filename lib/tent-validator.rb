@@ -174,21 +174,41 @@ module TentValidator
     @local_requests ||= []
   end
 
-  def self.wrap_local_server(app)
-    lambda do |env|
-      match = env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
-      env['PATH_INFO'] = $3.to_s
-      env['SCRIPT_NAME'] = $1.to_s
+  def self.webhooks
+    @webhooks ||= {}
+  end
 
-      user_id = $2
-      unless env['current_user'] = TentD::Model::User.first(:public_id => user_id)
-        return [404, { 'Content-Type' => 'text/plain' }, ['']]
+  def self.wrap_local_server(app)
+    not_found = lambda {
+      [404, { 'Content-Type' => 'text/plain' }, ['']]
+    }
+
+    lambda do |env|
+      if env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
+        env['PATH_INFO'] = $3.to_s
+        env['SCRIPT_NAME'] = $1.to_s
+
+        user_id = $2
+        if env['current_user'] = TentD::Model::User.first(:public_id => user_id)
+          local_request_key = env['current_user'].id
+          status, headers, body = app.call(env)
+        else
+          return not_found.call
+        end
+      elsif env['PATH_INFO'] =~ %r{\A/([^/]+)/webhooks/?\Z}
+        webhook_id = $1
+        if webhook = TentValidator.webhooks[webhook_id]
+          local_request_key = webhook_id
+          status, headers, body = webhook[:response]
+        else
+          return not_found.call
+        end
+      else
+        return not_found.call
       end
 
-      status, headers, body = app.call(env)
-
       TentValidator.mutex.synchronize do
-        if TentValidator.watch_local_requests[env['current_user'].id]
+        if TentValidator.watch_local_requests[local_request_key]
           env['REQUEST_BODY'] ||= begin
             _body = env['rack.input'].read
             env['rack.input'].rewind
