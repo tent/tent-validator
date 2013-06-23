@@ -1037,6 +1037,243 @@ module TentValidator
       end
     end
 
+    describe "DELETE post when entity is foreign" do
+      # import post of foreign decent
+      # expect post to be accessible
+      # DELETE post
+      # expect no delete post to be created
+      # expect post to not be accessible
+
+      shared_example :setup do
+        expect_response(:status => 200, :schema => :data) do
+          foreign_entity = "https://fictitious-#{TentD::Utils.timestamp}.example.com"
+          set(:foreign_entity, foreign_entity)
+
+          data = generate_status_post(get(:public)).merge(
+            :id => TentD::Utils.random_id,
+            :entity => foreign_entity,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp
+            }
+          )
+          data[:version][:id] = generate_version_signature(data)
+
+          set(:post, data)
+
+          expected_data = TentD::Utils::Hash.deep_dup(data)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+      end
+
+      shared_example :delete_post do
+        # make sure we can get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          get(:client).post.get(post[:entity], post[:id])
+        end
+
+        # delete the post
+        expect_response(:status => 200) do
+          post = get(:post)
+
+          expect_body('')
+
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+
+        # make sure we can no longer get the post
+        expect_response(:status => 404, :schema => :error) do
+          post = get(:post)
+          get(:client).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :unauthorized_delete_post do
+        # make sure we can get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+
+        # delete the post
+        expect_response(:status => 403) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+
+        # make sure we can still get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :unauthorized_delete_post_401 do
+        # make sure we can get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+
+        # delete the post
+        expect_response(:status => 401) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+
+        # make sure we can still get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+      end
+
+      shared_example :not_found do
+        # make sure we can get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+
+        # delete the post
+        expect_response(:status => 404) do
+          post = get(:post)
+          get(:client).post.delete(post[:entity], post[:id])
+        end
+
+        # make sure we can still get the post
+        expect_response(:status => 200, :schema => :data) do
+          post = get(:post)
+
+          expected_data = TentD::Utils::Hash.deep_dup(post)
+          expected_data.delete(:permissions) if get(:public)
+          expect_properties(:post => expected_data)
+
+          clients(:app_auth).post.get(post[:entity], post[:id])
+        end
+      end
+
+      context "when post is public" do
+        setup do
+          set(:public, true)
+        end
+
+        context "when authenticated" do
+          context "when not authorized" do
+            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0#reply ))
+
+            behaves_as(:setup)
+            behaves_as(:unauthorized_delete_post)
+          end
+
+          context "when limited authorization" do
+            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0# ))
+
+            behaves_as(:setup)
+            behaves_as(:delete_post)
+          end
+
+          context "when full authorization" do
+            setup do
+              set(:client, clients(:app_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:delete_post)
+          end
+        end
+
+        context "when not authenticated" do
+          setup do
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:setup)
+          behaves_as(:unauthorized_delete_post_401)
+        end
+      end
+
+      context "when post is private" do
+        setup do
+          set(:public, false)
+        end
+
+        context "when authenticated" do
+          context "when not authorized" do
+            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0#reply ))
+
+            behaves_as(:setup)
+            behaves_as(:not_found)
+          end
+
+          context "when limited authorization" do
+            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0# ))
+
+            behaves_as(:setup)
+            behaves_as(:delete_post)
+          end
+
+          context "when full authorization" do
+            setup do
+              set(:client, clients(:app_auth))
+            end
+
+            behaves_as(:setup)
+            behaves_as(:delete_post)
+          end
+        end
+
+        context "when not authenticated" do
+          setup do
+            set(:client, clients(:no_auth))
+          end
+
+          behaves_as(:setup)
+          behaves_as(:not_found)
+        end
+      end
+    end
+
     describe "PUT post with delete post notification" do
       shared_example :setup_relationship do
         # [author:fake] import relationship#initial
