@@ -43,6 +43,16 @@ module TentValidator
         }
       end
 
+      def generate_credentials_post(target_type)
+        {
+          :type => "https://tent.io/types/credentials/v0##{TentClient::TentType.new(target_type).to_s(:fragment => false)}",
+          :content => {
+            :hawk_key => TentD::Utils.hawk_key,
+            :hawk_algorithm => TentD::Utils.hawk_algorithm
+          }
+        }
+      end
+
     end
   end
 end
