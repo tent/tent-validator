@@ -115,7 +115,7 @@ module TentValidator
                 _env, _res = req
                 _req_path, _req_method, _req_url = _env['PATH_INFO'], _env['REQUEST_METHOD'], parse_url(_env)
                 expectation.url_expectations.any? { |e| e.send(:failed_assertions, _req_url).empty? } &&
-                expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? } &&
+                (expectation.path_expectations.empty? || expectation.path_expectations.any? { |e| e.send(:failed_assertions, _req_path).empty? }) &&
                 expectation.method_expectations.any? { |e| e.send(:failed_assertions, _req_method).empty? }
               }.sort_by { |req|
                 _env, _res = req
