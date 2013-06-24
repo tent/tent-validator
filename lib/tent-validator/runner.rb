@@ -5,7 +5,11 @@ require 'benchmark'
 module TentValidator
   module Runner
 
-    ValidatorPlaceholder = Struct.new(:name)
+    ValidatorPlaceholder = Struct.new(:name) do
+      def full_name
+        name
+      end
+    end
 
     class Results
       include ApiValidator::Mixins::DeepMerge
@@ -37,10 +41,10 @@ module TentValidator
     def self.merge_setup_failure(e, results, validator)
       if e.results
         _setup_failure_results = ApiValidator::ResponseExpectation::Results.new(e.response, e.results)
-        results.merge!(ApiValidator::Spec::Results.new(e.validator || validator, [_setup_failure_results]))
+        results.merge!(ApiValidator::Spec::Results.new(ValidatorPlaceholder.new((e.validator || validator).full_name + " " + e.message), [_setup_failure_results]))
         results.skipped(validator)
       else
-        puts %(<#{validator.name} SetupFailure "#{e.message}">:)
+        puts %(<#{(e.validator || validator).full_name} SetupFailure "#{e.message}">:)
 
         if e.response
           print "\tRESPONSE:\n\t"
