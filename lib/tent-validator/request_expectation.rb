@@ -154,6 +154,10 @@ module TentValidator
       instance_eval(&block) if block_given?
     end
 
+    def negative?
+      false
+    end
+
     def header_expectations
       @header_expectations ||= []
     end

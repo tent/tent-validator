@@ -134,7 +134,7 @@ module TentValidator
             end
 
             break if Time.now.to_i >= timeout
-            if TentValidator.async_local_request_expectations.any?
+            if TentValidator.async_local_request_expectations.any? { |i| !i.negative? }
               if ticks == 0
                 print "\n"
                 print "Wating for incoming requests... "
@@ -157,6 +157,9 @@ module TentValidator
 
             results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation_results]))
           end
+
+          # Remove negative request expectations
+          TentValidator.async_local_request_expectations.delete_if { |i| i.negative? }
 
           # No requests found for these expectations
           TentValidator.async_local_request_expectations.each do |expectation|

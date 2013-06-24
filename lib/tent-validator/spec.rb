@@ -1,5 +1,6 @@
 require 'tent-canonical-json'
 require 'tent-validator/request_expectation'
+require 'tent-validator/negative_request_expectation'
 
 module TentValidator
   class Spec < ApiValidator::Spec
@@ -203,13 +204,22 @@ module TentValidator
     end
 
     def expect_request(options = {}, &block)
-      expectation = RequestExpectation.new(self, options, &block)
+      if options.delete(:negative_expectation)
+        expectation = NegativeRequestExpectation.new(self, options, &block)
+      else
+        expectation = RequestExpectation.new(self, options, &block)
+      end
+
       self.expectations << expectation
       expectation
     end
 
     def expect_async_request(options = {}, &block)
-      expectation = RequestExpectation.new(self, options, &block)
+      if options.delete(:negative_expectation)
+        expectation = NegativeRequestExpectation.new(self, options, &block)
+      else
+        expectation = RequestExpectation.new(self, options, &block)
+      end
 
       TentValidator.mutex.synchronize do
         TentValidator.async_local_request_expectations << expectation
