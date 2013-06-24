@@ -159,7 +159,7 @@ module TentValidator
             expectation_results = expectation.run(_env, _res)
             expectations_results += expectation_results.results
 
-            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation_results]))
+            results.merge!(ApiValidator::Spec::Results.new(ValidatorPlaceholder.new(expectation.validator.full_name), [expectation_results]))
           end
 
           # Remove negative request expectations
@@ -167,7 +167,7 @@ module TentValidator
 
           # No requests found for these expectations
           TentValidator.async_local_request_expectations.each do |expectation|
-            results.merge!(ApiValidator::Spec::Results.new(expectation.validator, [expectation.run({}, [])]))
+            results.merge!(ApiValidator::Spec::Results.new(ValidatorPlaceholder.new(expectation.validator.full_name), [expectation.run({}, [])]))
           end
 
           if TentValidator.async_local_request_expectations.any? || expectations_results.any? { |r| !r[:valid] }
