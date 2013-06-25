@@ -237,7 +237,9 @@ module TentValidator
               expect_response(:status => 404, :schema => :error) do
                 post = get(:post)
                 catch_faraday_exceptions("Request failed") do
-                  get(:client).post.get(post[:entity], post[:id])
+                  get(:client).post.get(post[:entity], post[:id]) do |request|
+                    request.headers['Cache-Control'] = 'only-if-cached'
+                  end
                 end
               end
             end
@@ -260,7 +262,7 @@ module TentValidator
                 post = get(:post)
                 catch_faraday_exceptions("Request failed") do
                   get(:client).post.get(post[:entity], post[:id]) do |request|
-                    request.headers['Cache-Control'] = 'only-if-cached'
+                    request.headers['Cache-Control'] = 'no-cache'
                   end
                 end
               end
@@ -284,7 +286,7 @@ module TentValidator
                 post = get(:post)
                 catch_faraday_exceptions("Request failed") do
                   get(:client).post.get(post[:entity], post[:id]) do |request|
-                    request.headers['Cache-Control'] = 'only-if-cached'
+                    request.headers['Cache-Control'] = 'no-cache'
                   end
                 end
               end
@@ -1436,9 +1438,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:fetch_without_proxy)
@@ -1458,9 +1460,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -1481,9 +1483,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -1653,9 +1655,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -1675,9 +1677,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -1698,9 +1700,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -1738,9 +1740,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:fetch_without_proxy)
@@ -1760,9 +1762,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -1783,9 +1785,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -1921,9 +1923,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -1941,9 +1943,9 @@ module TentValidator
                 end
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
               end
             end
@@ -1960,9 +1962,9 @@ module TentValidator
               end
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
             end
           end
@@ -2022,9 +2024,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:fetch_without_proxy)
@@ -2044,9 +2046,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2067,9 +2069,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -2210,9 +2212,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2232,9 +2234,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2255,9 +2257,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -2320,9 +2322,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:fetch_without_proxy)
@@ -2342,9 +2344,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2365,9 +2367,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -2511,9 +2513,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2533,9 +2535,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2556,9 +2558,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
@@ -2622,9 +2624,9 @@ module TentValidator
                 behaves_as(:fetch_via_proxy)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:fetch_without_proxy)
@@ -2644,9 +2646,9 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when `Cache-Control: only-if-cache" do
+              context "when `Cache-Control: only-if-cached" do
                 setup do
-                  set(:cache_control, 'only-if-cache')
+                  set(:cache_control, 'only-if-cached')
                 end
 
                 behaves_as(:not_found)
@@ -2667,9 +2669,9 @@ module TentValidator
               behaves_as(:not_found)
             end
 
-            context "when `Cache-Control: only-if-cache" do
+            context "when `Cache-Control: only-if-cached" do
               setup do
-                set(:cache_control, 'only-if-cache')
+                set(:cache_control, 'only-if-cached')
               end
 
               behaves_as(:not_found)
