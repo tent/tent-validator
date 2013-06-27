@@ -192,6 +192,27 @@ module TentValidator
       Webhook.new(id, "http://localhost:#{TentValidator.local_server_port}/#{id}/webhooks")
     end
 
+    def build_request_url(env)
+      "http://#{env['HTTP_HOST']}#{env['PATH_INFO']}"
+    end
+
+    ##
+    # options
+    #   :url
+    #   :method
+    def manipulate_local_requests(user_id, options = {}, &block)
+      TentValidator.mutex.synchronize do
+        TentValidator.manipulate_requests[user_id] = proc do |env, app|
+          request_url = build_request_url(env.merge('PATH_INFO' => env['ORIGINAL_PATH_INFO']))
+          if (!options[:url] || options[:url] == request_url) && (!options[:method] || options[:method] == env['REQUEST_METHOD'])
+            yield(env, app)
+          else
+            app.call(env)
+          end
+        end
+      end
+    end
+
     def watch_local_requests(should, user_id)
       TentValidator.mutex.synchronize do
         if should

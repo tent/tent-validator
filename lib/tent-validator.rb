@@ -158,6 +158,10 @@ module TentValidator
     end
   end
 
+  def self.manipulate_requests
+    @manipulate_requests ||= Hash.new
+  end
+
   def self.watch_local_requests
     @watch_local_requests ||= Hash.new
   end
@@ -185,13 +189,24 @@ module TentValidator
 
     lambda do |env|
       if env['PATH_INFO'] =~ %r{\A(/([^/]+)/tent)(.*)}
+        env['ORIGINAL_PATH_INFO'] = env['PATH_INFO']
         env['PATH_INFO'] = $3.to_s
         env['SCRIPT_NAME'] = $1.to_s
 
         user_id = $2
         if env['current_user'] = TentD::Model::User.first(:public_id => user_id)
           local_request_key = env['current_user'].id
-          status, headers, body = app.call(env)
+
+          middleware = nil
+          TentValidator.mutex.synchronize do
+            middleware = TentValidator.manipulate_requests[local_request_key]
+          end
+
+          if middleware
+            status, headers, body = middleware.call(env, app)
+          else
+            status, headers, body = app.call(env)
+          end
         else
           return not_found.call
         end
