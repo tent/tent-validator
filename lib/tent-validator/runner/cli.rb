@@ -135,7 +135,11 @@ module TentValidator
             if String === actual[:response_body]
               puts actual[:response_body]
             else
-              puts Yajl::Encoder.encode(actual[:response_body])
+              if actual[:response_body]
+                puts Yajl::Encoder.encode(actual[:response_body])
+              else
+                puts ""
+              end
             end
             print "\n"
 
