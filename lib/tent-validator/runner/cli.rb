@@ -1,5 +1,6 @@
 require 'awesome_print'
 require 'benchmark'
+require 'rack/multipart/parser'
 
 module TentValidator
   module Runner
@@ -113,6 +114,20 @@ module TentValidator
             puts actual[:request_body]
             print "\n"
 
+            if ENV['PRINT_CANONICAL_JSON'] == 'true' && actual[:request_body]
+              print "\n"
+              puts "Canonical JSON:"
+              if (actual[:request_headers] || {})['Content-Type'] =~ /multipart/
+                _post_json = (parse_multipart_body(actual[:request_body], actual[:request_headers]) || {}).find do |k,v|
+                  v[:type] =~ Regexp.new("\\A#{Regexp.escape(TentD::API::POST_CONTENT_TYPE.split(';').first)}\\b")
+                end.last[:tempfile]
+                puts TentCanonicalJson.encode(Yajl::Parser.parse(_post_json))
+              else
+                puts TentCanonicalJson.encode(Yajl::Parser.parse(actual[:request_body]) || {})
+              end
+              print "\n"
+            end
+
             puts "RESPONSE:"
             puts actual[:response_status]
             puts (actual[:response_headers] || {}).inject([]) { |m, (k,v)| m << "#{k}: #{v}"; m }.join("\n")
@@ -162,6 +177,14 @@ module TentValidator
 
       def color(text, color_code)
         "#{color_code}#{text}\e[0m"
+      end
+
+      def parse_multipart_body(body, headers)
+        Rack::Multipart::Parser.new(
+          'rack.input' => StringIO.new(body),
+          'CONTENT_TYPE' => headers['Content-Type'],
+          'CONTENT_LENGTH' => headers['Content-Length']
+        ).parse
       end
     end
 
