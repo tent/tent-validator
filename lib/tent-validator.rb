@@ -80,7 +80,7 @@ module TentValidator
           :description => "Tent 0.3 Protocol Validator",
           :url => "http://localhost/validator",
           :redirect_uri => "null://validator/callback",
-          :post_types => {
+          :types => {
             :read => %w( all ),
             :write => %w( all )
           },

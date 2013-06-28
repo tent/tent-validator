@@ -76,7 +76,7 @@ module TentValidator
 
       context "with auth" do
         context "when unauthorized" do
-          authenticate_with_permissions(:write_post_types => [])
+          authenticate_with_permissions(:write_types => [])
 
           expect_response(:status => 403) do
             get(:create_post_version_response)
@@ -85,7 +85,7 @@ module TentValidator
 
         context "when limited authorization" do
           setup do
-            authenticate_with_permissions(:write_post_types => [get(:post)[:type]])
+            authenticate_with_permissions(:write_types => [get(:post)[:type]])
           end
 
           context '' do # workaround to ensure `expect_response`s in `setup` are called first

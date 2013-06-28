@@ -25,8 +25,8 @@ module TentValidator
           expect_schema(:post, '/post')
 
           data = generate_app_post
-          data[:content][:post_types][:read] = options[:read_post_types].to_a
-          data[:content][:post_types][:write] = options[:write_post_types].to_a
+          data[:content][:types][:read] = options[:read_types].to_a
+          data[:content][:types][:write] = options[:write_types].to_a
           data[:content][:scopes] = options[:scopes].to_a
 
           res = clients(:no_auth).post.create(data)

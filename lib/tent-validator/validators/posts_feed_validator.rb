@@ -33,8 +33,8 @@ module TentValidator
 
       set(:posts, posts)
 
-      post_types = posts.map { |post| post['type'] }.reverse
-      set(:post_types, post_types)
+      types = posts.map { |post| post['type'] }.reverse
+      set(:types, types)
     end
 
     def create_posts_with_mentions
@@ -70,7 +70,7 @@ module TentValidator
     describe "GET posts_feed", :before => :create_posts do
       context "without params" do
         expect_response(:status => 200, :schema => :data) do
-          expect_properties(:posts => get(:post_types).map { |type| { :type => type } })
+          expect_properties(:posts => get(:types).map { |type| { :type => type } })
 
           clients(:app_auth).post.list
         end
@@ -84,7 +84,7 @@ module TentValidator
 
       context "with type param" do
         expect_response(:status => 200, :schema => :data) do
-          types = get(:post_types)
+          types = get(:types)
           types = [types.first, types.last]
 
           expect_properties(:posts => types.map { |type| { :type => type } })
@@ -95,7 +95,7 @@ module TentValidator
         expect_response(:status => 200) do
           expect_headers('Count' => /\A\d+\Z/)
 
-          types = get(:post_types)
+          types = get(:types)
           types = [types.first, types.last]
 
           clients(:app_auth).post.head.list(:types => types.join(","))
@@ -104,7 +104,7 @@ module TentValidator
         context "when using fragment wildcard" do
           expect_response(:status => 200, :schema => :data) do
             type = TentClient::TentType.new('https://tent.io/types/status/v0')
-            expected_types = get(:post_types).select { |t|
+            expected_types = get(:types).select { |t|
               TentClient::TentType.new(t).base == type.base
             }.map { |t| { :type => t } }
 
@@ -1264,7 +1264,7 @@ module TentValidator
 
         context "with limited authorization" do
           context "when limited fragment" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             expect_response(:status => 200, :schema => :data) do
               expect_properties(:posts => 2.times.map { {:type => "https://tent.io/types/status/v0#"} })
@@ -1281,7 +1281,7 @@ module TentValidator
           end
 
           context "when limited base" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0))
 
             expect_response(:status => 200, :schema => :data) do
               expect_properties(:posts => 2.times.map {

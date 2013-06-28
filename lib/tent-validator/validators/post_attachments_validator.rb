@@ -148,7 +148,7 @@ module TentValidator
       context "with auth" do
         context "when unauthorized" do
           setup do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
           end
 
           describe "post_attachment" do
@@ -176,7 +176,7 @@ module TentValidator
 
         context "when authorized with limited access" do
           setup do
-            authenticate_with_permissions(:read_post_types => [get(:post)[:type]])
+            authenticate_with_permissions(:read_types => [get(:post)[:type]])
           end
 
           describe "post_attachment" do

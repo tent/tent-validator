@@ -23,9 +23,9 @@ module TentValidator
             }
           )
           data[:content][:notification_url] = webhook.url
-          data[:content][:notification_post_types] = get(:notification_post_types).to_a
-          data[:content][:post_types][:read] = get(:read_types).to_a
-          data[:content][:post_types][:write] = get(:write_types).to_a
+          data[:content][:notification_types] = get(:notification_types).to_a
+          data[:content][:types][:read] = get(:read_types).to_a
+          data[:content][:types][:write] = get(:write_types).to_a
           data[:content][:scopes] = get(:scopes) || %w( permissions )
 
           data[:version][:id] = generate_version_signature(data)
@@ -130,7 +130,7 @@ module TentValidator
               { :post => app[:id], :type => app[:type] }
             ]
           )
-          data[:content][:post_types] = app[:content][:post_types]
+          data[:content][:types] = app[:content][:types]
           data[:content][:scopes] = app[:content][:scopes]
 
           data[:version][:id] = generate_version_signature(data)

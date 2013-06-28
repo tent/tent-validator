@@ -105,13 +105,13 @@ module TentValidator
 
         context "with auth" do
           context "when post type not authorized" do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
 
             behaves_as(:get_post)
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             behaves_as(:get_post)
           end
@@ -140,7 +140,7 @@ module TentValidator
 
         context "with auth" do
           context "when post type not authorized" do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
 
             expect_response(:status => 404, :schema => :error) do
               post = get(:post)
@@ -149,7 +149,7 @@ module TentValidator
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             behaves_as(:get_post)
           end
@@ -229,7 +229,7 @@ module TentValidator
       context "when public post" do
         context "with authentication" do
           context "when not authorized" do
-            authenticate_with_permissions(:write_post_types => [])
+            authenticate_with_permissions(:write_types => [])
 
             setup do
               set(:post, create_post.call(:public => true))
@@ -244,7 +244,7 @@ module TentValidator
           end
 
           context "when limited read-only authorization" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             setup do
               set(:post, create_post.call(:public => true))
@@ -258,7 +258,7 @@ module TentValidator
           end
 
           context "when full read-only authorization" do
-            authenticate_with_permissions(:read_post_types => %w( all ))
+            authenticate_with_permissions(:read_types => %w( all ))
 
             setup do
               set(:post, create_post.call(:public => true))
@@ -272,7 +272,7 @@ module TentValidator
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:write_types => %w(https://tent.io/types/status/v0#))
 
             context "with Create-Delete-Post header set to false" do
               context "when single version" do
@@ -420,7 +420,7 @@ module TentValidator
       context "when private post" do
         context "with authentication" do
           context "when not authorized" do
-            authenticate_with_permissions(:write_post_types => [])
+            authenticate_with_permissions(:write_types => [])
 
             setup do
               set(:post, create_post.call(:public => false))
@@ -434,7 +434,7 @@ module TentValidator
           end
 
           context "when limited read-only authentication" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             setup do
               set(:post, create_post.call(:public => false))
@@ -448,7 +448,7 @@ module TentValidator
           end
 
           context "when full read-only authorization" do
-            authenticate_with_permissions(:read_post_types => %w( all ))
+            authenticate_with_permissions(:read_types => %w( all ))
 
             setup do
               set(:post, create_post.call(:public => false))
@@ -462,7 +462,7 @@ module TentValidator
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:write_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:write_types => %w(https://tent.io/types/status/v0#))
 
             context "without Create-Delete-Post header set" do
               context "when single version" do
@@ -800,14 +800,14 @@ module TentValidator
         context "when `Create-Delete-Post` header not set" do
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_authorized)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -840,14 +840,14 @@ module TentValidator
 
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_authorized)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -880,14 +880,14 @@ module TentValidator
 
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_authorized)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -922,14 +922,14 @@ module TentValidator
         context "when `Create-Delete-Post` header not set" do
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_found)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -962,14 +962,14 @@ module TentValidator
 
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_found)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -1002,14 +1002,14 @@ module TentValidator
 
           context "with authentication" do
             context "when type not authorized" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#reply"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#reply"])
 
               behaves_as(:setup)
               behaves_as(:not_found)
             end
 
             context "when limited authorization" do
-              authenticate_with_permissions(:write_post_types => ["https://tent.io/types/status/v0#"])
+              authenticate_with_permissions(:write_types => ["https://tent.io/types/status/v0#"])
 
               behaves_as(:setup)
               behaves_as(:delete_version)
@@ -1200,14 +1200,14 @@ module TentValidator
 
         context "when authenticated" do
           context "when not authorized" do
-            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0#reply ))
+            authenticate_with_permissions(:write_types => %w( https://tent.io/types/status/v0#reply ))
 
             behaves_as(:setup)
             behaves_as(:unauthorized_delete_post)
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0# ))
+            authenticate_with_permissions(:write_types => %w( https://tent.io/types/status/v0# ))
 
             behaves_as(:setup)
             behaves_as(:delete_post)
@@ -1240,14 +1240,14 @@ module TentValidator
 
         context "when authenticated" do
           context "when not authorized" do
-            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0#reply ))
+            authenticate_with_permissions(:write_types => %w( https://tent.io/types/status/v0#reply ))
 
             behaves_as(:setup)
             behaves_as(:not_found)
           end
 
           context "when limited authorization" do
-            authenticate_with_permissions(:write_post_types => %w( https://tent.io/types/status/v0# ))
+            authenticate_with_permissions(:write_types => %w( https://tent.io/types/status/v0# ))
 
             behaves_as(:setup)
             behaves_as(:delete_post)
@@ -1715,7 +1715,7 @@ module TentValidator
 
         context "with auth" do
           context "when limited authorization" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             behaves_as(:get_all_mentions)
           end
@@ -1761,7 +1761,7 @@ module TentValidator
 
         context "with auth" do
           context "when limited authorization" do
-            authenticate_with_permissions(:read_post_types => %w(https://tent.io/types/status/v0#))
+            authenticate_with_permissions(:read_types => %w(https://tent.io/types/status/v0#))
 
             behaves_as(:get_all_mentions)
           end
@@ -2224,13 +2224,13 @@ module TentValidator
         end
 
         context "when not authorized" do
-          authenticate_with_permissions(:read_post_types => [])
+          authenticate_with_permissions(:read_types => [])
 
           behaves_as(:not_authorized)
         end
 
         context "when limited authorization" do
-          authenticate_with_permissions(:read_post_types => [get(:post_type)])
+          authenticate_with_permissions(:read_types => [get(:post_type)])
 
           behaves_as(:authorized)
         end
@@ -2319,13 +2319,13 @@ module TentValidator
           end
 
           context "without authorization" do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
 
             behaves_as(:all_versions)
           end
 
           context "with limited authorization" do
-            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+            authenticate_with_permissions(:read_types => [get(:post_type)])
 
             behaves_as(:all_versions)
           end
@@ -2366,7 +2366,7 @@ module TentValidator
           end
 
           context "without authorization" do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
 
             setup do
               set(:versions, get(:public_versions))
@@ -2376,7 +2376,7 @@ module TentValidator
           end
 
           context "with limited authorization" do
-            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+            authenticate_with_permissions(:read_types => [get(:post_type)])
 
             behaves_as(:all_versions)
           end
@@ -2415,13 +2415,13 @@ module TentValidator
           end
 
           context "without authorization" do
-            authenticate_with_permissions(:read_post_types => [])
+            authenticate_with_permissions(:read_types => [])
 
             behaves_as(:not_found)
           end
 
           context "with limited authorization" do
-            authenticate_with_permissions(:read_post_types => [get(:post_type)])
+            authenticate_with_permissions(:read_types => [get(:post_type)])
 
             behaves_as(:all_versions)
           end

@@ -9,11 +9,11 @@ module TentValidator
             :description => "Example App Description",
             :url => "http://someapp.example.com",
             :redirect_uri => "http://someapp.example.com/oauth/callback",
-            :post_types => {
+            :types => {
               :read => %w( https://tent.io/types/status/v0# ),
               :write => %w( https://tent.io/types/status/v0# )
             },
-            :notification_post_types => %w( https://tent.io/types/status/v0# ),
+            :notification_types => %w( https://tent.io/types/status/v0# ),
             :scopes => %w( permissions )
           },
           :permissions => {
@@ -35,7 +35,7 @@ module TentValidator
         {
           :type => "https://tent.io/types/app-auth/v0#",
           :content => {
-            :post_types => {
+            :types => {
               :read => %w( all ),
               :write => %w( all )
             },

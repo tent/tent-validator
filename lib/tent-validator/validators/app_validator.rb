@@ -87,7 +87,7 @@ module TentValidator
           setup do
             set(:public, true)
             set(:post_type, "https://tent.io/types/status/v0#reply")
-            set(:notification_post_types, [get(:post_type)])
+            set(:notification_types, [get(:post_type)])
           end
 
           behaves_as(:setup)
@@ -98,7 +98,7 @@ module TentValidator
           setup do
             set(:public, false)
             set(:post_type, "https://tent.io/types/status/v0#")
-            set(:notification_post_types, [get(:post_type)])
+            set(:notification_types, [get(:post_type)])
           end
 
           behaves_as(:setup)
@@ -119,7 +119,7 @@ module TentValidator
           context "when post matches authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#reply")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -129,7 +129,7 @@ module TentValidator
           context "when post doesn't match authorized type" do
             setup do
               set(:post_type, "https://tent.example.org/types/fictitious/v0#")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -145,7 +145,7 @@ module TentValidator
           context "when post matches authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#reply")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -155,7 +155,7 @@ module TentValidator
           context "when post doesn't match authorized type" do
             setup do
               set(:post_type, "https://tent.example.org/types/fictitious/v0#")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -177,7 +177,7 @@ module TentValidator
           context "when post matches authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -187,7 +187,7 @@ module TentValidator
           context "when post doesn't match authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#reply")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -203,7 +203,7 @@ module TentValidator
           context "when post matches authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
@@ -213,7 +213,7 @@ module TentValidator
           context "when post doesn't match authorized type" do
             setup do
               set(:post_type, "https://tent.io/types/status/v0#reply")
-              set(:notification_post_types, [get(:post_type)])
+              set(:notification_types, [get(:post_type)])
             end
 
             behaves_as(:setup)
