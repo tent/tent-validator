@@ -213,6 +213,40 @@ module TentValidator
         end
       end
 
+      def include_import_subscription_examples
+        expect_response(:status => 200, :schema => :data) do
+          data = {
+            :id => TentD::Utils.random_id,
+            :entity => get(:user).entity,
+            :published_at => TentD::Utils.timestamp,
+            :received_at => TentD::Utils.timestamp,
+            :type => "https://tent.io/types/subscription/v0##{TentClient::TentType.new(get(:type)).to_s(:fragment => false)}",
+            :mentions => [{ 'entity' => TentValidator.remote_entity_uri }],
+            :content => {
+              :type => get(:type)
+            },
+            :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp
+            },
+            :permissions => {
+              :public => false,
+              :entities => [TentValidator.remote_entity_uri]
+            }
+          }
+
+          data[:version][:id] = generate_version_signature(data)
+
+          expect_properties(:post => data)
+
+          clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import subscription post", response, results, validator)
+          end
+        end
+      end
+
     end
   end
 end
