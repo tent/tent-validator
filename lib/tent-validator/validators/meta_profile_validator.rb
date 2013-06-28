@@ -105,15 +105,13 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app_auth).post.create(data)
-
-          if res.status == 200
-            set(:post, res.body['post'])
+          clients(:app_auth).post.create(data)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create post", response, results, validator)
           else
-            set(:post, {})
+            set(:post, response.body['post'])
           end
-
-          res
         end
 
         ##
@@ -212,15 +210,13 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
-
-          if res.status == 200
-            set(:post, res.body['post'])
+          clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create version of post", response, results, validator)
           else
-            set(:post, {})
+            set(:post, response.body['post'])
           end
-
-          res
         end
 
         ##
@@ -371,15 +367,13 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app_auth).post.create(data)
-
-          if res.status == 200
-            set(:post, res.body['post'])
+          clients(:app_auth).post.create(data)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create post", response, results, validator)
           else
-            set(:post, {})
+            set(:post, response.body['post'])
           end
-
-          res
         end
 
         ##
@@ -453,15 +447,13 @@ module TentValidator
 
           expect_properties(:post => expected_data)
 
-          res = clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
-
-          if res.status == 200
-            set(:post, res.body['post'])
+          clients(:app_auth).post.update(parent_post['entity'], parent_post['id'], data)
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to create version of post", response, results, validator)
           else
-            set(:post, {})
+            set(:post, response.body['post'])
           end
-
-          res
         end
 
         ##
