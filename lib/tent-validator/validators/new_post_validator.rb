@@ -29,7 +29,7 @@ module TentValidator
               res = get(:client).post.create(post)
             end
 
-            if Hash === res.body
+            if (Hash === res.body) && (Hash === res.body['post'])
               expect_properties(:post => { :version => { :id => generate_version_signature(res.body['post']) } })
             end
 
