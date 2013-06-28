@@ -198,8 +198,10 @@ module TentValidator
           local_request_key = env['current_user'].id
 
           middleware = nil
-          TentValidator.mutex.synchronize do
-            middleware = TentValidator.manipulate_requests[local_request_key]
+          unless env['HTTP_VALIDATOR_REQUEST'] == 'true'
+            TentValidator.mutex.synchronize do
+              middleware = TentValidator.manipulate_requests[local_request_key]
+            end
           end
 
           if middleware
@@ -222,19 +224,21 @@ module TentValidator
         return not_found.call
       end
 
-      TentValidator.mutex.synchronize do
-        if TentValidator.watch_local_requests[local_request_key]
-          env['REQUEST_BODY'] ||= begin
-            _body = env['rack.input'].read
+      unless env['HTTP_VALIDATOR_REQUEST'] == 'true'
+        TentValidator.mutex.synchronize do
+          if TentValidator.watch_local_requests[local_request_key]
+            env['REQUEST_BODY'] ||= begin
+              _body = env['rack.input'].read
+              env['rack.input'].rewind
+              _body
+            end
+            TentValidator.pending_local_requests << [env, [status, headers, body]]
+          elsif TentValidator.async_local_request_expectations.any?
+            env['REQUEST_BODY'] = env['rack.input'].read
             env['rack.input'].rewind
-            _body
-          end
-          TentValidator.pending_local_requests << [env, [status, headers, body]]
-        elsif TentValidator.async_local_request_expectations.any?
-          env['REQUEST_BODY'] = env['rack.input'].read
-          env['rack.input'].rewind
 
-          TentValidator.local_requests << [env, [status, headers, body]]
+            TentValidator.local_requests << [env, [status, headers, body]]
+          end
         end
       end
 

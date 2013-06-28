@@ -5,6 +5,14 @@ require 'tent-validator/negative_request_expectation'
 module TentValidator
   class Spec < ApiValidator::Spec
 
+    require 'faraday_middleware'
+    class LocalRequestMiddleware < Faraday::Middleware
+      def call(env)
+        env[:request_headers]['Validator-Request'] = 'true'
+        @app.call(env)
+      end
+    end
+
     module SharedClassAndInstanceMethods
       def parse_params(query_string)
         query_string.to_s.sub(/\A\?/, '').split('&').inject({}) do |params, param|
@@ -59,6 +67,9 @@ module TentValidator
           user = options[:user]
           opts = {
             :faraday_adapter => TentValidator.remote_adapter,
+            :faraday_setup => proc { |faraday|
+              faraday.use LocalRequestMiddleware
+            },
             :server_meta => TentD::Utils::Hash.stringify_keys(user.meta_post.as_json)
           }
 
