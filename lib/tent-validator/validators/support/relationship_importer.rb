@@ -3,6 +3,7 @@ module TentValidator
     module RelationshipImporter
 
       # Imports relationship with fake entity or uses :entity if set
+      # Doesn't import a meta_post unless :meta_post is set
       # Sets
       #   :fake_entity
       #   :remote_entity
@@ -209,6 +210,23 @@ module TentValidator
         end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
             raise SetupFailure.new("Failed to import post", response, results, validator)
+          end
+        end
+
+        # [author:fake] import meta post if set
+        expect_response(:status => 200) do
+          if data = get(:meta_post)
+            expect_schema(:data, '/')
+            expect_schema(:post, '/post')
+            expect_properties(:post => data)
+
+            clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
+          else
+            Faraday::Response.new({ :status => 200 })
+          end
+        end.after do |response, results, validator|
+          if results.any? { |r| !r[:valid] }
+            raise SetupFailure.new("Failed to import meta post", response, results, validator)
           end
         end
       end
