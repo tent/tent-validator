@@ -13,10 +13,7 @@ module TentValidator
         TentClient::Discovery.discover(client, remote_entity, :return_response => true) || Faraday::Response.new({})
       end
 
-      expect_response(:status => 200, :schema => :data) do
-        expect_schema(:post, '/post')
-        expect_schema(:post_relationship, '/post/content')
-
+      expect_response(:status => 200) do
         ##
         # Create user on local server
         user = TentD::Model::User.generate
