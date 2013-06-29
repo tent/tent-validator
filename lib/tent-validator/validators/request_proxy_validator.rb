@@ -126,8 +126,6 @@ module TentValidator
             post[:version].delete(:received_at)
             expect_properties(:post => post)
 
-            watch_local_requests(true, user.id)
-
             res = catch_faraday_exceptions("Proxied request failed") do
               get(:client).post.get(post[:entity], post[:id]) do |request|
                 if cache_control
@@ -136,25 +134,8 @@ module TentValidator
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
             # Expect post to be fetched
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{post[:id]}",
@@ -164,8 +145,6 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:post => post)
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -369,7 +348,6 @@ module TentValidator
 
             # Expect discovery (no relationship exists)
             expect_request(
-              :method => :head,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/"
             )
@@ -657,33 +635,14 @@ module TentValidator
             reffed_post[:version].delete(:received_at)
             expect_properties(:refs => [reffed_post])
 
-            watch_local_requests(true, user.id)
-
             res = get(:client).post.list(:limit => 2, :max_refs => 1) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
             # Expect post to be fetched
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{reffed_post[:id]}",
@@ -693,8 +652,6 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:post => reffed_post)
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -1070,35 +1027,14 @@ module TentValidator
 
             expect_properties(:posts => [post])
 
-            watch_local_requests(true, user.id)
-
             res = get(:client).post.list(:limit => 1, :entities => user.entity) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
 
-            watch_local_requests(false, user.id)
-
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
             # Expect post to be fetched
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts",
@@ -1267,8 +1203,6 @@ module TentValidator
 
             expect_body(attachment[:data])
 
-            watch_local_requests(true, user.id)
-
             res = catch_faraday_exceptions("Proxied request failed") do
               get(:client).attachment.get(post[:entity], attachment[:digest]) do |request|
                 if cache_control
@@ -1277,33 +1211,14 @@ module TentValidator
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
             # Expect attachment to be fetched
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/attachments/#{URI.encode_www_form_component(user.entity)}/#{attachment[:digest]}"
             ).expect_response(:status => 200) do
               expect_body(attachment[:data])
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -1551,8 +1466,6 @@ module TentValidator
 
             attachment = get(:attachment)
 
-            watch_local_requests(true, user.id)
-
             res = catch_faraday_exceptions("Proxied request failed") do
               get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
                 if cache_control
@@ -1569,25 +1482,8 @@ module TentValidator
               )).path))
             )
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
             # Expect attachment to be fetched via redirect
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{post[:id]}/attachments/#{attachment[:name]}"
@@ -1596,8 +1492,6 @@ module TentValidator
                 'Location' => %r{/attachments/#{Regexp.escape(URI.encode_www_form_component(user.entity))}/#{attachment[:digest]}}
               )
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -1813,32 +1707,13 @@ module TentValidator
 
             expect_properties(:mentions => [{ :post => post[:id], :type => post[:type] }])
 
-            watch_local_requests(true, user.id)
-
             res = get(:client).post.mentions(mentioned_post[:entity], mentioned_post[:id]) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{mentioned_post[:id]}",
@@ -1848,8 +1723,6 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:mentions => [{ :post => post[:id], :type => post[:type] }])
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -2099,32 +1972,13 @@ module TentValidator
             expected_data.delete(:received_at)
             expect_properties(:versions => [expected_data])
 
-            watch_local_requests(true, user.id)
-
             res = get(:client).post.children(parent_post[:entity], parent_post[:id]) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{parent_post[:id]}",
@@ -2134,8 +1988,6 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:versions => [expected_data])
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -2397,32 +2249,13 @@ module TentValidator
             expected_data.each { |i| i.delete(:received_at) }
             expect_properties(:versions => expected_data)
 
-            watch_local_requests(true, user.id)
-
             res = get(:client).post.versions(parent_post[:entity], parent_post[:id]) do |request|
               if cache_control
                 request.headers['Cache-Control'] = cache_control
               end
             end
 
-            # Expect discovery (no relationship exists)
-            expect_request(
-              :method => :head,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/"
-            )
-            expect_request(
-              :method => :get,
-              :url => %r{\A#{Regexp.escape(user.entity)}},
-              :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{user.meta_post.public_id}",
-              :headers => {
-                "Accept" => Regexp.new("\\A" + Regexp.escape(TentD::API::POST_CONTENT_MIME))
-              }
-            ).expect_response(:status => 200, :schema => :data) do
-              expect_properties(:post => user.meta_post.as_json)
-            end
-
-            expect_request(
+            expect_async_request(
               :method => :get,
               :url => %r{\A#{Regexp.escape(user.entity)}},
               :path => "/posts/#{URI.encode_www_form_component(user.entity)}/#{parent_post[:id]}",
@@ -2432,8 +2265,6 @@ module TentValidator
             ).expect_response(:status => 200, :schema => :data) do
               expect_properties(:versions => expected_data)
             end
-
-            watch_local_requests(false, user.id)
 
             res
           end
@@ -2449,8 +2280,6 @@ module TentValidator
             expected_data = [post, parent_post].map { |p| TentD::Utils::Hash.deep_dup(p[:version]) }
             expected_data.each { |i| i.delete(:received_at) }
             expect_properties(:versions => expected_data)
-
-            watch_local_requests(true, user.id)
 
             get(:client).post.versions(parent_post[:entity], parent_post[:id]) do |request|
               if cache_control
