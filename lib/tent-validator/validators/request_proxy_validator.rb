@@ -735,14 +735,18 @@ module TentValidator
             post = get(:post)
             cache_control = get(:cache_control)
 
-            unless get(:is_app)
+            if get(:is_app)
+              expect_properties(:refs => [])
+            else
               post = TentD::Utils::Hash.deep_dup(post)
               post[:received_at] = property_absent
               post[:version][:received_at] = property_absent
+              post[:app] = { :id => property_absent }
+
+              expect_properties(:refs => property_absent)
             end
 
             expect_properties(:posts => [post])
-            expect_properties(:refs => [])
 
             get(:client).post.list(:limit => 1, :max_refs => 1) do |request|
               if cache_control
