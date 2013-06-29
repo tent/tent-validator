@@ -624,9 +624,9 @@ module TentValidator
           expect_properties(:post => expected_data)
 
           clients(:app_auth).post.create(data)
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
-            raise SetupFailure.new("Failed to create post", response, results)
+            raise SetupFailure.new("Failed to create post", response, results, validator)
           else
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             set(:post, post)
@@ -646,9 +646,9 @@ module TentValidator
           expect_properties(:post => expected_data)
 
           clients(:app_auth).post.update(post[:entity], post[:id], data)
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
-            raise SetupFailure.new("Failed to create post version", response, results)
+            raise SetupFailure.new("Failed to create post version", response, results, validator)
           else
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             set(:post_version, post)

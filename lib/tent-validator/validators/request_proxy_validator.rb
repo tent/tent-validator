@@ -75,14 +75,14 @@ module TentValidator
         expect_properties(:post => data)
 
         res
-      end.after do |response, results|
+      end.after do |response, results, validator|
         if !results.any? { |r| !r[:valid] }
           post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
           post.delete(:received_at)
           post[:version].delete(:received_at)
           set(:local_uncached_post, post)
         else
-          raise SetupFailure.new("Failed to create post on local server", response, results)
+          raise SetupFailure.new("Failed to create post on local server", response, results, validator)
         end
       end
 
@@ -96,12 +96,12 @@ module TentValidator
         expect_properties(:post => data)
 
         res
-      end.after do |response, results|
+      end.after do |response, results, validator|
         if !results.any? { |r| !r[:valid] }
           post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
           set(:local_cached_post, post)
         else
-          raise SetupFailure.new("Failed to create post on local server", response, results)
+          raise SetupFailure.new("Failed to create post on local server", response, results, validator)
         end
       end
 
@@ -109,9 +109,9 @@ module TentValidator
       expect_response(:status => 200, :schema => :data) do
         post = get(:local_cached_post)
         clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
-      end.after do |response, results|
+      end.after do |response, results, validator|
         if results.any? { |r| !r[:valid] }
-          raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+          raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
         end
       end
 
@@ -529,9 +529,9 @@ module TentValidator
             attachments = [get(:avatar_attachment)]
 
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true, :attachments => attachments)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
@@ -767,11 +767,11 @@ module TentValidator
             expect_properties(:post => data)
 
             res
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if !results.any? { |r| !r[:valid] }
               set(:post, TentD::Utils::Hash.symbolize_keys(response.body['post']))
             else
-              raise SetupFailure.new("Failed to create post on remote server", response, results)
+              raise SetupFailure.new("Failed to create post on remote server", response, results, validator)
             end
           end
 
@@ -889,11 +889,11 @@ module TentValidator
             expect_properties(:post => data)
 
             res
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if !results.any? { |r| !r[:valid] }
               set(:post, TentD::Utils::Hash.symbolize_keys(response.body['post']))
             else
-              raise SetupFailure.new("Failed to create post on remote server", response, results)
+              raise SetupFailure.new("Failed to create post on remote server", response, results, validator)
             end
           end
 
@@ -1009,14 +1009,14 @@ module TentValidator
           expect_properties(:post => data)
 
           res
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if !results.any? { |r| !r[:valid] }
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             post.delete(:received_at)
             post[:version].delete(:received_at)
             set(:local_cached_post, post)
           else
-            raise SetupFailure.new("Failed to create post on local server", response, results)
+            raise SetupFailure.new("Failed to create post on local server", response, results, validator)
           end
         end
 
@@ -1030,14 +1030,14 @@ module TentValidator
           expect_properties(:post => data)
 
           res
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if !results.any? { |r| !r[:valid] }
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             post.delete(:received_at)
             post[:version].delete(:received_at)
             set(:local_uncached_post, post)
           else
-            raise SetupFailure.new("Failed to create post on local server", response, results)
+            raise SetupFailure.new("Failed to create post on local server", response, results, validator)
           end
         end
 
@@ -1045,9 +1045,9 @@ module TentValidator
         expect_response(:status => 200, :schema => :data) do
           post = get(:local_cached_post)
           clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
-            raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+            raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
           end
         end
 
@@ -1241,9 +1241,9 @@ module TentValidator
           expect_properties(:post => expected_data)
 
           clients(:app_auth, :server => :local, :user => user).post.create(data, {}, :attachments => attachments)
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
-            raise SetupFailure.new("Failed to create post with attachemnts on local server", response, results)
+            raise SetupFailure.new("Failed to create post with attachemnts on local server", response, results, validator)
           else
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             post[:attachments].first.merge!(get(:attachment))
@@ -1418,9 +1418,9 @@ module TentValidator
             attachments = [attachment]
 
             clients(:app_auth).post.update(post[:entity], post[:id], post.merge(:attachments => []), {}, :import => true, :attachments => attachments)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
@@ -1526,9 +1526,9 @@ module TentValidator
           expect_properties(:post => expected_data)
 
           clients(:app_auth, :server => :local, :user => user).post.create(data, {}, :attachments => attachments)
-        end.after do |response, results|
+        end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
-            raise SetupFailure.new("Failed to create post with attachemnts on local server", response, results)
+            raise SetupFailure.new("Failed to create post with attachemnts on local server", response, results, validator)
           else
             post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
             post[:attachments].first.merge!(get(:attachment))
@@ -1720,9 +1720,9 @@ module TentValidator
             attachments = [attachment]
 
             clients(:app_auth).post.update(post[:entity], post[:id], post.merge(:attachments => []), {}, :import => true, :attachments => attachments)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
@@ -1900,9 +1900,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.create(data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -1991,9 +1991,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.create(data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -2004,9 +2004,9 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             post = get(:post)
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
@@ -2189,9 +2189,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.create(data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -2289,9 +2289,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.create(data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -2302,9 +2302,9 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             post = get(:post)
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
@@ -2490,9 +2490,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.update(parent_post[:entity], parent_post[:id], data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -2591,9 +2591,9 @@ module TentValidator
             expect_properties(:post => expected_data)
 
             clients(:app_auth, :server => :local, :user => user).post.update(parent_post[:entity], parent_post[:id], data)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to create post on local server", response, results)
+              raise SetupFailure.new("Failed to create post on local server", response, results, validator)
             else
               post = TentD::Utils::Hash.symbolize_keys(response.body['post'])
               set(:post, post)
@@ -2604,9 +2604,9 @@ module TentValidator
           expect_response(:status => 200, :schema => :data) do
             post = get(:post)
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true)
-          end.after do |response, results|
+          end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }
-              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results)
+              raise SetupFailure.new("Failed to deliver post notification on remote server", response, results, validator)
             end
           end
 
