@@ -78,6 +78,9 @@ module TentValidator
         print "Loading validations..."
         require 'tent-validator/validators/support/tent_schemas'
 
+        # needs to run before everything else
+        require 'tent-validator/validators/posts_feed_validator'
+
         # needs to run before relationship validator
         require 'tent-validator/validators/request_proxy_validator'
 

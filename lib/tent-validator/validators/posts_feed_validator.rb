@@ -21,13 +21,12 @@ module TentValidator
 
       posts = []
 
-      timestamp_offset = 1000
-      timestamp = TentD::Utils.timestamp + timestamp_offset
+      timestamp = TentD::Utils.timestamp
       posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "first or second post A"}))
       posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "first or second post B"}))
-      posts << create_post(client, generate_status_reply_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "third post"}))
-      posts << create_post(client, generate_status_post.merge(:published_at => TentD::Utils.timestamp + timestamp_offset, :content => {:text => "fourth post"}))
-      timestamp = TentD::Utils.timestamp + timestamp_offset
+      posts << create_post(client, generate_status_reply_post.merge(:published_at => TentD::Utils.timestamp, :content => {:text => "third post"}))
+      posts << create_post(client, generate_status_post.merge(:published_at => TentD::Utils.timestamp, :content => {:text => "fourth post"}))
+      timestamp = TentD::Utils.timestamp
       posts << create_post(client, generate_status_post.merge(:published_at => timestamp, :content => {:text => "fifth or sixth post A"}))
       posts << create_post(client, generate_fictitious_post.merge(:published_at => timestamp, :content => {:text => "fifth or sixth post B"}))
 
