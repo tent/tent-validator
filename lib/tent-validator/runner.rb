@@ -78,20 +78,38 @@ module TentValidator
         print "Loading validations..."
         require 'tent-validator/validators/support/tent_schemas'
 
-        # needs to run before everything else
-        require 'tent-validator/validators/posts_feed_validator'
+        paths = [
+          # needs to run before everything else
+          'tent-validator/validators/posts_feed_validator',
 
-        # needs to run before relationship validator
-        require 'tent-validator/validators/request_proxy_validator'
+          # needs to run before relationship validator
+          'tent-validator/validators/request_proxy_validator',
 
-        # run near beginning to maximize window for async requests
-        require 'tent-validator/validators/relationship_validator'
+          # run near beginning to maximize window for async requests
+          'tent-validator/validators/relationship_validator'
+        ]
 
+        run_only = ENV['INCLUDE']
+        run_except = ENV['EXCLUDE']
+        loaded_paths = []
         load_time = Benchmark.realtime do
-          paths = Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
-          paths.each { |path| require path }
+          paths = paths | Dir[File.expand_path(File.join(File.dirname(__FILE__), 'validators', '**', '*_validator.rb'))]
+          paths.each do |path|
+            if run_only
+              next unless path =~ Regexp.new(run_only)
+            end
+
+            if run_except
+              next if path =~ Regexp.new(run_except)
+            end
+
+            if require path
+              loaded_paths << path
+            end
+          end
         end
         print " #{load_time}s\n"
+        p loaded_paths
 
         TentValidator.validators.each do |validator|
           validation_benchmarks[validator.name] = Benchmark.realtime do
