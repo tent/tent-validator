@@ -637,6 +637,10 @@ module TentValidator
           post = get(:post)
           data = generate_status_post(get(:public))
 
+          data[:version] = {
+            :parents => [{ :version => post[:version][:id] }]
+          }
+
           expected_data = TentD::Utils::Hash.deep_dup(data)
 
           if get(:public)
