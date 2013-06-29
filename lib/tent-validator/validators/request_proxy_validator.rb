@@ -526,6 +526,7 @@ module TentValidator
             post[:received_at] = TentD::Utils.timestamp - 2000
             post[:version][:received_at] = TentD::Utils.timestamp - 2000
 
+            post.delete(:attachments)
             attachments = [get(:avatar_attachment)]
 
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true, :attachments => attachments)
