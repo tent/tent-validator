@@ -529,6 +529,8 @@ module TentValidator
             post.delete(:attachments)
             attachments = [get(:avatar_attachment)]
 
+            post[:version].delete(:id)
+
             clients(:app_auth).post.update(post[:entity], post[:id], post, {}, :import => true, :attachments => attachments)
           end.after do |response, results, validator|
             if results.any? { |r| !r[:valid] }

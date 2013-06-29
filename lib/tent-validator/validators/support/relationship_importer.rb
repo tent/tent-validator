@@ -191,6 +191,8 @@ module TentValidator
               :type => remote_relationship[:type]
             }],
             :version => {
+              :published_at => TentD::Utils.timestamp,
+              :received_at => TentD::Utils.timestamp,
               :parents => [{
                 :entity => fake_entity,
                 :post => fake_relationship_initial[:id],
