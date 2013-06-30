@@ -2102,6 +2102,14 @@ module TentValidator
 
                 behaves_as(:not_found)
               end
+
+              context "when default: no-cache" do
+                setup do
+                  set(:cache_control, nil)
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
             end
 
             context "when not app authorized" do
@@ -2211,6 +2219,14 @@ module TentValidator
                 end
 
                 behaves_as(:fetch_without_proxy)
+              end
+
+              context "when default: no-cache" do
+                setup do
+                  set(:cache_control, nil)
+                end
+
+                behaves_as(:fetch_via_proxy)
               end
             end
 
