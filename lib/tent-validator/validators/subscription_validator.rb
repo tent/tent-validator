@@ -127,6 +127,104 @@ module TentValidator
       end
     end
 
+    describe "Delete Subscription" do
+      # setup relationship with subscription
+      # delete subscription
+      # assert posts are not received for the subscription
+
+      setup do
+        set(:type, "https://example.org/types/status-#{TentD::Utils.timestamp}/v#{rand(1000)}#")
+        set(:notification_types, [get(:type)])
+        set(:read_types, get(:notification_types))
+
+        user = TentD::Model::User.generate
+        set(:user, user)
+        set(:entity, user.entity)
+        set(:meta_post, user.meta_post.as_json)
+      end
+
+      include_import_subscription_examples
+      include_import_relationship_examples
+
+      # make sure we can get the subscription
+      expect_response(:status => 200, :schema => :data) do
+        subscription = get(:subscription)
+
+        expect_properties(:post => subscription)
+
+        clients(:app_auth).post.get(subscription[:entity], subscription[:id]) do |request|
+          request['Cache-Control'] = 'only-if-cached'
+        end
+      end
+
+      # delete the subscription
+      expect_response(:status => 200) do
+        subscription = get(:subscription)
+
+        remote_credentials = get(:remote_credentials)
+        client = clients(:custom, remote_credentials[:content].merge(:id => remote_credentials[:id]))
+
+        delete_post = {
+          :id => TentD::Utils.random_id,
+          :entity => get(:entity),
+          :type => "https://tent.io/types/delete/v0#",
+          :refs => [{
+            :entity => subscription[:entity],
+            :post => subscription[:id]
+          }]
+        }
+
+        client.post.update(delete_post[:entity], delete_post[:id], delete_post, {}, :notification => true)
+      end
+
+      # make sure the subscription is deleted
+      expect_response(:status => 404, :schema => :error) do
+        subscription = get(:subscription)
+
+        clients(:app_auth).post.get(subscription[:entity], subscription[:id]) do |request|
+          request['Cache-Control'] = 'only-if-cached'
+        end
+      end
+
+      # create a post that would we delivered to the subscriber if the subscription still existed
+      # assert it is not delivered
+      expect_response(:status => 200, :schema => :data) do
+        user = get(:user)
+
+        data = generate_status_post
+        data[:type] = get(:type)
+
+        expect_async_request(
+          :method => "PUT",
+          :url => %r{\A#{Regexp.escape(get(:user).entity)}},
+          :path => %r{\A/posts/#{Regexp.escape(URI.encode_www_form_component(TentValidator.remote_entity_uri))}/[^/]+\Z},
+          :negative_expectation => true
+        ) do
+          expect_schema(:post)
+          expect_headers(
+            'Content-Type' => %r{\brel=['"]#{Regexp.escape("https://tent.io/rels/notification")}['"]}
+          )
+          expect_headers(
+            'Content-Type' => %r{\A#{Regexp.escape(TentD::API::POST_CONTENT_TYPE % get(:type))}}
+          )
+        end
+
+        manipulate_local_requests(user.id) do |env, app|
+          if env['CONTENT_TYPE'].to_s =~ %r{#{Regexp.escape(get(:type))}.+rel=['"][^'"]+notification['"]}
+            [200, {}, []]
+          else
+            app.call(env)
+          end
+        end
+
+        expected_data = TentD::Utils::Hash.deep_dup(data)
+        expected_data.delete(:permissions)
+        expect_properties(:post => expected_data)
+
+        clients(:app_auth).post.create(data)
+      end
+    end
+
   end
 
   TentValidator.validators << SubscriptionValidator
