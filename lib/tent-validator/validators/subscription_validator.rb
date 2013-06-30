@@ -4,6 +4,9 @@ module TentValidator
     require 'tent-validator/validators/support/post_generators'
     include Support::PostGenerators
 
+    require 'tent-validator/validators/support/relationship_importer'
+    include Support::RelationshipImporter
+
     describe "Create Subscription" do
       context "when no existing relationship" do
 
@@ -70,6 +73,57 @@ module TentValidator
           clients(:app_auth).post.create(data)
         end
 
+      end
+    end
+
+    describe "Import Subscription"  do
+      setup do
+        set(:type, "https://example.org/types/status-#{TentD::Utils.timestamp}/v#{rand(1000)}#")
+        set(:notification_types, [get(:type)])
+        set(:read_types, get(:notification_types))
+
+        user = TentD::Model::User.generate
+        set(:user, user)
+        set(:entity, user.entity)
+        set(:meta_post, user.meta_post.as_json)
+      end
+
+      include_import_subscription_examples
+      include_import_relationship_examples
+
+      expect_response(:status => 200, :schema => :data) do
+        user = get(:user)
+
+        data = generate_status_post
+        data[:type] = get(:type)
+
+        expect_async_request(
+          :method => "PUT",
+          :url => %r{\A#{Regexp.escape(get(:user).entity)}},
+          :path => %r{\A/posts/#{Regexp.escape(URI.encode_www_form_component(TentValidator.remote_entity_uri))}/[^/]+\Z}
+        ) do
+          expect_schema(:post)
+          expect_headers(
+            'Content-Type' => %r{\brel=['"]#{Regexp.escape("https://tent.io/rels/notification")}['"]}
+          )
+          expect_headers(
+            'Content-Type' => %r{\A#{Regexp.escape(TentD::API::POST_CONTENT_TYPE % get(:type))}}
+          )
+        end
+
+        manipulate_local_requests(user.id) do |env, app|
+          if env['CONTENT_TYPE'].to_s =~ %r{#{Regexp.escape(get(:type))}.+rel=['"][^'"]+notification['"]}
+            [200, {}, []]
+          else
+            app.call(env)
+          end
+        end
+
+        expected_data = TentD::Utils::Hash.deep_dup(data)
+        expected_data.delete(:permissions)
+        expect_properties(:post => expected_data)
+
+        clients(:app_auth).post.create(data)
       end
     end
 

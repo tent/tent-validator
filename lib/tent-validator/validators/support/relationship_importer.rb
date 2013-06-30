@@ -259,6 +259,8 @@ module TentValidator
 
           expect_properties(:post => data)
 
+          set(:subscription, data)
+
           clients(:app_auth).post.update(data[:entity], data[:id], data, {}, :import => true)
         end.after do |response, results, validator|
           if results.any? { |r| !r[:valid] }
