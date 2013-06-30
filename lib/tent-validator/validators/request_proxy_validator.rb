@@ -1810,6 +1810,14 @@ module TentValidator
 
                 behaves_as(:not_found)
               end
+
+              context "when default: no-cache" do
+                setup do
+                  set(:cache_control, nil)
+                end
+
+                behaves_as(:fetch_via_proxy)
+              end
             end
 
             context "when not app authorized" do
@@ -1821,12 +1829,16 @@ module TentValidator
                 setup do
                   set(:cache_control, 'no-cache')
                 end
+
+                behaves_as(:not_found)
               end
 
               context "when `Cache-Control: only-if-cached" do
                 setup do
                   set(:cache_control, 'only-if-cached')
                 end
+
+                behaves_as(:not_found)
               end
             end
           end
@@ -1840,12 +1852,16 @@ module TentValidator
               setup do
                 set(:cache_control, 'no-cache')
               end
+
+              behaves_as(:not_found)
             end
 
             context "when `Cache-Control: only-if-cached" do
               setup do
                 set(:cache_control, 'only-if-cached')
               end
+
+              behaves_as(:not_found)
             end
           end
         end
@@ -1907,6 +1923,14 @@ module TentValidator
               context "when `Cache-Control: only-if-cached" do
                 setup do
                   set(:cache_control, 'only-if-cached')
+                end
+
+                behaves_as(:fetch_without_proxy)
+              end
+
+              context "when default: no-cache" do
+                setup do
+                  set(:cache_control, nil)
                 end
 
                 behaves_as(:fetch_without_proxy)
