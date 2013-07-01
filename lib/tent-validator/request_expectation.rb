@@ -268,7 +268,14 @@ module TentValidator
 
     def build_response(response)
       status, headers, body = response
-      body = body ? body.first : body
+
+      body = body && Array === body ? body.first : body
+      if body.respond_to?(:read)
+        _body = body.read
+        body.rewind if body.respond_to?(:rewind)
+        body = _body
+      end
+
       response = Response.new(status, headers, body)
       response.headers ||= Hash.new
       response
