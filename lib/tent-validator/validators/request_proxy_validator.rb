@@ -126,7 +126,7 @@ module TentValidator
             post[:version].delete(:received_at)
             expect_properties(:post => post)
 
-            res = catch_faraday_exceptions("Proxied request failed") do
+            res = catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Post(#{post[:id]}), Entity(#{post[:entity]})") do
               get(:client).post.get(post[:entity], post[:id]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -160,7 +160,7 @@ module TentValidator
             post[:version].delete(:received_at)
             expect_properties(:post => post)
 
-            catch_faraday_exceptions("Proxied request failed") do
+            catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Post(#{post[:id]}), Entity(#{post[:entity]})") do
               get(:client).post.get(post[:entity], post[:id]) do |request|
                 request.headers['Cache-Control'] = cache_control
               end
@@ -1203,7 +1203,7 @@ module TentValidator
 
             expect_body(attachment[:data])
 
-            res = catch_faraday_exceptions("Proxied request failed") do
+            res = catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Attachment(#{attachment[:digest]}), Entity(#{post[:entity]})") do
               get(:client).attachment.get(post[:entity], attachment[:digest]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -1233,7 +1233,7 @@ module TentValidator
 
             expect_body(attachment[:data])
 
-            catch_faraday_exceptions("Proxied request failed") do
+            catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Attachment(#{attachment[:digest]}), Entity(#{post[:entity]})") do
               get(:client).attachment.get(post[:entity], attachment[:digest]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -1250,7 +1250,7 @@ module TentValidator
 
             attachment = post[:attachments].first
 
-            catch_faraday_exceptions("Proxied request failed") do
+            catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Attachment(#{attachment[:digest]}), Entity(#{post[:entity]})") do
               get(:client).attachment.get(post[:entity], attachment[:digest]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -1466,7 +1466,7 @@ module TentValidator
 
             attachment = get(:attachment)
 
-            res = catch_faraday_exceptions("Proxied request failed") do
+            res = catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Post(#{post[:id]}), Entity(#{post[:entity]}), Attachment(#{attachment[:name]})") do
               get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -1504,7 +1504,7 @@ module TentValidator
 
             attachment = get(:attachment)
 
-            res = catch_faraday_exceptions("Proxied request failed") do
+            res = catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Post(#{post[:id]}), Entity(#{post[:entity]}), Attachment(#{attachment[:name]})") do
               get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
@@ -1531,7 +1531,7 @@ module TentValidator
 
             attachment = post[:attachments].first
 
-            catch_faraday_exceptions("Proxied request failed") do
+            catch_faraday_exceptions("#{self.full_name}: Proxied request failed for Post(#{post[:id]}), Entity(#{post[:entity]}), Attachment(#{attachment[:name]})") do
               get(:client).post.get_attachment(post[:entity], post[:id], attachment[:name]) do |request|
                 if cache_control
                   request.headers['Cache-Control'] = cache_control
