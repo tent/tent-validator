@@ -1070,7 +1070,7 @@ module TentValidator
             user = get(:user)
             cache_control = get(:cache_control)
 
-            expect_properties(:posts => [])
+            expect_properties(:posts => [{ :entity => not_equal(user.entity) }])
 
             get(:client).post.list(:limit => 1, :entities => user.entity) do |request|
               if cache_control
