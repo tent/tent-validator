@@ -1088,7 +1088,9 @@ module TentValidator
           expected_data[:version].delete(:received_at)
           expect_properties(:post => expected_data)
 
-          clients(:app_auth).post.get(post[:entity], post[:id])
+          clients(:app_auth).post.get(post[:entity], post[:id]) do |request|
+            request.headers['Cache-Control'] = 'only-if-cached'
+          end
         end
 
         # send delete notification for the status post
@@ -1115,7 +1117,9 @@ module TentValidator
         # make sure we can't get the status post
         expect_response(:status => 404, :schema => :error) do
           post = get(:fake_status)
-          clients(:app_auth).post.get(post[:entity], post[:id])
+          clients(:app_auth).post.get(post[:entity], post[:id]) do |request|
+            request.headers['Cache-Control'] = 'only-if-cached'
+          end
         end
       end
 
