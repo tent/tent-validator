@@ -187,9 +187,9 @@ module TentValidator
               set(:client, clients(:app_auth))
             end
 
-            context "when `Cache-Control: no-cache`" do
+            context "when `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:get_post_via_proxy)
@@ -236,12 +236,12 @@ module TentValidator
               end
             end
 
-            context "when `Cache-Control: no-cache`" do
+            context "when `Cache-Control: proxy`" do
               expect_response(:status => 404, :schema => :error) do
                 post = get(:post)
                 catch_faraday_exceptions("Request failed") do
                   get(:client).post.get(post[:entity], post[:id]) do |request|
-                    request.headers['Cache-Control'] = 'no-cache'
+                    request.headers['Cache-Control'] = 'proxy'
                   end
                 end
               end
@@ -260,12 +260,12 @@ module TentValidator
               end
             end
 
-            context "when `Cache-Control: no-cache`" do
+            context "when `Cache-Control: proxy`" do
               expect_response(:status => 404, :schema => :error) do
                 post = get(:post)
                 catch_faraday_exceptions("Request failed") do
                   get(:client).post.get(post[:entity], post[:id]) do |request|
-                    request.headers['Cache-Control'] = 'no-cache'
+                    request.headers['Cache-Control'] = 'proxy'
                   end
                 end
               end
@@ -283,9 +283,9 @@ module TentValidator
               set(:client, clients(:app_auth))
             end
 
-            context "when `Cache-Control: no-cache`" do
+            context "when `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:get_post_via_proxy)
@@ -406,9 +406,9 @@ module TentValidator
                 set(:is_app, true)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -437,9 +437,9 @@ module TentValidator
                 set(:is_app, false)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_no_profiles)
@@ -469,9 +469,9 @@ module TentValidator
               set(:is_app, false)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_no_profiles)
@@ -523,9 +523,9 @@ module TentValidator
                 set(:is_app, true)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -554,9 +554,9 @@ module TentValidator
                 set(:is_app, false)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_no_profiles)
@@ -586,9 +586,9 @@ module TentValidator
               set(:is_app, false)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_no_profiles)
@@ -746,9 +746,9 @@ module TentValidator
                 set(:is_app, true)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -777,9 +777,9 @@ module TentValidator
                 set(:is_app, false)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_no_refs)
@@ -809,9 +809,9 @@ module TentValidator
               set(:is_app, false)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_no_refs)
@@ -868,9 +868,9 @@ module TentValidator
                 set(:is_app, true)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -899,9 +899,9 @@ module TentValidator
                 set(:is_app, false)
               end
 
-              context "with `Cache-Control: no-cache`" do
+              context "with `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_no_refs)
@@ -931,9 +931,9 @@ module TentValidator
               set(:is_app, false)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_no_refs)
@@ -1087,9 +1087,9 @@ module TentValidator
               set(:is_app, true)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_via_proxy)
@@ -1110,9 +1110,9 @@ module TentValidator
               set(:is_app, false)
             end
 
-            context "with `Cache-Control: no-cache`" do
+            context "with `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:fetch_empty_feed)
@@ -1134,9 +1134,9 @@ module TentValidator
             set(:is_app, false)
           end
 
-          context "with `Cache-Control: no-cache`" do
+          context "with `Cache-Control: proxy`" do
             setup do
-              set(:cache_control, 'no-cache')
+              set(:cache_control, 'proxy')
             end
 
             behaves_as(:fetch_empty_feed)
@@ -1267,9 +1267,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache`" do
+              context "when `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -1289,9 +1289,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache`" do
+              context "when `Cache-Control: proxy`" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -1312,9 +1312,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache`" do
+            context "when `Cache-Control: proxy`" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -1463,9 +1463,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -1485,9 +1485,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -1508,9 +1508,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -1625,9 +1625,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -1641,7 +1641,7 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -1655,9 +1655,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -1678,9 +1678,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -1742,9 +1742,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -1758,7 +1758,7 @@ module TentValidator
                 behaves_as(:fetch_without_proxy)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -1772,9 +1772,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -1795,9 +1795,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -1917,9 +1917,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -1933,7 +1933,7 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -1947,9 +1947,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -1970,9 +1970,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -2035,9 +2035,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -2051,7 +2051,7 @@ module TentValidator
                 behaves_as(:fetch_without_proxy)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -2065,9 +2065,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -2088,9 +2088,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -2211,9 +2211,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -2227,7 +2227,7 @@ module TentValidator
                 behaves_as(:not_found)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -2241,9 +2241,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -2264,9 +2264,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
@@ -2330,9 +2330,9 @@ module TentValidator
                 set(:client, clients(:app_auth))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:fetch_via_proxy)
@@ -2346,7 +2346,7 @@ module TentValidator
                 behaves_as(:fetch_without_proxy)
               end
 
-              context "when default: no-cache" do
+              context "when default: proxy" do
                 setup do
                   set(:cache_control, nil)
                 end
@@ -2360,9 +2360,9 @@ module TentValidator
                 set(:client, clients(:app))
               end
 
-              context "when `Cache-Control: no-cache" do
+              context "when `Cache-Control: proxy" do
                 setup do
-                  set(:cache_control, 'no-cache')
+                  set(:cache_control, 'proxy')
                 end
 
                 behaves_as(:not_found)
@@ -2383,9 +2383,9 @@ module TentValidator
               set(:client, clients(:no_auth))
             end
 
-            context "when `Cache-Control: no-cache" do
+            context "when `Cache-Control: proxy" do
               setup do
-                set(:cache_control, 'no-cache')
+                set(:cache_control, 'proxy')
               end
 
               behaves_as(:not_found)
