@@ -163,7 +163,7 @@ module TentValidator
         expect_properties(:post => subscription)
 
         clients(:app_auth).post.get(subscription[:entity], subscription[:id]) do |request|
-          request['Cache-Control'] = 'only-if-cached'
+          request['Cache-Control'] = 'no-proxy'
         end
       end
 
@@ -192,7 +192,7 @@ module TentValidator
         subscription = get(:subscription)
 
         clients(:app_auth).post.get(subscription[:entity], subscription[:id]) do |request|
-          request['Cache-Control'] = 'only-if-cached'
+          request['Cache-Control'] = 'no-proxy'
         end
       end
 

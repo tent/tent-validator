@@ -1089,7 +1089,7 @@ module TentValidator
           expect_properties(:post => expected_data)
 
           clients(:app_auth).post.get(post[:entity], post[:id]) do |request|
-            request.headers['Cache-Control'] = 'only-if-cached'
+            request.headers['Cache-Control'] = 'no-proxy'
           end
         end
 
@@ -1118,7 +1118,7 @@ module TentValidator
         expect_response(:status => 404, :schema => :error) do
           post = get(:fake_status)
           clients(:app_auth).post.get(post[:entity], post[:id]) do |request|
-            request.headers['Cache-Control'] = 'only-if-cached'
+            request.headers['Cache-Control'] = 'no-proxy'
           end
         end
       end
