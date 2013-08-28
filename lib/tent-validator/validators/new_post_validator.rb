@@ -41,7 +41,7 @@ module TentValidator
 
         context "when member set that should be ignored" do
           properties = ApiValidator::JsonSchemas[:post]["properties"]
-          %w( /id /received_at /entity /original_entity /app /version/id /version/published_at /version/received_at ).each do |path|
+          %w( /id /received_at /entity /original_entity /app /version/published_at /version/received_at ).each do |path|
             path_fragments = path.split('/')
             property_path = path_fragments[0] + path_fragments[1..-1].join('/properties/')
             property = JsonPointer.new(properties, property_path).value
