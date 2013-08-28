@@ -84,7 +84,7 @@ module TentValidator
             :read => %w( all ),
             :write => %w( all )
           },
-          :scopes => %w( import )
+          :scopes => %w( import permissions )
         },
         :permissions => {
           :public => false
