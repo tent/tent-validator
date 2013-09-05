@@ -4,10 +4,20 @@ module TentValidator
     require 'tent-validator/validators/support/post_generators'
     include Support::PostGenerators
 
+    require 'tent-validator/validators/support/app_post_generators'
+    include Support::AppPostGenerators
+
+    require 'tent-validator/validators/support/oauth'
+    include Support::OAuth
+
     require 'tent-validator/validators/support/relationship_importer'
     include Support::RelationshipImporter
 
     describe "Create Subscription" do
+      set(:subscription_type, %(https://tent.io/types/status/v0#))
+      set(:subscription_type_base, %(https://tent.io/types/status/v0))
+      set(:subscription_post_type, TentClient::TentType.new("https://tent.io/types/subscription/v0##{get(:subscription_type_base)}").to_s)
+
       context "when no existing relationship" do
 
         shared_example :create_relationship_and_subscription do
@@ -70,10 +80,6 @@ module TentValidator
           end
         end
 
-        set(:subscription_type, %(https://tent.io/types/status/v0#))
-        set(:subscription_type_base, %(https://tent.io/types/status/v0))
-        set(:subscription_post_type, TentClient::TentType.new("https://tent.io/types/subscription/v0##{get(:subscription_type_base)}").to_s)
-
         context "entity A" do
           set(:user, TentD::Model::User.generate)
           behaves_as(:create_relationship_and_subscription)
@@ -82,6 +88,30 @@ module TentValidator
         context "entity B" do
           set(:user, TentD::Model::User.generate)
           behaves_as(:create_relationship_and_subscription)
+        end
+      end
+
+      context "when not authorized to create subscription posts" do
+        set(:user, TentD::Model::User.generate)
+
+        setup do
+          authenticate_with_permissions(:read => [], :write => [])
+        end
+
+        describe "POST /posts with subscription post" do
+          expect_response(:status => 403, :schema => :error) do
+            data = {
+              :type => get(:subscription_post_type),
+              :mentions => [{ 'entity' => get(:user).entity }],
+              :content => {
+                :type => get(:subscription_type)
+              },
+              :permissions => {
+                :entities => [get(:user).entity]
+              }
+            }
+            get(:client).post.create(data)
+          end
         end
       end
     end
