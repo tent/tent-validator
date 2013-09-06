@@ -9,6 +9,23 @@ module TentValidator
     require 'tent-validator/validators/support/app_importer'
     include Support::AppImporter
 
+    describe "App update with app credentials" do
+      include_import_app_examples
+
+      expect_response(:status => 200, :schema => :data) do
+        client = clients(:custom, { :id => get(:app_credentials)[:id] }.merge(get(:app_credentials)[:content]))
+
+        attrs = TentD::Utils::Hash.deep_dup(get(:app))
+        attrs[:version] = {
+          :parents => [{
+            :version => attrs[:version][:id]
+          }]
+        }
+
+        client.post.update(attrs[:entity], attrs[:id], attrs)
+      end
+    end
+
     describe "App notifications" do
       # create app on remote server with generated webhook url (via import)
       # create post for which app is registered to be notified about
